@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MABUNET - Master Billing & Network</title>
   
+  <!-- PWA MANIFEST -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3067/3067260.png">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: { extend: {} }
-    }
+    tailwind.config = { darkMode: 'class', theme: { extend: {} } }
   </script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
@@ -25,10 +27,17 @@
     
     @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
     .scanner-line { position: absolute; width: 100%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80; animation: scan 1.5s linear infinite; }
-    .pulse-glow { box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(99, 102, 241, 0); } 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } }
-    @keyframes ring { 0% { transform: rotate(0); } 25% { transform: rotate(15deg); } 50% { transform: rotate(-15deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0); } }
-    .animate-ring { animation: ring 0.5s ease-in-out infinite; }
+    
+    /* STRUK KASIR 58mm PRINT OVERRIDE */
+    @media print {
+      body * { visibility: hidden; }
+      #print-receipt, #print-receipt * { visibility: visible; }
+      #print-receipt { 
+        position: absolute; left: 0; top: 0; width: 58mm; margin: 0; padding: 5px; 
+        font-family: monospace; font-size: 11px; color: #000; background: #fff;
+      }
+      @page { margin: 0; }
+    }
   </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen transition-colors duration-300">
@@ -37,11 +46,13 @@
   <script type="text/babel" data-type="module">
     import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import Cropper from 'https://esm.sh/react-easy-crop@3.3.3';
+    import { BarChart, Bar, XAxis, YAxis, Tooltip as ChartTooltip, ResponsiveContainer } from 'https://esm.sh/recharts@2.12.7';
     import { 
       Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, 
       Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
       Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server,
-      Eye, EyeOff, Sun, Moon
+      Eye, EyeOff, Sun, Moon, Crop, Printer, Download, Activity, TrendingUp
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -62,7 +73,12 @@
     try {
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
-    } catch(e) { console.error("Gagal menghubungkan Firebase:", e); }
+    } catch(e) { console.error("Gagal Firebase:", e); }
+
+    // Registrasi PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Error:', err));
+    }
 
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
@@ -89,7 +105,6 @@
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
       const [showPassword, setShowPassword] = useState(false); 
-      
       const [isDarkMode, setIsDarkMode] = useState(true); 
       
       const [activeTab, setActiveTab] = useState('dashboard');
@@ -103,8 +118,12 @@
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
+      const [auditLogs, setAuditLogs] = useState([]); // LOG AKTIVITAS
       const [isDbLoading, setIsDbLoading] = useState(true);
       
+      // STRUK KASIR DATA
+      const [printData, setPrintData] = useState(null);
+
       const [alarmEnabled, setAlarmEnabled] = useState(false);
       const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
@@ -124,6 +143,19 @@
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
+
+      // --- LOGGING HELPER ---
+      const writeLog = async (actionDesc) => {
+        if(!db || !currentUser) return;
+        try {
+          await addDoc(collection(db, 'logs'), { 
+            time: new Date().getTime(), 
+            dateStr: new Date().toLocaleString('id-ID'),
+            admin: currentUser.name, 
+            action: actionDesc 
+          });
+        } catch(e) {}
+      };
 
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
@@ -152,7 +184,12 @@
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setExpenses(data);
           });
-          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); };
+          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            data.sort((a,b) => b.time - a.time); // Paling baru di atas
+            setAuditLogs(data);
+          });
+          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
@@ -161,20 +198,34 @@
         const cust = customers.find(c => c.id === custId);
         const isPaid = cust.payments && cust.payments[monthKey];
         await updateDoc(doc(db, 'customers', custId), { [`payments.${monthKey}`]: !isPaid });
+        writeLog(isPaid ? `Membatalkan lunas tagihan: ${cust.name}` : `Menandai LUNAS tagihan: ${cust.name}`);
       };
+
       const handleSaveCustomer = async (e) => {
         e.preventDefault();
-        if (editingCustomer) { await updateDoc(doc(db, 'customers', editingCustomer.id), formData); } 
-        else { await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); }
+        if (editingCustomer) { 
+          await updateDoc(doc(db, 'customers', editingCustomer.id), formData); 
+          writeLog(`Mengedit data pelanggan: ${formData.name}`);
+        } else { 
+          await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); 
+          writeLog(`Menambah pelanggan baru: ${formData.name}`);
+        }
         setIsCustomerModalOpen(false);
       };
+
       const handleSaveExpense = async (e) => {
         e.preventDefault();
         await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
+        writeLog(`Mencatat kas keluar: ${formatIDR(expenseForm.amount)} (${expenseForm.description})`);
         setIsExpenseModalOpen(false);
       };
+
       const handleDeleteCustomer = async (id) => {
-        if(confirm("Yakin hapus pelanggan ini?")) await deleteDoc(doc(db, 'customers', id));
+        const cust = customers.find(c => c.id === id);
+        if(confirm("Yakin hapus pelanggan ini?")) {
+          await deleteDoc(doc(db, 'customers', id));
+          writeLog(`Menghapus pelanggan: ${cust.name}`);
+        }
       };
 
       const handleLogin = (e) => {
@@ -182,87 +233,51 @@
         setLoginError('');
         const user = admins.find(a => a.username === loginForm.username && a.password === loginForm.password);
         if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan oleh Super Admin.');
+          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
           localStorage.setItem('mabunet_device_user', user.id); 
         } else { setLoginError('Username atau Password salah!'); }
       };
 
-      // --- WEBAUTHN FINGERPRINT: DAFTARKAN PERANGKAT ---
+      // FINGERPRINT LOGIC
       const registerFingerprint = async () => {
         try {
-          if (!window.PublicKeyCredential) throw new Error("Perangkat/Browser ini tidak mendukung Fingerprint WebAuthn.");
-          
-          const challenge = new Uint8Array(32);
-          window.crypto.getRandomValues(challenge);
-          const userId = new Uint8Array(16);
-          window.crypto.getRandomValues(userId);
-
+          if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
+          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+          const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
           const pubKey = {
-            challenge,
-            rp: { name: "MABUNET", id: window.location.hostname || "localhost" },
-            user: { 
-              id: userId, 
-              name: editProfile.username || 'admin', 
-              displayName: editProfile.name || 'Admin' 
-            },
+            challenge, rp: { name: "MABUNET", id: window.location.hostname },
+            user: { id: userId, name: editProfile.username, displayName: editProfile.name },
             pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
             authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-            timeout: 60000,
-            attestation: "none"
+            timeout: 60000, attestation: "none"
           };
-
           const credential = await navigator.credentials.create({ publicKey: pubKey });
           const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
-          
           setEditProfile({...editProfile, credentialId: credentialId, fingerprintEnabled: true});
-          alert("Sidik Jari berhasil dikaitkan dengan akun Anda! Tekan 'Simpan Profil' di bawah untuk menerapkan.");
-        } catch (err) {
-          console.error(err);
-          alert("Gagal mengaktifkan sidik jari. Pastikan perangkat Anda memiliki sensor aktif.");
-        }
+          alert("Sidik Jari terkait! Tekan 'Simpan Profil'.");
+        } catch (err) { alert("Gagal mengaktifkan sidik jari."); }
       };
 
-      // --- WEBAUTHN FINGERPRINT: LOGIN OTOMATIS ---
       const handleFingerprintScan = async () => {
         setIsScanning(true); setLoginError('');
-        
         try {
           const savedUserId = localStorage.getItem('mabunet_device_user');
-          if (!savedUserId) throw new Error('Perangkat belum dikenali. Silakan Login Manual satu kali dengan akun Anda.');
-          
+          if (!savedUserId) throw new Error('Perangkat belum dikenali. Login Manual dahulu.');
           const savedUser = admins.find(a => a.id === savedUserId);
-          if (!savedUser) throw new Error('Data pengguna tidak ditemukan di server.');
-          if (savedUser.status !== 'Aktif') throw new Error('Akun Anda telah dinonaktifkan.');
-          if (!savedUser.fingerprintEnabled || !savedUser.credentialId) throw new Error('Anda belum mengaktifkan Sidik Jari di menu Pengaturan Profil.');
-          if (!window.PublicKeyCredential) throw new Error('Perangkat ini tidak mendukung fitur Sidik Jari.');
-
-          const challenge = new Uint8Array(32);
-          window.crypto.getRandomValues(challenge);
+          if (!savedUser || savedUser.status !== 'Aktif') throw new Error('Akun dinonaktifkan atau hilang.');
+          if (!savedUser.fingerprintEnabled || !savedUser.credentialId) throw new Error('Sidik Jari belum diaktifkan.');
+          
+          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           const rawId = Uint8Array.from(atob(savedUser.credentialId), c => c.charCodeAt(0));
-
           const assertion = await navigator.credentials.get({
-            publicKey: {
-              challenge,
-              rpId: window.location.hostname || "localhost",
-              allowCredentials: [{ type: "public-key", id: rawId }],
-              userVerification: "required"
-            }
+            publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" }
           });
-
-          if (assertion) {
-            setCurrentUser(savedUser);
-            setEditProfile(savedUser);
-          }
-        } catch (err) {
-          console.error(err);
-          setLoginError(err.message || 'Verifikasi Sidik Jari gagal atau dibatalkan.');
-        } finally {
-          setIsScanning(false);
-        }
+          if (assertion) { setCurrentUser(savedUser); setEditProfile(savedUser); }
+        } catch (err) { setLoginError(err.message || 'Verifikasi Sidik Jari gagal.'); } finally { setIsScanning(false); }
       };
 
-      // --- NATIVE SMART AUTO-CROP & COMPRESS ---
+      // AUTO-CROP IMAGE
       const handlePhotoUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -271,19 +286,13 @@
             const img = new Image();
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              const size = Math.min(img.width, img.height); // Ambil rasio 1:1
-              canvas.width = 400; // Kompres ke 400px agar ringan
-              canvas.height = 400;
+              const size = Math.min(img.width, img.height);
+              canvas.width = 400; canvas.height = 400;
               const ctx = canvas.getContext('2d');
-              
-              // Potong tepat di tengah (Center Crop)
               const startX = (img.width - size) / 2;
               const startY = (img.height - size) / 2;
-              
               ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
-              
               setEditProfile({ ...editProfile, photo: canvas.toDataURL('image/jpeg', 0.8) });
-              alert("Selesai! Foto Anda otomatis dipotong (Auto-Crop 1:1) dan dikompres agar aplikasi tetap ringan.");
             };
             img.src = reader.result;
           };
@@ -293,30 +302,48 @@
 
       const handleSaveProfile = async (e) => {
         e.preventDefault();
-        if (!db) return alert("Firebase belum tersambung!");
         try {
           const updateData = {
-            name: editProfile.name,
-            username: editProfile.username,
-            password: editProfile.password,
-            email: editProfile.email || '',
-            fingerprintEnabled: editProfile.fingerprintEnabled || false,
+            name: editProfile.name, username: editProfile.username, password: editProfile.password,
+            email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false,
             credentialId: editProfile.credentialId || ''
           };
-          if (currentUser.id === 'admin1') {
-            updateData.phone = editProfile.phone;
-            updateData.photo = editProfile.photo;
-          }
+          if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; updateData.photo = editProfile.photo; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
-          alert('Profil berhasil diperbarui!');
-          setIsEditingProfile(false); 
+          alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
       };
 
       const toggleAdminStatus = async (adminId, currentStatus) => {
-        if (!db) return;
         const newStatus = currentStatus === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
         await updateDoc(doc(db, 'admins', adminId), { status: newStatus });
+      };
+
+      // EXPORT CSV
+      const exportCSV = (type) => {
+        let csv = '';
+        if (type === 'customers') {
+          csv = 'Nama,Blok,Paket,Harga,Status\n';
+          customers.forEach(c => csv += `${c.name},${c.block},${getPackage(c.packageId).speed},${getPackage(c.packageId).price},${c.status}\n`);
+        } else {
+          csv = 'Tanggal,Kategori,Uraian,Nominal,Admin\n';
+          expenses.forEach(e => csv += `${e.date},${e.category},${e.description},${e.amount},${e.admin}\n`);
+        }
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `MABUNET_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+      };
+
+      // BLUETOOTH THERMAL PRINTING
+      const triggerPrint = (cust) => {
+        setPrintData(cust);
+        // Beri waktu react merender struktur print-receipt, lalu jalankan browser print
+        setTimeout(() => {
+          window.print();
+          setPrintData(null); // Bersihkan setelah print dialog ditutup
+        }, 300);
       };
 
       const sendWAInvoice = (cust) => {
@@ -324,19 +351,24 @@
         const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar ke BCA 1234567890. Abaikan jika sudah lunas.`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
-      const sendWAReceipt = (cust, monthKey) => {
-        const pkg = getPackage(cust.packageId); const [y, m] = monthKey.split('-');
-        const text = `*KUITANSI MABUNET*\nTerima kasih Bapak/Ibu *${cust.name}*.\nPembayaran internet paket *${pkg.speed}* untuk bulan *${MONTHS[parseInt(m) - 1]} ${y}* sebesar *${formatIDR(pkg.price)}* berstatus *LUNAS*.`;
-        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
-      };
-
+      
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
+      
       const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const totalExpenseAmount = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
       const netProfit = actualPaidRevenue - totalExpenseAmount;
+      
+      // DATA CHART (KHUSUS DESKTOP)
+      const chartData = [
+        { name: 'Potensi Omset', Rp: totalPotentialRevenue },
+        { name: 'Uang Masuk', Rp: actualPaidRevenue },
+        { name: 'Kas Keluar', Rp: totalExpenseAmount },
+        { name: 'Net Profit', Rp: netProfit }
+      ];
+
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
@@ -402,6 +434,31 @@
 
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300">
+          
+          {/* BAGIAN STRUK KASIR (TERSEMBUNYI, HANYA MUNCUL SAAT PRINT THERMAL 58mm) */}
+          {printData && (
+            <div id="print-receipt">
+              <div style={{textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '5px'}}>
+                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABUNET</h2>
+                <p style={{margin: '0', fontSize: '10px'}}>Internet RT & Network</p>
+              </div>
+              <p style={{margin: '2px 0'}}>Tgl : {new Date().toLocaleDateString('id-ID')}</p>
+              <p style={{margin: '2px 0'}}>Opr : {currentUser.name}</p>
+              <p style={{margin: '2px 0'}}>Plg : {printData.name} ({printData.block})</p>
+              <p style={{margin: '2px 0'}}>Paket: {getPackage(printData.packageId).speed}</p>
+              <p style={{margin: '2px 0'}}>Bulan: {MONTHS[selectedMonth]} {selectedYear}</p>
+              <div style={{borderTop: '1px dashed #000', marginTop: '5px', paddingTop: '5px'}}>
+                <p style={{margin: '0', fontSize: '14px', fontWeight: 'bold'}}>TOTAL: {formatIDR(getPackage(printData.packageId).price)}</p>
+                <p style={{margin: '0', fontSize: '12px', fontWeight: 'bold', marginTop: '5px'}}>STATUS: LUNAS</p>
+              </div>
+              <div style={{textAlign: 'center', marginTop: '15px', fontSize: '10px'}}>
+                <p style={{margin: '0'}}>Terima Kasih</p>
+                <p style={{margin: '0'}}>Telah Berlangganan</p>
+                <p style={{margin: '0'}}>MABUNET</p>
+              </div>
+            </div>
+          )}
+
           <header className="md:hidden fixed top-0 inset-x-0 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between px-4 shadow-sm dark:shadow-lg transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center overflow-hidden border border-indigo-500/30">
@@ -428,17 +485,17 @@
             <nav className="flex flex-row md:flex-col gap-2 md:gap-4 w-full md:px-4 items-center justify-around md:justify-start flex-1">
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                 <LayoutDashboard size={22} />
-                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium">Dashboard</span>
+                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Dashboard</span>
               </button>
               
               <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'customers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                 <div className="relative"><Users size={22} />{isDbLoading && <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>}</div>
-                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium">Data Pelanggan</span>
+                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Data Pelanggan</span>
               </button>
               
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                 <BookOpen size={22} />
-                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium">Buku Kas</span>
+                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Buku Kas</span>
               </button>
               
               <div className="hidden md:block w-full h-px bg-slate-200 dark:bg-slate-800 my-2"></div>
@@ -446,7 +503,7 @@
               
               <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200'}`}>
                 <Settings size={22} />
-                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium">Pengaturan</span>
+                <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Pengaturan</span>
               </button>
 
               <button onClick={() => { setCurrentUser(null); localStorage.removeItem('mabunet_device_user'); }} className="md:hidden relative group flex justify-center p-3 rounded-xl text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
@@ -457,15 +514,15 @@
             <div className="hidden md:flex mt-auto px-4 w-full flex-col gap-4 items-center">
               <button onClick={() => setIsDarkMode(!isDarkMode)} className="relative group flex justify-center p-3 rounded-xl text-amber-500 hover:bg-amber-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">
                 {isDarkMode ? <Sun size={22}/> : <Moon size={22}/>}
-                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium">Ubah Tema</span>
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Ubah Tema</span>
               </button>
               <div className="relative group cursor-help">
                 {db ? <Server size={18} className="text-emerald-500 dark:text-emerald-400" /> : <Server size={18} className="text-rose-500 dark:text-rose-400 animate-pulse" />}
-                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700">Status Server</span>
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 z-50">Status Server</span>
               </div>
               <button onClick={() => { setCurrentUser(null); localStorage.removeItem('mabunet_device_user'); }} className="relative group w-full flex justify-center p-3 rounded-xl text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
                 <LogOut size={22} />
-                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-rose-200 dark:border-rose-900 font-bold">Keluar</span>
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-rose-200 dark:border-rose-900 font-bold z-50">Keluar</span>
               </button>
             </div>
           </aside>
@@ -494,6 +551,25 @@
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl transition-colors"><p className="text-xs text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl font-extrabold">{formatIDR(totalPotentialRevenue)}</h3></div>
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl transition-colors"><p className="text-xs text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{formatIDR(actualPaidRevenue)}</h3></div>
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl transition-colors"><p className="text-xs text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl font-extrabold ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
+                </div>
+
+                {/* GRAFIK ANALITIK (KHUSUS DESKTOP) */}
+                <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xl transition-colors">
+                  <h3 className="font-bold flex items-center gap-2 mb-4 text-indigo-600 dark:text-indigo-400"><TrendingUp size={20}/> Grafik Keuangan Bulan Ini</h3>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                        <XAxis dataKey="name" stroke={isDarkMode ? '#94a3b8' : '#64748b'} fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis stroke={isDarkMode ? '#94a3b8' : '#64748b'} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `Rp ${val/1000}k`} />
+                        <ChartTooltip cursor={{fill: isDarkMode ? '#1e293b' : '#f1f5f9'}} contentStyle={{backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', borderColor: isDarkMode ? '#334155' : '#e2e8f0', borderRadius: '8px', color: isDarkMode ? '#f8fafc' : '#0f172a'}} formatter={(val) => formatIDR(val)} />
+                        <Bar dataKey="Rp" radius={[4, 4, 0, 0]}>
+                          {chartData.map((entry, index) => (
+                            <cell key={`cell-${index}`} fill={index === 2 ? '#ef4444' : index === 3 ? (netProfit >= 0 ? '#4f46e5' : '#ef4444') : '#10b981'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
                 {customersDueToday.length > 0 && (
@@ -534,7 +610,12 @@
                 <div className="flex flex-wrap gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors">
                   <input type="text" placeholder="Cari Nama/Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm flex-1 text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
                   <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                  <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: ''}); setIsCustomerModalOpen(true); }} className="px-4 py-2 bg-indigo-600 rounded-xl text-white text-sm font-semibold shadow-lg hover:bg-indigo-700">Tambah Baru</button>
+                  
+                  {/* TOMBOL DOWNLOAD EXCEL & TAMBAH */}
+                  <div className="flex gap-2">
+                    <button onClick={() => exportCSV('customers')} className="px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-lg hover:bg-emerald-700 flex items-center gap-2" title="Download Excel"><Download size={16}/> <span className="hidden sm:inline">Export</span></button>
+                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: ''}); setIsCustomerModalOpen(true); }} className="px-4 py-2 bg-indigo-600 rounded-xl text-white text-sm font-semibold shadow-lg hover:bg-indigo-700 flex items-center gap-2"><Plus size={16}/> <span className="hidden sm:inline">Tambah</span></button>
+                  </div>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
@@ -543,13 +624,13 @@
                   ) : customers.length === 0 ? (
                     <div className="p-12 text-center text-rose-500 font-bold">Data Pelanggan Kosong!</div>
                   ) : (
-                    <table className="w-full text-left text-sm min-w-[1200px]">
+                    <table className="w-full text-left text-sm min-w-[1300px]">
                       <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                         <tr>
                           <th className="py-3 px-4 w-48">Pelanggan</th>
-                          <th className="py-3 px-4">Paket</th>
-                          {MONTHS.map((m, i) => <th key={i} className="py-3 px-2 text-center text-[10px] uppercase tracking-wider">{m.substring(0,3)}</th>)}
-                          <th className="py-3 px-4 text-right">Opsi</th>
+                          <th className="py-3 px-4 w-32">Paket</th>
+                          {MONTHS.map((m, i) => <th key={i} className="py-3 px-1 text-center text-[10px] uppercase tracking-wider">{m.substring(0,3)}</th>)}
+                          <th className="py-3 px-4 text-right w-48">Opsi & Print</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -567,7 +648,7 @@
                               const isPaid = cust.payments && cust.payments[monthKey];
                               return (
                                 <td key={i} className="py-3 px-1 text-center">
-                                  <button onClick={() => togglePayment(cust.id, monthKey)} className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                                  <button onClick={() => togglePayment(cust.id, monthKey)} className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                                     {isPaid ? <Check size={16} strokeWidth={3} /> : <span className="text-[10px]">{i+1}</span>}
                                   </button>
                                 </td>
@@ -575,7 +656,10 @@
                             })}
                             
                             <td className="py-3 px-4 text-right space-x-1">
-                              <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-2 hover:text-emerald-500 text-slate-400" title="Kirim Nota"><FileText size={16} /></button>
+                              {/* TOMBOL CETAK STRUK THERMAL */}
+                              <button onClick={() => triggerPrint(cust)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded hover:text-indigo-500 text-slate-400 shadow-sm" title="Print Struk Kasir"><Printer size={16} /></button>
+                              
+                              <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-2 hover:text-emerald-500 text-slate-400" title="Kirim WA"><FileText size={16} /></button>
                               <button onClick={() => { setEditingCustomer(cust); setFormData(cust); setIsCustomerModalOpen(true); }} className="p-2 hover:text-indigo-500 text-slate-400" title="Edit"><Edit3 size={16} /></button>
                               <button onClick={() => handleDeleteCustomer(cust.id)} className="p-2 hover:text-rose-500 text-slate-400" title="Hapus"><Trash2 size={16} /></button>
                             </td>
@@ -592,7 +676,10 @@
               <div className="space-y-6">
                 <div className="flex justify-between bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors">
                   <h3 className="text-lg font-bold">Buku Kas Pengeluaran</h3>
-                  <button onClick={() => setIsExpenseModalOpen(true)} className="px-4 py-2 bg-rose-600 rounded-xl text-white text-sm font-semibold flex gap-2 shadow-lg hover:bg-rose-700"><Plus size={16}/> Catat Kas</button>
+                  <div className="flex gap-2">
+                    <button onClick={() => exportCSV('expenses')} className="px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-lg hover:bg-emerald-700 flex items-center gap-2"><Download size={16}/> <span className="hidden sm:inline">Export</span></button>
+                    <button onClick={() => setIsExpenseModalOpen(true)} className="px-4 py-2 bg-rose-600 rounded-xl text-white text-sm font-semibold flex gap-2 shadow-lg hover:bg-rose-700"><Plus size={16}/> <span className="hidden sm:inline">Catat Kas</span></button>
+                  </div>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-colors">
                   <table className="w-full text-left text-sm min-w-[700px]">
@@ -613,12 +700,12 @@
               </div>
             )}
 
-            {/* TAB PENGATURAN (PROFIL SEMPIT & KELOLA ADMIN) */}
+            {/* TAB PENGATURAN (PROFIL, KELOLA ADMIN & AUDIT LOG) */}
             {activeTab === 'settings' && (
-              <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto items-start">
+              <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto items-start">
                 
                 {/* KARTU PROFIL (Lebih Sempit & Ringkas) */}
-                <div className="w-full lg:w-[380px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors relative">
+                <div className="w-full lg:w-[360px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
                     // === TAMPILAN BACA (READ-ONLY) ===
                     <>
@@ -662,7 +749,6 @@
                           </div>
                         )}
                         
-                        {/* Status Fingerprint */}
                         <div className="mt-4 flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${currentUser.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
                           <span className="text-xs text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span>
@@ -684,7 +770,7 @@
                                 <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                               </label>
                             </div>
-                            <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Otomatis dipotong persegi (Auto-Crop).</p></div>
+                            <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Auto-Crop 1:1.</p></div>
                           </div>
                         ) : (
                           <div className="flex items-center gap-4 mb-6">
@@ -712,16 +798,15 @@
                           <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                         )}
                         
-                        {/* PENGATURAN SIDIK JARI (WEBAUTHN ASLI) */}
                         <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
-                          <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Keamanan Biometrik (Sidik Jari Asli HP/PC)</label>
+                          <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Keamanan Biometrik (WebAuthn)</label>
                           {!editProfile.credentialId ? (
                             <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
-                              <Fingerprint size={16} /> Daftarkan Sidik Jari Perangkat
+                              <Fingerprint size={16} /> Daftarkan Sidik Jari Asli
                             </button>
                           ) : (
                             <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl">
-                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold"><Check size={16}/> Sidik Jari Terdaftar</div>
+                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold"><Check size={16}/> Terdaftar</div>
                               <label className="flex items-center gap-2 cursor-pointer">
                                 <span className="text-[10px] text-slate-500">Aktifkan:</span>
                                 <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"/>
@@ -739,83 +824,56 @@
                   )}
                 </div>
                 
-                {/* KELOLA AKSES ADMIN (HANYA MUNCUL UNTUK SUPER ADMIN/ADMIN 1) */}
+                {/* KOLOM KANAN: KELOLA ADMIN & AUDIT LOG (KHUSUS ADMIN 1) */}
                 {currentUser.id === 'admin1' && (
-                  <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors h-fit w-full">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin Sistem</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Matikan tombol di bawah jika Anda ingin memblokir Admin lain agar tidak bisa masuk ke aplikasi secara permanen.</p>
-                    <div className="space-y-4">
-                      {admins.filter(a => a.id !== 'admin1').map(admin => (
-                        <div key={admin.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-                              {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User size={20} className="text-slate-400" />}
+                  <div className="flex-1 w-full space-y-6">
+                    
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors">
+                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin Sistem</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {admins.filter(a => a.id !== 'admin1').map(admin => (
+                          <div key={admin.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+                                {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User size={20} className="text-slate-400" />}
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
-                            </div>
+                            <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
+                              {admin.status === 'Aktif' ? <ToggleRight size={20}/> : <ToggleLeft size={20}/>}
+                            </button>
                           </div>
-                          <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
-                            {admin.status === 'Aktif' ? 'Akses Aktif' : 'Akses Diblokir'}
-                            {admin.status === 'Aktif' ? <ToggleRight size={18}/> : <ToggleLeft size={18}/>}
-                          </button>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors">
+                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Activity size={20}/> Riwayat Aktivitas Sistem (Log)</h3>
+                      <div className="h-64 overflow-y-auto pr-2">
+                        {auditLogs.length === 0 ? (
+                          <p className="text-center text-slate-500 py-10">Belum ada aktivitas tercatat.</p>
+                        ) : (
+                          <ul className="space-y-3">
+                            {auditLogs.map((log) => (
+                              <li key={log.id} className="flex gap-3 text-sm p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <div className="text-slate-400 w-24 shrink-0 text-[10px]">{log.dateStr}</div>
+                                <div><span className="font-bold text-indigo-600 dark:text-indigo-400">{log.admin}</span>: <span className="text-slate-700 dark:text-slate-300">{log.action}</span></div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+
                   </div>
                 )}
                 
               </div>
             )}
           </main>
-
-          {/* MODALS CRUD PELANGGAN/KAS */}
-          {isCustomerModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl transition-colors">
-                <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-slate-100">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}</h3>
-                <form onSubmit={handleSaveCustomer} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="text" required placeholder="Blok (Misl: A2)" value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm uppercase text-slate-800 dark:text-slate-100"/>
-                    <input type="text" required placeholder="Nama Pelanggan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  </div>
-                  <input type="text" placeholder="No HP/WA (0812...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  <select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100">{PACKAGES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}</select>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input type="number" required placeholder="Tgl Tempo (1-31)" min="1" max="31" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: parseInt(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"><option value="Aktif">Aktif</option><option value="Tidak Aktif">Tidak Aktif</option><option value="Isolir">Isolir</option></select>
-                  </div>
-                  <input type="text" placeholder="Keterangan (Opsional)" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">Batal</button>
-                    <button type="submit" className="flex-1 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg hover:bg-indigo-700">Simpan ke Cloud</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {isExpenseModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors">
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800 dark:text-slate-100"><CloudLightning size={20} className="text-indigo-600 dark:text-indigo-400"/> Input Kas Keluar</h3>
-                <form onSubmit={handleSaveExpense} className="space-y-4">
-                  <input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100">
-                    <option value="Operasional">Operasional</option><option value="Maintenance">Maintenance</option><option value="Lainnya">Lainnya</option>
-                  </select>
-                  <input type="text" required placeholder="Uraian Singkat" value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  <textarea placeholder="Catatan Manual (Opsional)" rows="2" value={expenseForm.notes} onChange={e => setExpenseForm({...expenseForm, notes: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm resize-none text-slate-800 dark:text-slate-100"></textarea>
-                  <input type="number" required placeholder="Nominal (Rp)" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"/>
-                  <div className="flex gap-3 pt-2">
-                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">Batal</button>
-                    <button type="submit" className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-semibold shadow-lg hover:bg-rose-700">Simpan Pengeluaran</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
       );
     }
