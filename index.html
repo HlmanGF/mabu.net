@@ -44,7 +44,6 @@
       Eye, EyeOff, Sun, Moon
     } from 'https://esm.sh/lucide-react@0.292.0';
     
-    // --- IMPORT FIREBASE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
@@ -66,9 +65,9 @@
     } catch(e) { console.error("Gagal menghubungkan Firebase:", e); }
 
     const INITIAL_ADMINS = [
-      { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif' },
-      { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif' },
-      { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif' }
+      { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
+      { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
+      { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
     ];
 
     const PACKAGES = [
@@ -95,7 +94,7 @@
       
       const [activeTab, setActiveTab] = useState('dashboard');
       const [editProfile, setEditProfile] = useState({});
-      const [isEditingProfile, setIsEditingProfile] = useState(false); // State Buka/Tutup Form Edit Profil
+      const [isEditingProfile, setIsEditingProfile] = useState(false); 
       
       const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -189,26 +188,105 @@
         } else { setLoginError('Username atau Password salah!'); }
       };
 
-      const handleFingerprintScan = () => {
-        setIsScanning(true); setLoginError('');
-        setTimeout(() => {
-          setIsScanning(false);
-          const savedUserId = localStorage.getItem('mabunet_device_user');
-          if (savedUserId) {
-            const user = admins.find(a => a.id === savedUserId);
-            if (user && user.status === 'Aktif') {
-              setCurrentUser(user); setEditProfile(user); return;
-            }
-          }
-          setLoginError('Perangkat belum dikenali. Silakan Login Manual satu kali untuk menyimpan akses.');
-        }, 2000);
+      // --- WEBAUTHN FINGERPRINT: DAFTARKAN PERANGKAT ---
+      const registerFingerprint = async () => {
+        try {
+          if (!window.PublicKeyCredential) throw new Error("Perangkat/Browser ini tidak mendukung Fingerprint WebAuthn.");
+          
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          const userId = new Uint8Array(16);
+          window.crypto.getRandomValues(userId);
+
+          const pubKey = {
+            challenge,
+            rp: { name: "MABUNET", id: window.location.hostname || "localhost" },
+            user: { 
+              id: userId, 
+              name: editProfile.username || 'admin', 
+              displayName: editProfile.name || 'Admin' 
+            },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000,
+            attestation: "none"
+          };
+
+          const credential = await navigator.credentials.create({ publicKey: pubKey });
+          const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
+          
+          setEditProfile({...editProfile, credentialId: credentialId, fingerprintEnabled: true});
+          alert("Sidik Jari berhasil dikaitkan dengan akun Anda! Tekan 'Simpan Profil' di bawah untuk menerapkan.");
+        } catch (err) {
+          console.error(err);
+          alert("Gagal mengaktifkan sidik jari. Pastikan perangkat Anda memiliki sensor aktif.");
+        }
       };
 
+      // --- WEBAUTHN FINGERPRINT: LOGIN OTOMATIS ---
+      const handleFingerprintScan = async () => {
+        setIsScanning(true); setLoginError('');
+        
+        try {
+          const savedUserId = localStorage.getItem('mabunet_device_user');
+          if (!savedUserId) throw new Error('Perangkat belum dikenali. Silakan Login Manual satu kali dengan akun Anda.');
+          
+          const savedUser = admins.find(a => a.id === savedUserId);
+          if (!savedUser) throw new Error('Data pengguna tidak ditemukan di server.');
+          if (savedUser.status !== 'Aktif') throw new Error('Akun Anda telah dinonaktifkan.');
+          if (!savedUser.fingerprintEnabled || !savedUser.credentialId) throw new Error('Anda belum mengaktifkan Sidik Jari di menu Pengaturan Profil.');
+          if (!window.PublicKeyCredential) throw new Error('Perangkat ini tidak mendukung fitur Sidik Jari.');
+
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          const rawId = Uint8Array.from(atob(savedUser.credentialId), c => c.charCodeAt(0));
+
+          const assertion = await navigator.credentials.get({
+            publicKey: {
+              challenge,
+              rpId: window.location.hostname || "localhost",
+              allowCredentials: [{ type: "public-key", id: rawId }],
+              userVerification: "required"
+            }
+          });
+
+          if (assertion) {
+            setCurrentUser(savedUser);
+            setEditProfile(savedUser);
+          }
+        } catch (err) {
+          console.error(err);
+          setLoginError(err.message || 'Verifikasi Sidik Jari gagal atau dibatalkan.');
+        } finally {
+          setIsScanning(false);
+        }
+      };
+
+      // --- NATIVE SMART AUTO-CROP & COMPRESS ---
       const handlePhotoUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
           const reader = new FileReader();
-          reader.onloadend = () => setEditProfile({ ...editProfile, photo: reader.result });
+          reader.onloadend = () => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const size = Math.min(img.width, img.height); // Ambil rasio 1:1
+              canvas.width = 400; // Kompres ke 400px agar ringan
+              canvas.height = 400;
+              const ctx = canvas.getContext('2d');
+              
+              // Potong tepat di tengah (Center Crop)
+              const startX = (img.width - size) / 2;
+              const startY = (img.height - size) / 2;
+              
+              ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
+              
+              setEditProfile({ ...editProfile, photo: canvas.toDataURL('image/jpeg', 0.8) });
+              alert("Selesai! Foto Anda otomatis dipotong (Auto-Crop 1:1) dan dikompres agar aplikasi tetap ringan.");
+            };
+            img.src = reader.result;
+          };
           reader.readAsDataURL(file);
         }
       };
@@ -221,7 +299,9 @@
             name: editProfile.name,
             username: editProfile.username,
             password: editProfile.password,
-            email: editProfile.email || ''
+            email: editProfile.email || '',
+            fingerprintEnabled: editProfile.fingerprintEnabled || false,
+            credentialId: editProfile.credentialId || ''
           };
           if (currentUser.id === 'admin1') {
             updateData.phone = editProfile.phone;
@@ -229,7 +309,7 @@
           }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
           alert('Profil berhasil diperbarui!');
-          setIsEditingProfile(false); // Tutup form setelah simpan
+          setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
       };
 
@@ -306,12 +386,12 @@
 
               <div className="mt-2 flex flex-col items-center relative z-10">
                 <button onClick={handleFingerprintScan} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400'}`}>
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                     <Fingerprint size={28} strokeWidth={isScanning ? 2 : 1.5} className={isScanning ? 'opacity-50' : ''}/>
                     {isScanning && <div className="scanner-line"></div>}
                   </div>
                   <span className={`text-[10px] font-semibold text-center ${isScanning ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                    {isScanning ? 'Memindai...' : 'Login Fingerprint'} <br/> <span className="font-normal text-[8px] opacity-70">(Ingat Perangkat Saya)</span>
+                    {isScanning ? 'Memindai...' : 'Login Sidik Jari Asli'} <br/> <span className="font-normal text-[8px] opacity-70">(Otentikasi Perangkat)</span>
                   </span>
                 </button>
               </div>
@@ -533,130 +613,159 @@
               </div>
             )}
 
+            {/* TAB PENGATURAN (PROFIL SEMPIT & KELOLA ADMIN) */}
             {activeTab === 'settings' && (
-              <div className="space-y-6 max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold border-b border-slate-200 dark:border-slate-800 pb-4 transition-colors">Pengaturan Aplikasi</h2>
+              <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto items-start">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  {/* AREA PROFIL SAYA DENGAN TAMPILAN READ-ONLY & EDIT */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors relative">
-                    {!isEditingProfile ? (
-                      // === TAMPILAN BACA (READ-ONLY) ===
-                      <>
-                        <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-6 right-6 p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil">
-                          <Edit3 size={18} />
-                        </button>
-                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User size={20}/> Profil Saya ({currentUser.role})</h3>
-                        
-                        <div className="flex items-center gap-4 mb-6">
-                          <div className="w-20 h-20 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                            {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-400" />}
-                          </div>
-                          <div>
-                            <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{currentUser.name}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{currentUser.email || 'Email belum diatur'}</p>
-                          </div>
+                {/* KARTU PROFIL (Lebih Sempit & Ringkas) */}
+                <div className="w-full lg:w-[380px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors relative">
+                  {!isEditingProfile ? (
+                    // === TAMPILAN BACA (READ-ONLY) ===
+                    <>
+                      <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-6 right-6 p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil">
+                        <Edit3 size={18} />
+                      </button>
+                      <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User size={20}/> Profil Saya</h3>
+                      
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className="w-20 h-20 rounded-full border-2 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                          {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-400" />}
                         </div>
+                        <div>
+                          <p className="font-bold text-lg text-slate-800 dark:text-slate-100 leading-tight">{currentUser.name}</p>
+                          <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase mt-1">{currentUser.role}</p>
+                        </div>
+                      </div>
 
-                        <div className="space-y-4">
-                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
-                            <span className="text-[10px] uppercase font-bold text-slate-400">Nama Lengkap</span>
-                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.name}</span>
-                          </div>
-                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
-                            <span className="text-[10px] uppercase font-bold text-slate-400">Username Login</span>
-                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.username}</span>
-                          </div>
-                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 relative">
-                            <span className="text-[10px] uppercase font-bold text-slate-400">Password</span>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-slate-800 dark:text-slate-200 tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
-                              <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500">
-                                {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
-                            <span className="text-[10px] uppercase font-bold text-slate-400">Email</span>
-                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.email || '-'}</span>
-                          </div>
-                          {currentUser.id === 'admin1' && (
-                            <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
-                              <span className="text-[10px] uppercase font-bold text-slate-400">No. WhatsApp</span>
-                              <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.phone}</span>
-                            </div>
-                          )}
+                      <div className="space-y-4">
+                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Username Login</span>
+                          <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.username}</span>
                         </div>
-                      </>
-                    ) : (
-                      // === TAMPILAN EDIT FORM ===
-                      <>
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Edit3 size={20}/> Edit Profil</h3>
-                        <form onSubmit={handleSaveProfile} className="space-y-4">
-                          {currentUser.id === 'admin1' ? (
-                            <div className="flex items-center gap-4 mb-6">
-                              <div className="relative w-20 h-20 rounded-full border-2 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
-                                {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={32} className="text-slate-400" />}
-                                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"><Camera size={20} className="text-white" /><input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" /></label>
-                              </div>
-                              <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-xs text-slate-500 dark:text-slate-400">Klik ikon foto untuk mengubah.</p></div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-4 mb-6">
-                               <div className="w-16 h-16 rounded-full border-2 border-slate-300 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={28} className="text-slate-400" />}
-                              </div>
-                              <div><p className="text-sm font-semibold text-slate-500">Foto Profil Terkunci</p><p className="text-xs text-slate-400">Hubungi Super Admin.</p></div>
-                            </div>
-                          )}
-                          
-                          <div><label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                          <div><label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                          
-                          <div className="relative">
-                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Password Baru</label>
-                            <input type={showPassword ? "text" : "password"} required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-4 pr-10 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-3 text-slate-400 hover:text-indigo-500">
+                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 relative">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Password</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
+                            <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500">
                               {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
                             </button>
                           </div>
-
-                          <div><label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Email Anda</label><input type="email" placeholder="Contoh: admin@gmail.com" value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                          
-                          {currentUser.id === 'admin1' && (
-                            <div><label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                          )}
-                          
-                          <div className="flex gap-3 pt-2">
-                            <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                            <button type="submit" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-colors">Simpan Profil</button>
+                        </div>
+                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
+                          <span className="text-[10px] uppercase font-bold text-slate-400">Email</span>
+                          <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.email || '-'}</span>
+                        </div>
+                        {currentUser.id === 'admin1' && (
+                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <span className="text-[10px] uppercase font-bold text-slate-400">No. WhatsApp</span>
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{currentUser.phone}</span>
                           </div>
-                        </form>
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* KELOLA AKSES ADMIN (HANYA MUNCUL UNTUK SUPER ADMIN/ADMIN 1) */}
-                  {currentUser.id === 'admin1' && (
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors h-fit">
-                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Matikan tombol di bawah jika Anda ingin memblokir Admin lain agar tidak bisa masuk ke aplikasi.</p>
-                      <div className="space-y-3">
-                        {admins.filter(a => a.id !== 'admin1').map(admin => (
-                          <div key={admin.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
-                            <div><p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p><p className="text-xs text-slate-500 dark:text-slate-400">Username: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p></div>
-                            <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
-                              {admin.status === 'Aktif' ? 'Akses Aktif' : 'Akses Diblokir'}
-                              {admin.status === 'Aktif' ? <ToggleRight size={18}/> : <ToggleLeft size={18}/>}
-                            </button>
-                          </div>
-                        ))}
+                        )}
+                        
+                        {/* Status Fingerprint */}
+                        <div className="mt-4 flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${currentUser.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span>
+                        </div>
                       </div>
-                    </div>
+                    </>
+                  ) : (
+                    // === TAMPILAN EDIT FORM ===
+                    <>
+                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Edit3 size={20}/> Edit Profil</h3>
+                      <form onSubmit={handleSaveProfile} className="space-y-4">
+                        
+                        {currentUser.id === 'admin1' ? (
+                          <div className="flex items-center gap-4 mb-6">
+                            <div className="relative w-16 h-16 rounded-full border-2 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
+                              {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
+                              <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer">
+                                <Camera size={16} className="text-white" />
+                                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                              </label>
+                            </div>
+                            <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Otomatis dipotong persegi (Auto-Crop).</p></div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-4 mb-6">
+                             <div className="w-16 h-16 rounded-full border-2 border-slate-300 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                              {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
+                            </div>
+                            <div><p className="text-sm font-semibold text-slate-500">Foto Terkunci</p><p className="text-[10px] text-slate-400">Hubungi Super Admin.</p></div>
+                          </div>
+                        )}
+                        
+                        <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        
+                        <div className="relative">
+                          <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Password Baru</label>
+                          <input type={showPassword ? "text" : "password"} required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-4 pr-10 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-3 text-slate-400 hover:text-indigo-500">
+                            {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
+                          </button>
+                        </div>
+
+                        <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Email Anda</label><input type="email" placeholder="Contoh: admin@gmail.com" value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        
+                        {currentUser.id === 'admin1' && (
+                          <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        )}
+                        
+                        {/* PENGATURAN SIDIK JARI (WEBAUTHN ASLI) */}
+                        <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+                          <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Keamanan Biometrik (Sidik Jari Asli HP/PC)</label>
+                          {!editProfile.credentialId ? (
+                            <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                              <Fingerprint size={16} /> Daftarkan Sidik Jari Perangkat
+                            </button>
+                          ) : (
+                            <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl">
+                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold"><Check size={16}/> Sidik Jari Terdaftar</div>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <span className="text-[10px] text-slate-500">Aktifkan:</span>
+                                <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"/>
+                              </label>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-3 pt-4 mt-2">
+                          <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                          <button type="submit" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-colors">Simpan Profil</button>
+                        </div>
+                      </form>
+                    </>
                   )}
-                  
                 </div>
+                
+                {/* KELOLA AKSES ADMIN (HANYA MUNCUL UNTUK SUPER ADMIN/ADMIN 1) */}
+                {currentUser.id === 'admin1' && (
+                  <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors h-fit w-full">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin Sistem</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Matikan tombol di bawah jika Anda ingin memblokir Admin lain agar tidak bisa masuk ke aplikasi secara permanen.</p>
+                    <div className="space-y-4">
+                      {admins.filter(a => a.id !== 'admin1').map(admin => (
+                        <div key={admin.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+                              {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User size={20} className="text-slate-400" />}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                            </div>
+                          </div>
+                          <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
+                            {admin.status === 'Aktif' ? 'Akses Aktif' : 'Akses Diblokir'}
+                            {admin.status === 'Aktif' ? <ToggleRight size={18}/> : <ToggleLeft size={18}/>}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
               </div>
             )}
           </main>
