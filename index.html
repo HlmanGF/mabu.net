@@ -32,11 +32,10 @@
       Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server
     } from 'https://esm.sh/lucide-react@0.292.0';
     
-    // --- IMPORT FIREBASE MENGGUNAKAN SERVER RESMI GOOGLE ---
+    // --- IMPORT FIREBASE ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-    // --- FIREBASE CONFIG MILIK ANDA ---
     const firebaseConfig = {
       apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
       authDomain: "billing-mabunet.firebaseapp.com",
@@ -47,16 +46,12 @@
       measurementId: "G-2DBSV96KHP"
     };
 
-    // INISIALISASI FIREBASE
     let app, db;
     try {
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
-    } catch(e) { 
-      console.error("Gagal menghubungkan Firebase:", e); 
-    }
+    } catch(e) { console.error("Firebase Error:", e); }
 
-    // --- DATA KONSTANTA ---
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', photo: '', status: 'Aktif' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', photo: '', status: 'Aktif' },
@@ -109,35 +104,24 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      // ==========================================
-      // REAL-TIME DATABASE SYNC
-      // ==========================================
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
-        
         try {
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
-            setCustomers(data);
-            setIsDbLoading(false);
-          }, (err) => {
-            console.error("Firebase Error:", err);
-            setIsDbLoading(false);
+            setCustomers(data); setIsDbLoading(false);
           });
-
           const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setExpenses(data);
           });
-
           return () => { unsubCustomers(); unsubExpenses(); };
-        } catch(e) { console.error(e); setIsDbLoading(false); }
+        } catch(e) { setIsDbLoading(false); }
       }, []);
 
-      // --- FIREBASE CRUD ACTIONS ---
       const togglePayment = async (custId, monthKey) => {
-        if (!db) return alert("Firebase belum tersambung!");
+        if (!db) return;
         const cust = customers.find(c => c.id === custId);
         const isPaid = cust.payments && cust.payments[monthKey];
         await updateDoc(doc(db, 'customers', custId), { [`payments.${monthKey}`]: !isPaid });
@@ -145,7 +129,6 @@
 
       const handleSaveCustomer = async (e) => {
         e.preventDefault();
-        if (!db) return alert("Firebase belum tersambung!");
         if (editingCustomer) { await updateDoc(doc(db, 'customers', editingCustomer.id), formData); } 
         else { await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); }
         setIsCustomerModalOpen(false);
@@ -153,23 +136,20 @@
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
-        if (!db) return alert("Firebase belum tersambung!");
         await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
         setIsExpenseModalOpen(false);
       };
 
       const handleDeleteCustomer = async (id) => {
-        if (!db) return;
         if(confirm("Yakin hapus pelanggan ini?")) await deleteDoc(doc(db, 'customers', id));
       };
 
-      // --- LOGIN LOGIC ---
       const handleLogin = (e) => {
         if(e) e.preventDefault();
         setLoginError('');
         const user = admins.find(a => a.username === loginForm.username && a.password === loginForm.password);
         if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
+          if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
         } else { setLoginError('Username atau Password salah!'); }
       };
@@ -201,19 +181,18 @@
 
       const toggleAdminStatus = (adminId) => setAdmins(admins.map(a => a.id === adminId ? { ...a, status: a.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif' } : a));
 
-      // --- WA MESSAGES ---
       const sendWAInvoice = (cust) => {
         const pkg = getPackage(cust.packageId);
         const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar ke BCA 1234567890. Abaikan jika sudah lunas.`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
+      
       const sendWAReceipt = (cust, monthKey) => {
         const pkg = getPackage(cust.packageId); const [y, m] = monthKey.split('-');
         const text = `*KUITANSI MABUNET*\nTerima kasih Bapak/Ibu *${cust.name}*.\nPembayaran internet paket *${pkg.speed}* untuk bulan *${MONTHS[parseInt(m) - 1]} ${y}* sebesar *${formatIDR(pkg.price)}* berstatus *LUNAS*.`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
 
-      // --- DATA CALCULATIONS ---
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
@@ -231,9 +210,6 @@
 
       useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
 
-      // ==========================================
-      // VIEW: SCREEN LOGIN
-      // ==========================================
       if (!currentUser) {
         return (
           <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 via-slate-950 to-slate-950">
@@ -263,7 +239,7 @@
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500"><Lock size={16} /></div>
                   <input type="password" placeholder="Password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-950/50 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-indigo-500" />
                 </div>
-                <button type="submit" className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg">Masuk Aplikasi</button>
+                <button type="submit" className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg hover:bg-indigo-700 transition-colors">Masuk Aplikasi</button>
               </form>
 
               <div className="w-full border-t border-slate-800 my-6 relative z-10"><span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-slate-900 px-2 text-xs text-slate-500 font-semibold">ATAU</span></div>
@@ -282,42 +258,63 @@
         );
       }
 
-      // ==========================================
-      // VIEW: MAIN DASHBOARD
-      // ==========================================
       return (
-        <div className="min-h-screen flex flex-col md:flex-row">
-          <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 md:h-screen sticky top-0 z-30">
-            <div className="p-5 border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-indigo-900 flex items-center justify-center overflow-hidden">
-                  {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-indigo-400" />}
-                </div>
-                <div><h2 className="font-bold text-sm">{currentUser.name}</h2><p className="text-[10px] text-indigo-400 uppercase font-bold">{currentUser.role}</p></div>
-              </div>
+        <div className="min-h-screen flex relative">
+          {/* MULTI-LAYER SLIM SIDEBAR */}
+          <aside className="fixed inset-y-0 left-0 z-50 w-20 bg-slate-900/80 backdrop-blur-xl border-r border-slate-800 flex flex-col items-center py-6 shadow-[4px_0_24px_rgba(0,0,0,0.5)]">
+            
+            {/* Profile Avatar */}
+            <div className="w-12 h-12 rounded-2xl bg-indigo-900 flex items-center justify-center overflow-hidden mb-8 border border-indigo-500/30 shadow-lg shadow-indigo-500/20 cursor-pointer" title={currentUser.name}>
+              {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-indigo-400" />}
             </div>
-            <nav className="p-4 space-y-2 flex-1">
-              <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'dashboard' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}><LayoutDashboard size={18} /> Dashboard</button>
-              <button onClick={() => setActiveTab('customers')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'customers' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}>
-                <Users size={18} /> Data Pelanggan 
-                {isDbLoading ? <span className="text-[10px] text-indigo-400 animate-pulse ml-auto">Memuat...</span> : <span className="text-[10px] ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{customers.length}</span>}
+            
+            {/* Nav Icons */}
+            <nav className="flex flex-col gap-4 w-full px-4 flex-1">
+              <button onClick={() => setActiveTab('dashboard')} className={`relative group w-full flex justify-center p-3 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                <LayoutDashboard size={22} />
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700 font-medium">Dashboard</span>
               </button>
-              <button onClick={() => setActiveTab('ledger')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'ledger' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}><BookOpen size={18} /> Buku Kas</button>
+              
+              <button onClick={() => setActiveTab('customers')} className={`relative group w-full flex justify-center p-3 rounded-xl transition-all ${activeTab === 'customers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                <div className="relative">
+                  <Users size={22} />
+                  {isDbLoading && <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>}
+                </div>
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700 font-medium">Data Pelanggan</span>
+              </button>
+              
+              <button onClick={() => setActiveTab('ledger')} className={`relative group w-full flex justify-center p-3 rounded-xl transition-all ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                <BookOpen size={22} />
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700 font-medium">Buku Kas</span>
+              </button>
               
               {currentUser.id === 'admin1' && (
-                <div className="pt-4 mt-4 border-t border-slate-800">
-                  <p className="px-4 text-xs font-bold text-slate-500 mb-2 uppercase">Super Admin</p>
-                  <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'settings' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}><Settings size={18} /> Pengaturan Aplikasi</button>
-                </div>
+                <>
+                  <div className="w-full h-px bg-slate-800 my-2"></div>
+                  <button onClick={() => setActiveTab('settings')} className={`relative group w-full flex justify-center p-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}>
+                    <Settings size={22} />
+                    <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700 font-medium">Pengaturan Aplikasi</span>
+                  </button>
+                </>
               )}
             </nav>
-            <div className="p-4 border-t border-slate-800">
-              {db && <div className="flex justify-center items-center gap-2 mb-3 text-[10px] text-emerald-400 font-bold"><Server size={12}/> Terhubung ke Cloud</div>}
-              <button onClick={() => setCurrentUser(null)} className="w-full flex items-center justify-center gap-2 py-3 bg-rose-500/10 text-sm font-semibold text-rose-400 rounded-xl hover:bg-rose-500/20"><LogOut size={16} /> Keluar</button>
+            
+            {/* Bottom System Icons */}
+            <div className="mt-auto px-4 w-full flex flex-col gap-4 items-center">
+              <div className="relative group cursor-help">
+                {db ? <Server size={18} className="text-emerald-400" /> : <Server size={18} className="text-rose-400 animate-pulse" />}
+                <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-slate-800 text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-700">Status Server</span>
+              </div>
+              
+              <button onClick={() => setCurrentUser(null)} className="relative group w-full flex justify-center p-3 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all">
+                <LogOut size={22} />
+                <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-rose-950 text-rose-300 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-rose-900 font-bold">Keluar (Logout)</span>
+              </button>
             </div>
           </aside>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+          {/* MAIN CONTENT AREA - with margin to slide perfectly beside the floating sidebar */}
+          <main className="flex-1 ml-20 overflow-y-auto p-4 md:p-8 space-y-6">
             {activeTab !== 'settings' && (
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
                 <div className="flex items-center gap-4">
@@ -503,7 +500,7 @@
           {/* MODALS */}
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 shadow-2xl">
                 <h3 className="text-lg font-bold mb-4">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}</h3>
                 <form onSubmit={handleSaveCustomer} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -528,7 +525,7 @@
 
           {isExpenseModalOpen && (
             <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><CloudLightning size={20} className="text-indigo-400"/> Input Kas Keluar</h3>
                 <form onSubmit={handleSaveExpense} className="space-y-4">
                   <input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
