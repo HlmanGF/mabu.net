@@ -29,14 +29,14 @@
     import { 
       Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, 
       Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
-      Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server, Database
+      Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server, Database, UploadCloud
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     // --- IMPORT FIREBASE ---
     import { initializeApp } from "https://esm.sh/firebase@10.6.0/app";
     import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://esm.sh/firebase@10.6.0/firestore";
 
-    // --- FIREBASE CONFIG MILIK ANDA (SUDAH DIPERBAIKI) ---
+    // --- FIREBASE CONFIG MILIK ANDA ---
     const firebaseConfig = {
       apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
       authDomain: "billing-mabunet.firebaseapp.com",
@@ -47,14 +47,13 @@
       measurementId: "G-2DBSV96KHP"
     };
 
-    // INISIALISASI FIREBASE ANTI-BLANK
+    // INISIALISASI FIREBASE
     let app, db;
     try {
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
     } catch(e) { 
       console.error("Gagal menghubungkan Firebase:", e); 
-      alert("Sistem Error: " + e.message);
     }
 
     // --- DATA KONSTANTA ---
@@ -85,41 +84,34 @@
     }));
 
     function App() {
-      // System States
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
       const [loginForm, setLoginForm] = useState({ username: '', password: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
       
-      // UI States
       const [activeTab, setActiveTab] = useState('dashboard');
       const [editProfile, setEditProfile] = useState({});
       
-      // Filter States
       const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
 
-      // Database States
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [isDbLoading, setIsDbLoading] = useState(true);
       const [isInjecting, setIsInjecting] = useState(false);
       
-      // Alarm
       const [alarmEnabled, setAlarmEnabled] = useState(false);
       const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
-      // Modals
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Operasional', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
 
-      // --- HELPER FUNCTIONS ---
       const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
       const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
       const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
@@ -135,13 +127,11 @@
         try {
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Proteksi sorting agar tidak blank jika ada data kosong
             data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
             setCustomers(data);
             setIsDbLoading(false);
           }, (err) => {
             console.error("Firebase Error:", err);
-            alert("Akses Firebase ditolak! Pastikan Rules Firestore Anda sudah diset 'true' (Test Mode).");
             setIsDbLoading(false);
           });
 
@@ -151,16 +141,13 @@
           });
 
           return () => { unsubCustomers(); unsubExpenses(); };
-        } catch(e) {
-          console.error(e);
-          setIsDbLoading(false);
-        }
+        } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
       // --- INJEKSI 189 DATA KE FIREBASE ---
       const handleInjectData = async () => {
-        if(!db) return alert("Firebase belum konek!");
-        if(!confirm("Yakin ingin meng-upload 189 data master ke Firebase sekarang?")) return;
+        if(!db) return alert("Sistem belum siap tersambung ke Database.");
+        if(!confirm("Yakin ingin meng-upload 189 data ini sekarang? Jangan klik 2 kali agar data tidak ganda.")) return;
         
         setIsInjecting(true);
         try {
@@ -173,8 +160,8 @@
             });
           });
           await Promise.all(promises);
-          alert("SUKSES! 189 Data Master telah masuk ke Firebase Cloud!");
-        } catch (error) { console.error(error); alert("Gagal upload data."); }
+          alert("SUKSES! 189 Data telah berhasil diinjeksi ke Cloud!");
+        } catch (error) { console.error(error); alert("Gagal upload data. Pastikan Rules Firestore sudah benar."); }
         setIsInjecting(false);
       };
 
@@ -285,7 +272,7 @@
               
               {!db && (
                 <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] rounded-lg text-center font-bold">
-                  ⚠️ FIREBASE BELUM TERHUBUNG! PERIKSA KODE CONFIG ANDA.
+                  ⚠️ KONEKSI FIREBASE TERGANGGU. COBA REFRESH.
                 </div>
               )}
 
@@ -297,7 +284,7 @@
 
               {loginError && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl flex items-center gap-2"><ShieldAlert size={14}/> {loginError}</div>}
 
-              {/* TOMBOL QUICK LOGIN (KLIK NAMA LANGSUNG MASUK) */}
+              {/* TOMBOL QUICK LOGIN */}
               <div className="space-y-3 relative z-10 mb-6">
                 {admins.map(adm => (
                   <button key={adm.id} onClick={() => {
@@ -441,7 +428,9 @@
 
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto shadow-xl">
                   {isDbLoading ? (
-                    <div className="p-12 text-center text-slate-400">Memuat Data dari Cloud Database...</div>
+                    <div className="p-12 text-center text-slate-400 animate-pulse">Memuat Data dari Cloud Database...</div>
+                  ) : customers.length === 0 ? (
+                    <div className="p-12 text-center text-rose-400 font-bold">Data Pelanggan Kosong! Silakan Injeksi Data di Pengaturan Aplikasi.</div>
                   ) : (
                     <table className="w-full text-left text-sm min-w-[1200px]">
                       <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
@@ -513,21 +502,21 @@
               </div>
             )}
 
+            {/* TAB: SETTINGS (ADMIN 1 ONLY) */}
             {activeTab === 'settings' && currentUser.id === 'admin1' && (
               <div className="space-y-6 max-w-4xl mx-auto">
                 <h2 className="text-2xl font-bold border-b border-slate-800 pb-4">Konfigurasi Sistem Utama</h2>
                 
-                {customers.length === 0 && db && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-center">
-                    <h3 className="text-amber-400 font-bold mb-2 flex justify-center items-center gap-2"><Database size={20}/> Database Kosong!</h3>
-                    <p className="text-sm text-slate-300 mb-4">Klik tombol di bawah ini HANYA SEKALI untuk memasukkan 189 data master dari Excel ke dalam Firebase Cloud.</p>
-                    <button onClick={handleInjectData} disabled={isInjecting} className="px-6 py-3 bg-amber-600 text-white font-bold rounded-xl shadow-lg hover:bg-amber-700 transition-colors">
-                      {isInjecting ? 'Proses Upload...' : 'Upload 189 Data ke Firebase Sekarang!'}
-                    </button>
-                  </div>
-                )}
+                {/* ⚠️ TOMBOL RAHASIA (SELALU MUNCUL) ⚠️ */}
+                <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-6 text-center mb-6">
+                  <h3 className="text-indigo-400 font-bold mb-2 flex justify-center items-center gap-2"><UploadCloud size={20}/> Injeksi Database Master</h3>
+                  <p className="text-sm text-slate-300 mb-4">Jika tabel pelanggan kosong, klik tombol ini (1 KALI SAJA) untuk memasukkan 189 data dari Excel ke Firebase.</p>
+                  <button onClick={handleInjectData} disabled={isInjecting} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-colors">
+                    {isInjecting ? 'Mengupload...' : 'Upload 189 Data ke Firebase Sekarang!'}
+                  </button>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-400"><User size={20}/> Profil Super Admin</h3>
                     <form onSubmit={handleSaveProfile} className="space-y-4">
