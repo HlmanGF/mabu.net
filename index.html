@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MABUNET - Master Billing & Network</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel Standalone untuk kompilasi JSX di Browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    /* Kustomisasi scrollbar agar lebih rapi */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased">
+  <div id="root"></div>
+
+  <!-- Script Utama Aplikasi -->
+  <script type="text/babel" data-type="module">
+    // Import React & ReactDOM
+    import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    
+    // Import Icons dari Lucide
+    import { 
+      Users, LayoutDashboard, Bell, LogOut, MessageCircle, 
+      CheckCircle2, Plus, Edit3, Trash2, Search, X, DollarSign, 
+      Wifi, AlertTriangle, BookOpen, ArrowDownRight, RefreshCw, PowerOff,
+      Phone, Calendar, ChevronRight, Check
+    } from 'https://esm.sh/lucide-react@0.292.0';
+
+    // Import Firebase
+    import { initializeApp } from 'https://esm.sh/firebase@10.6.0/app';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://esm.sh/firebase@10.6.0/auth';
+    import { 
+      getFirestore, doc, collection, onSnapshot, addDoc, 
+      updateDoc, deleteDoc, serverTimestamp 
+    } from 'https://esm.sh/firebase@10.6.0/firestore';
+
+    // ==========================================
+    // ⚠️ MASUKKAN KONFIGURASI FIREBASE ANDA DI SINI
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWaFhPioQK36oJmkCadgwKL9CSo8ILWsM",
+            authDomain: "mabu-park-rt-10.firebaseapp.com",
+            projectId: "mabu-park-rt-10",
+            storageBucket: "mabu-park-rt-10.firebasestorage.app",
+            messagingSenderId: "886767560025",
+            appId: "1:886767560025:web:96990fde548a7bae8d5848"
+    };
+
+    // Inisialisasi Firebase (Gunakan Try-Catch agar tidak error total jika config kosong)
+    let app, auth, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+    } catch (error) {
+      console.warn("Firebase belum dikonfigurasi. Aplikasi hanya akan menampilkan UI tanpa fungsi simpan database.");
+    }
+    
+    const appId = 'mabunet-billing-id';
+
+    // --- KONFIGURASI PAKET & ADMIN ---
+    const PACKAGES = [
+      { id: '5mbps_100', speed: '5 Mbps', price: 100000, label: '5 Mbps - Rp 100.000' },
+      { id: '10mbps_150', speed: '10 Mbps', price: 150000, label: '10 Mbps - Rp 150.000' },
+      { id: '10mbps_180', speed: '10 Mbps', price: 180000, label: '10 Mbps - Rp 180.000' },
+      { id: '15mbps_200', speed: '15 Mbps', price: 200000, label: '15 Mbps - Rp 200.000' },
+      { id: '20mbps_250', speed: '20 Mbps', price: 250000, label: '20 Mbps - Rp 250.000' },
+      { id: '25mbps_300', speed: '25 Mbps', price: 300000, label: '25 Mbps - Rp 300.000' },
+    ];
+
+    const ADMINS = [
+      { id: 'admin1', name: 'Admin 1', role: 'Super Admin / Penagihan', phone: '081234567890' },
+      { id: 'admin2', name: 'Admin 2', role: 'Billing & Keuangan', phone: '081234567891' },
+      { id: 'admin3', name: 'Admin 3', role: 'Teknisi & Customer Service', phone: '081234567892' }
+    ];
+
+    const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
+    const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
+
+    // --- 189 DATA MASTER PELANGGAN MABUNET ---
+    const SEED_CUSTOMERS = [
+      { no: 1, name: 'Oom', block: 'A2', phone: '', packageId: '10mbps_150', installDate: '2024-08-17', dueDate: 17, status: 'Aktif', notes: '' },
+      { no: 2, name: 'Idham', block: 'A2.8', phone: '', packageId: '10mbps_150', installDate: '2026-10-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 3, name: 'Daerobi', block: 'B1.3', phone: '', packageId: '20mbps_250', installDate: '2024-07-15', dueDate: 15, status: 'Aktif', notes: '' },
+      { no: 4, name: 'Kevin', block: 'B1.5', phone: '', packageId: '10mbps_150', installDate: '2024-01-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 5, name: 'Ricky', block: 'B2.1', phone: '', packageId: '10mbps_150', installDate: '2024-04-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 6, name: 'Fajri', block: 'B2.14', phone: '', packageId: '10mbps_150', installDate: '2025-05-01', dueDate: 1, status: 'Aktif', notes: '' },
+      { no: 7, name: 'Ryma', block: 'B2.3', phone: '', packageId: '10mbps_150', installDate: '2026-04-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 8, name: 'Lenny', block: 'B2.6', phone: '', packageId: '10mbps_150', installDate: '2025-11-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 9, name: 'Dina', block: 'B2.8', phone: '', packageId: '10mbps_150', installDate: '2024-04-01', dueDate: 1, status: 'Aktif', notes: '' },
+      { no: 10, name: 'Ira', block: 'B2.9', phone: '', packageId: '10mbps_150', installDate: '2025-08-30', dueDate: 30, status: 'Aktif', notes: '' },
+      { no: 11, name: 'Tamara', block: 'B3.14', phone: '', packageId: '10mbps_150', installDate: '2025-06-03', dueDate: 3, status: 'Aktif', notes: '' },
+      { no: 12, name: 'Suni', block: 'B3.3', phone: '', packageId: '25mbps_300', installDate: '2026-04-23', dueDate: 23, status: 'Tidak Aktif', notes: '' },
+      { no: 13, name: 'Ucay', block: 'B3.5', phone: '', packageId: '10mbps_180', installDate: '2025-02-21', dueDate: 21, status: 'Aktif', notes: '' },
+      { no: 14, name: 'Wiwin', block: 'B3.8', phone: '', packageId: '15mbps_200', installDate: '2025-05-16', dueDate: 16, status: 'Aktif', notes: '' },
+      { no: 15, name: 'Anwar', block: 'B4.1', phone: '', packageId: '10mbps_150', installDate: '2025-07-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 16, name: 'Angga', block: 'B4.10', phone: '', packageId: '10mbps_150', installDate: '2024-05-15', dueDate: 15, status: 'Tidak Aktif', notes: '' },
+      { no: 17, name: 'Tb Wahyu', block: 'b4.11', phone: '', packageId: '20mbps_250', installDate: '2024-03-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 18, name: 'Firda', block: 'B4.4', phone: '', packageId: '10mbps_150', installDate: '2024-12-29', dueDate: 29, status: 'Aktif', notes: '' },
+      { no: 19, name: 'Riki', block: 'B4.6', phone: '', packageId: '10mbps_150', installDate: '2025-10-02', dueDate: 2, status: 'Tidak Aktif', notes: '' },
+      { no: 20, name: 'Atika', block: 'B4.9', phone: '', packageId: '10mbps_150', installDate: '2025-04-14', dueDate: 14, status: 'Aktif', notes: '' },
+      { no: 21, name: 'Anggi', block: 'B5.3', phone: '', packageId: '10mbps_150', installDate: '2026-11-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 22, name: 'Lili', block: 'B6.1', phone: '', packageId: '10mbps_150', installDate: '2024-07-16', dueDate: 16, status: 'Aktif', notes: '' },
+      { no: 23, name: 'Genta', block: 'B6.3', phone: '', packageId: '15mbps_200', installDate: '2024-11-22', dueDate: 22, status: 'Tidak Aktif', notes: '' },
+      { no: 24, name: 'Rika', block: 'B7.2', phone: '', packageId: '10mbps_180', installDate: '2024-02-29', dueDate: 29, status: 'Aktif', notes: '' },
+      { no: 25, name: 'Lukito', block: 'C1.7', phone: '', packageId: '10mbps_150', installDate: '2025-11-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 26, name: 'H Dudi', block: 'C12', phone: '', packageId: '10mbps_150', installDate: '2023-09-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 27, name: 'Eki', block: 'E11', phone: '', packageId: '10mbps_150', installDate: '2026-02-13', dueDate: 13, status: 'Aktif', notes: '' },
+      { no: 28, name: 'Endang', block: 'E14', phone: '', packageId: '10mbps_150', installDate: '2026-07-06', dueDate: 6, status: 'Aktif', notes: '' },
+      { no: 29, name: 'Dika', block: 'E17', phone: '', packageId: '10mbps_150', installDate: '2025-10-02', dueDate: 2, status: 'Tidak Aktif', notes: '' },
+      { no: 30, name: 'Septha', block: 'E7', phone: '', packageId: '25mbps_300', installDate: '2023-10-02', dueDate: 2, status: 'Tidak Aktif', notes: '' },
+      { no: 31, name: 'Along', block: 'E9', phone: '', packageId: '10mbps_150', installDate: '2023-09-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 32, name: 'Imron', block: 'F10', phone: '', packageId: '10mbps_150', installDate: '2024-01-06', dueDate: 6, status: 'Aktif', notes: '' },
+      { no: 33, name: 'Rio', block: 'F11', phone: '', packageId: '15mbps_200', installDate: '2025-08-04', dueDate: 4, status: 'Aktif', notes: '' },
+      { no: 34, name: 'Deni', block: 'F12', phone: '', packageId: '10mbps_150', installDate: '2025-09-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 35, name: 'Dita', block: 'f14', phone: '', packageId: '10mbps_150', installDate: '2025-11-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 36, name: 'Noval', block: 'F15', phone: '', packageId: '20mbps_250', installDate: '2024-07-15', dueDate: 15, status: 'Tidak Aktif', notes: '' },
+      { no: 37, name: 'Yuli/Banu', block: 'F16', phone: '', packageId: '10mbps_150', installDate: '2026-03-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 38, name: 'Damar', block: 'F17', phone: '', packageId: '10mbps_150', installDate: '2025-01-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 39, name: 'Dina', block: 'F2', phone: '', packageId: '10mbps_150', installDate: '2025-12-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 40, name: 'Feri', block: 'F3', phone: '', packageId: '10mbps_150', installDate: '2024-02-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 41, name: 'Dilla', block: 'F5', phone: '', packageId: '10mbps_150', installDate: '2024-01-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 42, name: 'Gartika', block: 'F6', phone: '', packageId: '10mbps_150', installDate: '2024-06-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 43, name: 'Thalia', block: 'F7', phone: '', packageId: '10mbps_150', installDate: '2025-02-24', dueDate: 24, status: 'Aktif', notes: '' },
+      { no: 44, name: 'Furkon', block: 'F8', phone: '', packageId: '10mbps_150', installDate: '2024-03-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 45, name: 'Rizky', block: 'F9', phone: '', packageId: '10mbps_150', installDate: '2024-04-17', dueDate: 17, status: 'Aktif', notes: '' },
+      { no: 46, name: 'Adjie', block: 'G1', phone: '', packageId: '10mbps_150', installDate: '2025-01-18', dueDate: 18, status: 'Tidak Aktif', notes: '' },
+      { no: 47, name: 'Maya', block: 'G11', phone: '', packageId: '10mbps_150', installDate: '2025-12-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 48, name: 'Sofyan', block: 'G11A', phone: '', packageId: '5mbps_100', installDate: '2025-07-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 49, name: 'Idhar', block: 'G15', phone: '', packageId: '15mbps_200', installDate: '2024-11-21', dueDate: 21, status: 'Aktif', notes: '' },
+      { no: 50, name: 'Raihan', block: 'G16', phone: '', packageId: '10mbps_150', installDate: '2025-01-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 51, name: 'Nda', block: 'G19', phone: '', packageId: '10mbps_150', installDate: '2023-10-24', dueDate: 24, status: 'Aktif', notes: '' },
+      { no: 52, name: 'Ayudya', block: 'G20', phone: '', packageId: '10mbps_150', installDate: '2025-11-08', dueDate: 8, status: 'Aktif', notes: '' },
+      { no: 53, name: 'Darul', block: 'G22', phone: '', packageId: '10mbps_180', installDate: '2024-02-29', dueDate: 29, status: 'Aktif', notes: '' },
+      { no: 54, name: 'Jerry', block: 'G24', phone: '', packageId: '10mbps_150', installDate: '2026-01-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 55, name: 'Riyan', block: 'G3', phone: '', packageId: '10mbps_150', installDate: '2025-04-04', dueDate: 4, status: 'Tidak Aktif', notes: '' },
+      { no: 56, name: 'Robi', block: 'G30', phone: '', packageId: '10mbps_150', installDate: '2025-12-13', dueDate: 13, status: 'Tidak Aktif', notes: '' },
+      { no: 57, name: 'Rani', block: 'G6', phone: '', packageId: '10mbps_150', installDate: '2023-09-10', dueDate: 10, status: 'Tidak Aktif', notes: '' },
+      { no: 58, name: 'Ichwan', block: 'G7', phone: '', packageId: '10mbps_150', installDate: '2026-01-26', dueDate: 26, status: 'Aktif', notes: '' },
+      { no: 59, name: 'lan', block: 'H11', phone: '', packageId: '5mbps_100', installDate: '2024-06-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 60, name: 'Rabani', block: 'H14', phone: '', packageId: '10mbps_150', installDate: '2024-04-25', dueDate: 25, status: 'Tidak Aktif', notes: '' },
+      { no: 61, name: 'Imanah', block: 'H16', phone: '', packageId: '10mbps_150', installDate: '2026-02-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 62, name: 'Zea', block: 'H18', phone: '', packageId: '10mbps_150', installDate: '2023-09-14', dueDate: 14, status: 'Aktif', notes: '' },
+      { no: 63, name: 'Jaenal', block: 'H2', phone: '', packageId: '10mbps_150', installDate: '2023-07-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 64, name: 'Lia', block: 'H21', phone: '', packageId: '15mbps_200', installDate: '2024-06-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 65, name: 'Fauziah', block: 'H23', phone: '', packageId: '15mbps_200', installDate: '2023-06-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 66, name: 'Ridwan', block: 'H24', phone: '', packageId: '10mbps_150', installDate: '2024-01-19', dueDate: 19, status: 'Aktif', notes: '' },
+      { no: 67, name: 'Aditya', block: 'H6', phone: '', packageId: '10mbps_150', installDate: '2025-10-18', dueDate: 18, status: 'Aktif', notes: '' },
+      { no: 68, name: 'Irfan Ayu', block: 'H7', phone: '', packageId: '15mbps_200', installDate: '2025-07-01', dueDate: 1, status: 'Aktif', notes: '' },
+      { no: 69, name: 'Dina', block: 'H8', phone: '', packageId: '10mbps_150', installDate: '2024-07-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 70, name: 'Anwar', block: 'H9', phone: '', packageId: '10mbps_150', installDate: '2026-05-06', dueDate: 6, status: 'Aktif', notes: '' },
+      { no: 71, name: 'Tatin', block: 'i11a', phone: '', packageId: '10mbps_150', installDate: '2025-10-02', dueDate: 2, status: 'Aktif', notes: '' },
+      { no: 72, name: 'Naura', block: 'i16', phone: '', packageId: '10mbps_150', installDate: '2023-11-20', dueDate: 20, status: 'Tidak Aktif', notes: '' },
+      { no: 73, name: 'Kiki', block: '12', phone: '', packageId: '10mbps_150', installDate: '2024-08-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 74, name: 'Astari', block: '120', phone: '', packageId: '10mbps_150', installDate: '2023-09-10', dueDate: 10, status: 'Tidak Aktif', notes: '' },
+      { no: 75, name: 'Dewi', block: '122', phone: '', packageId: '10mbps_150', installDate: '2024-01-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 76, name: 'Mahmudin', block: 'i26', phone: '', packageId: '10mbps_150', installDate: '2025-01-11', dueDate: 11, status: 'Aktif', notes: '' },
+      { no: 77, name: 'Riski', block: '128', phone: '', packageId: '10mbps_150', installDate: '2024-04-04', dueDate: 4, status: 'Aktif', notes: '' },
+      { no: 78, name: 'Maman', block: '131', phone: '', packageId: '10mbps_150', installDate: '2024-04-20', dueDate: 20, status: 'Aktif', notes: '' },
+      { no: 79, name: 'Eko', block: '19', phone: '', packageId: '10mbps_150', installDate: '2023-10-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 80, name: 'Lutfia', block: 'J1', phone: '', packageId: '10mbps_150', installDate: '2023-09-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 81, name: 'Sundara', block: 'J2', phone: '', packageId: '10mbps_150', installDate: '2024-07-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 82, name: 'Suherti', block: 'J3', phone: '', packageId: '10mbps_150', installDate: '2024-07-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 83, name: 'Genta', block: 'J6', phone: '', packageId: '10mbps_150', installDate: '2025-04-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 84, name: 'Idan', block: 'K10', phone: '', packageId: '10mbps_150', installDate: '2025-09-30', dueDate: 30, status: 'Aktif', notes: '' },
+      { no: 85, name: 'Agung', block: 'K7', phone: '', packageId: '10mbps_150', installDate: '2026-01-04', dueDate: 4, status: 'Aktif', notes: '' },
+      { no: 86, name: 'Elka', block: 'L1', phone: '', packageId: '10mbps_150', installDate: '2023-01-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 87, name: 'Vie', block: 'L3', phone: '', packageId: '10mbps_150', installDate: '2025-07-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 88, name: 'Eri', block: 'L4', phone: '', packageId: '10mbps_150', installDate: '2023-09-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 89, name: 'Yeni', block: 'L6', phone: '', packageId: '10mbps_150', installDate: '2025-08-29', dueDate: 29, status: 'Aktif', notes: '' },
+      { no: 90, name: 'Yuli', block: 'L8', phone: '', packageId: '10mbps_150', installDate: '2024-06-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 91, name: 'Rizal', block: 'L9', phone: '', packageId: '10mbps_150', installDate: '2025-06-05', dueDate: 5, status: 'Tidak Aktif', notes: '' },
+      { no: 92, name: 'Mela', block: 'M10', phone: '', packageId: '10mbps_150', installDate: '2025-10-22', dueDate: 22, status: 'Tidak Aktif', notes: '' },
+      { no: 93, name: 'Gita', block: 'M11A', phone: '', packageId: '10mbps_180', installDate: '2024-03-05', dueDate: 5, status: 'Tidak Aktif', notes: '' },
+      { no: 94, name: 'Adam', block: 'M12', phone: '', packageId: '10mbps_150', installDate: '2024-07-27', dueDate: 27, status: 'Aktif', notes: '' },
+      { no: 95, name: 'Desi', block: 'M14', phone: '', packageId: '10mbps_150', installDate: '2023-12-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 96, name: 'Deni', block: 'M15', phone: '', packageId: '10mbps_150', installDate: '2023-09-30', dueDate: 30, status: 'Aktif', notes: '' },
+      { no: 97, name: 'Ela', block: 'M2', phone: '', packageId: '10mbps_150', installDate: '2024-05-11', dueDate: 11, status: 'Tidak Aktif', notes: '' },
+      { no: 98, name: 'Rifai', block: 'M6', phone: '', packageId: '10mbps_150', installDate: '2026-02-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 99, name: 'Lukman', block: 'M7', phone: '', packageId: '10mbps_150', installDate: '2026-07-01', dueDate: 1, status: 'Aktif', notes: '' },
+      { no: 100, name: 'Kenny', block: 'M9', phone: '', packageId: '25mbps_300', installDate: '2023-09-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 101, name: 'Yopi', block: 'N4', phone: '', packageId: '10mbps_150', installDate: '2025-05-26', dueDate: 26, status: 'Aktif', notes: '' },
+      { no: 102, name: 'Sarah', block: 'N6', phone: '', packageId: '10mbps_150', installDate: '2026-02-16', dueDate: 16, status: 'Aktif', notes: '' },
+      { no: 103, name: 'Maman', block: 'N9', phone: '', packageId: '10mbps_150', installDate: '2024-07-05', dueDate: 5, status: 'Tidak Aktif', notes: '' },
+      { no: 104, name: 'Maman', block: 'N9 Luar', phone: '', packageId: '10mbps_180', installDate: '2024-07-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 105, name: 'Fitri', block: '011a', phone: '', packageId: '10mbps_150', installDate: '2024-04-08', dueDate: 8, status: 'Aktif', notes: '' },
+      { no: 106, name: 'Rizki', block: '012', phone: '', packageId: '10mbps_150', installDate: '2026-01-02', dueDate: 2, status: 'Aktif', notes: '' },
+      { no: 107, name: 'Asep', block: '014', phone: '', packageId: '10mbps_150', installDate: '2026-04-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 108, name: 'Eka', block: '015', phone: '', packageId: '10mbps_150', installDate: '2025-10-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 109, name: 'Bara', block: '04', phone: '', packageId: '10mbps_150', installDate: '2026-07-13', dueDate: 13, status: 'Aktif', notes: '' },
+      { no: 110, name: 'Andini', block: '06', phone: '', packageId: '15mbps_200', installDate: '2025-03-06', dueDate: 6, status: 'Aktif', notes: '' },
+      { no: 111, name: 'Olief', block: '07', phone: '', packageId: '10mbps_150', installDate: '2023-11-20', dueDate: 20, status: 'Aktif', notes: '' },
+      { no: 112, name: 'Daerobi', block: '09', phone: '', packageId: '15mbps_200', installDate: '2025-05-15', dueDate: 15, status: 'Aktif', notes: '' },
+      { no: 113, name: 'Yuli', block: 'P1', phone: '', packageId: '10mbps_150', installDate: '2025-06-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 114, name: 'Fadly', block: 'P2', phone: '', packageId: '10mbps_150', installDate: '2026-01-03', dueDate: 3, status: 'Tidak Aktif', notes: '' },
+      { no: 115, name: 'Kevin', block: 'P5', phone: '', packageId: '10mbps_150', installDate: '2025-01-20', dueDate: 20, status: 'Aktif', notes: '' },
+      { no: 116, name: 'Laela', block: 'P6', phone: '', packageId: '15mbps_200', installDate: '2024-12-31', dueDate: 31, status: 'Aktif', notes: '' },
+      { no: 117, name: 'Deri', block: 'P8', phone: '', packageId: '10mbps_150', installDate: '2024-01-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 118, name: 'Meti', block: 'Q11', phone: '', packageId: '10mbps_150', installDate: '2023-10-14', dueDate: 14, status: 'Aktif', notes: '' },
+      { no: 119, name: 'Dika', block: 'Q3', phone: '', packageId: '10mbps_150', installDate: '2024-11-21', dueDate: 21, status: 'Aktif', notes: '' },
+      { no: 120, name: 'widya', block: 'Q4', phone: '', packageId: '10mbps_150', installDate: '2023-11-21', dueDate: 21, status: 'Aktif', notes: '' },
+      { no: 121, name: 'Gun', block: 'Q5', phone: '', packageId: '10mbps_180', installDate: '2024-10-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 122, name: 'Teh Wiwi', block: 'R10', phone: '', packageId: '10mbps_150', installDate: '2023-10-28', dueDate: 28, status: 'Aktif', notes: '' },
+      { no: 123, name: 'Redi', block: 'R4', phone: '', packageId: '10mbps_150', installDate: '2024-01-22', dueDate: 22, status: 'Aktif', notes: '' },
+      { no: 124, name: 'Yuda', block: 'R6', phone: '', packageId: '10mbps_150', installDate: '2025-08-08', dueDate: 8, status: 'Aktif', notes: '' },
+      { no: 125, name: 'Tiara', block: 'R7', phone: '', packageId: '15mbps_200', installDate: '2023-01-09', dueDate: 9, status: 'Aktif', notes: '' },
+      { no: 126, name: 'Agung', block: 'R8', phone: '', packageId: '10mbps_180', installDate: '2024-06-11', dueDate: 11, status: 'Tidak Aktif', notes: '' },
+      { no: 127, name: 'Agin', block: 'S1', phone: '', packageId: '10mbps_150', installDate: '2024-08-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 128, name: 'Ani Off', block: 'S11', phone: '', packageId: '10mbps_150', installDate: '2025-06-27', dueDate: 27, status: 'Tidak Aktif', notes: '' },
+      { no: 129, name: 'Hermawan', block: 'S11A', phone: '', packageId: '10mbps_150', installDate: '2025-10-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 130, name: 'Febriyanti', block: 'S12', phone: '', packageId: '10mbps_150', installDate: '2026-12-03', dueDate: 3, status: 'Aktif', notes: '' },
+      { no: 131, name: 'Iki', block: 'S6', phone: '', packageId: '10mbps_150', installDate: '2025-11-24', dueDate: 24, status: 'Aktif', notes: '' },
+      { no: 132, name: 'Halimah', block: 'S8', phone: '', packageId: '10mbps_150', installDate: '2025-11-24', dueDate: 24, status: 'Aktif', notes: '' },
+      { no: 133, name: 'Windy', block: 'T4', phone: '', packageId: '10mbps_150', installDate: '2025-02-07', dueDate: 7, status: 'Tidak Aktif', notes: '' },
+      { no: 134, name: 'Dedi', block: 'T8', phone: '', packageId: '10mbps_150', installDate: '2025-04-21', dueDate: 21, status: 'Aktif', notes: '' },
+      { no: 135, name: 'Andi', block: 'T9', phone: '', packageId: '15mbps_200', installDate: '2024-11-26', dueDate: 26, status: 'Aktif', notes: '' },
+      { no: 136, name: 'Depi', block: 'U2', phone: '', packageId: '20mbps_250', installDate: '2025-07-26', dueDate: 26, status: 'Aktif', notes: '' },
+      { no: 137, name: 'Lili', block: 'U4', phone: '', packageId: '10mbps_150', installDate: '2025-06-04', dueDate: 4, status: 'Aktif', notes: '' },
+      { no: 138, name: 'Obi', block: 'U5', phone: '', packageId: '10mbps_150', installDate: '2025-06-25', dueDate: 25, status: 'Aktif', notes: '' },
+      { no: 139, name: 'Edgar', block: 'U7', phone: '', packageId: '10mbps_150', installDate: '2025-12-23', dueDate: 23, status: 'Aktif', notes: '' },
+      { no: 140, name: 'Dodi', block: 'U9', phone: '', packageId: '10mbps_150', installDate: '2025-02-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 141, name: 'Daerobi', block: 'V1.1', phone: '', packageId: '10mbps_150', installDate: '2025-04-15', dueDate: 15, status: 'Aktif', notes: '' },
+      { no: 142, name: 'Dana', block: 'V1.2', phone: '', packageId: '10mbps_150', installDate: '2024-01-20', dueDate: 20, status: 'Aktif', notes: '' },
+      { no: 143, name: 'Dewi', block: 'V1.3', phone: '', packageId: '10mbps_180', installDate: '2024-03-06', dueDate: 6, status: 'Aktif', notes: '' },
+      { no: 144, name: 'Rika', block: 'V1.6', phone: '', packageId: '10mbps_150', installDate: '2024-04-30', dueDate: 30, status: 'Aktif', notes: '' },
+      { no: 145, name: 'Agnes', block: 'V1.7', phone: '', packageId: '10mbps_180', installDate: '2025-04-19', dueDate: 19, status: 'Aktif', notes: '' },
+      { no: 146, name: 'Saeful', block: 'V1.9', phone: '', packageId: '10mbps_150', installDate: '2026-07-12', dueDate: 12, status: 'Aktif', notes: '' },
+      { no: 147, name: 'Nida', block: 'V2.2', phone: '', packageId: '10mbps_150', installDate: '2026-08-24', dueDate: 24, status: 'Aktif', notes: '' },
+      { no: 148, name: 'Arip', block: 'V2.5', phone: '', packageId: '10mbps_150', installDate: '2024-05-03', dueDate: 3, status: 'Aktif', notes: '' },
+      { no: 149, name: 'Anang', block: 'V2.6', phone: '', packageId: '10mbps_150', installDate: '2024-04-08', dueDate: 8, status: 'Aktif', notes: '' },
+      { no: 150, name: 'Dian', block: 'V3.10', phone: '', packageId: '10mbps_180', installDate: '2024-07-10', dueDate: 10, status: 'Aktif', notes: '' },
+      { no: 151, name: 'Dina', block: 'V3.3', phone: '', packageId: '10mbps_180', installDate: '2024-03-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 152, name: 'Febri', block: 'V3.4', phone: '', packageId: '10mbps_150', installDate: '2025-12-26', dueDate: 26, status: 'Aktif', notes: '' },
+      { no: 153, name: 'Drajat', block: 'V3.9', phone: '', packageId: '10mbps_150', installDate: '2026-11-05', dueDate: 5, status: 'Aktif', notes: '' },
+      { no: 154, name: 'Rian', block: 'W1', phone: '', packageId: '10mbps_150', installDate: '2025-02-07', dueDate: 7, status: 'Aktif', notes: '' },
+      { no: 155, name: 'Shanty', block: 'W3', phone: '', packageId: '10mbps_150', installDate: '2025-03-02', dueDate: 2, status: 'Aktif', notes: '' },
+      { no: 156, name: 'Dian', block: 'A1.5', phone: '', packageId: '5mbps_100', installDate: '2025-04-13', dueDate: 13, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 157, name: 'Uum', block: 'A2.12', phone: '', packageId: '5mbps_100', installDate: '2026-06-02', dueDate: 2, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 158, name: 'Yudi', block: 'B2.11', phone: '', packageId: '15mbps_200', installDate: '2025-05-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 159, name: 'Pepi', block: 'B3.11', phone: '', packageId: '10mbps_150', installDate: '2025-04-28', dueDate: 28, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 160, name: 'Arief', block: 'B3.6', phone: '', packageId: '5mbps_100', installDate: '2025-04-30', dueDate: 30, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 161, name: 'C1', block: 'C1', phone: '', packageId: '10mbps_150', installDate: '2025-07-10', dueDate: 10, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 162, name: 'Yanti', block: 'C1.3', phone: '', packageId: '10mbps_150', installDate: '2025-05-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 163, name: 'Icih', block: 'C1.4', phone: '', packageId: '10mbps_150', installDate: '2025-04-15', dueDate: 15, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 164, name: 'Sofi', block: 'D1.10', phone: '', packageId: '10mbps_150', installDate: '2025-04-15', dueDate: 15, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 165, name: 'Hafid', block: 'D1.8', phone: '', packageId: '5mbps_100', installDate: '2025-07-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 166, name: 'Doni', block: 'D1.3', phone: '', packageId: '10mbps_150', installDate: '2025-05-04', dueDate: 4, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 167, name: 'Siti', block: 'D2.13', phone: '', packageId: '10mbps_150', installDate: '2025-01-04', dueDate: 4, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 168, name: 'Erin', block: 'D2.5', phone: '', packageId: '5mbps_100', installDate: '2024-01-01', dueDate: 1, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 169, name: 'Aziz', block: 'D2.7', phone: '', packageId: '5mbps_100', installDate: '2025-07-04', dueDate: 4, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 170, name: 'Nur', block: 'D4.1', phone: '', packageId: '5mbps_100', installDate: '2025-10-04', dueDate: 4, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 171, name: 'Heri', block: 'E1.8', phone: '', packageId: '5mbps_100', installDate: '2025-04-25', dueDate: 25, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 172, name: 'Denny', block: 'E2', phone: '', packageId: '10mbps_150', installDate: '2025-05-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 173, name: 'Ilyasa', block: 'E3.3', phone: '', packageId: '5mbps_100', installDate: '2024-01-01', dueDate: 1, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 174, name: 'Yunus', block: 'F1.5', phone: '', packageId: '5mbps_100', installDate: '2025-04-25', dueDate: 25, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 175, name: 'Linda', block: 'F2.6', phone: '', packageId: '10mbps_150', installDate: '2025-05-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: Ranau' },
+      { no: 176, name: 'Rosi', block: 'KVLNG', phone: '', packageId: '5mbps_100', installDate: '2025-05-04', dueDate: 4, status: 'Tidak Aktif', notes: 'Lokasi: Ranau' },
+      { no: 177, name: 'Fatonah', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2025-12-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 178, name: 'Gwen', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2025-06-18', dueDate: 18, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 179, name: 'Hachiko', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2025-07-18', dueDate: 18, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 180, name: 'Hikam', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2025-08-18', dueDate: 18, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 181, name: 'Nisa', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2025-10-18', dueDate: 18, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 182, name: 'Putri', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2026-12-04', dueDate: 4, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 183, name: 'Yeri', block: 'RG', phone: '', packageId: '10mbps_180', installDate: '2026-02-06', dueDate: 6, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 184, name: 'Ersan', block: 'RG E5', phone: '', packageId: '10mbps_150', installDate: '2025-02-07', dueDate: 7, status: 'Aktif', notes: 'Lokasi: RG' },
+      { no: 185, name: 'Bella Pesona', block: 'BELLA', phone: '', packageId: '10mbps_180', installDate: '2025-01-25', dueDate: 25, status: 'Aktif', notes: 'Lokasi: Pesona' },
+      { no: 186, name: 'Andi Pesona', block: 'CA1', phone: '', packageId: '10mbps_180', installDate: '2025-05-25', dueDate: 25, status: 'Aktif', notes: 'Lokasi: Pesona' },
+      { no: 187, name: 'Ayu', block: 'PLT', phone: '', packageId: '10mbps_150', installDate: '2025-10-25', dueDate: 25, status: 'Tidak Aktif', notes: 'Lokasi: PLT' },
+      { no: 188, name: 'Sinar Aji', block: 'W2', phone: '', packageId: '10mbps_150', installDate: '2026-10-14', dueDate: 14, status: 'Aktif', notes: '' },
+      { no: 189, name: 'Heni', block: 'B4.7', phone: '', packageId: '10mbps_150', installDate: '2026-10-25', dueDate: 25, status: 'Aktif', notes: '' }
+    ];
+
+    // --- KOMPONEN UTAMA REACT ---
+    function App() {
+      // State Autentikasi & Multi-Admin
+      const [user, setUser] = useState(null);
+      const [activeAdmin, setActiveAdmin] = useState(null);
+      const [isAuthReady, setIsAuthReady] = useState(false);
+
+      // Tab & Navigasi
+      const [activeTab, setActiveTab] = useState('dashboard');
+
+      // Periode Penagihan
+      const [selectedYear, setSelectedYear] = useState(2026);
+      const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+
+      // Data Database
+      const [customers, setCustomers] = useState([]);
+      const [expenses, setExpenses] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      // Filter & Pencarian
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterBlock, setFilterBlock] = useState('Semua Blok');
+      const [filterStatus, setFilterStatus] = useState('Semua');
+
+      // Modal Pelanggan
+      const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+      const [editingCustomer, setEditingCustomer] = useState(null);
+      const [formData, setFormData] = useState({
+        name: '', block: '', phone: '', packageId: PACKAGES[1].id,
+        installDate: new Date().toISOString().split('T')[0],
+        dueDate: new Date().getDate(), status: 'Aktif', notes: ''
+      });
+
+      // Modal Buku Kas
+      const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+      const [editingExpense, setEditingExpense] = useState(null);
+      const [expenseForm, setExpenseForm] = useState({
+        date: new Date().toISOString().split('T')[0],
+        category: 'Operasional', description: '', amount: ''
+      });
+
+      // --- FIREBASE AUTHENTICATION ---
+      useEffect(() => {
+        if (!auth) {
+          setIsAuthReady(true); // Bypass jika firebase config kosong
+          return;
+        }
+        const initAuth = async () => {
+          try { await signInAnonymously(auth); } 
+          catch (err) { console.error("Auth error:", err); }
+        };
+        initAuth();
+
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          setUser(currentUser);
+          setIsAuthReady(true);
+        });
+        return () => unsubscribe();
+      }, []);
+
+      // --- REALTIME DATA FETCHING ---
+      useEffect(() => {
+        if (!user || !db) {
+          // Dummy data jika Firebase gagal dimuat
+          setCustomers(SEED_CUSTOMERS.map((c, i) => ({ id: `dummy-${i}`, ...c })));
+          setLoading(false);
+          return;
+        }
+        setLoading(true);
+
+        const customersRef = collection(db, 'artifacts', appId, 'public', 'data', 'mabu_customers');
+        const expensesRef = collection(db, 'artifacts', appId, 'public', 'data', 'mabu_expenses');
+
+        const unsubCust = onSnapshot(customersRef, (snapshot) => {
+          const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          setCustomers(data);
+          setLoading(false);
+        }, (err) => console.error(err));
+
+        const unsubExp = onSnapshot(expensesRef, (snapshot) => {
+          const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          setExpenses(data);
+        }, (err) => console.error(err));
+
+        return () => {
+          unsubCust();
+          unsubExp();
+        };
+      }, [user]);
+
+      // Seed data awal ke Firebase
+      const seedInitialData = async () => {
+        if (!user || !db) return alert("Firebase tidak terkonfigurasi. Tidak dapat menyimpan data.");
+        try {
+          const customersRef = collection(db, 'artifacts', appId, 'public', 'data', 'mabu_customers');
+          for (const item of SEED_CUSTOMERS) {
+            await addDoc(customersRef, {
+              ...item,
+              payments: { [`${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`]: false },
+              createdAt: serverTimestamp()
+            });
+          }
+          alert("189 Data berhasil di-load ke database!");
+        } catch (e) {
+          console.error("Error seeding:", e);
+        }
+      };
+
+      // Helpers Format
+      const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
+      const cleanPhone = (phoneStr) => {
+        let p = (phoneStr || '').replace(/\D/g, '');
+        if (p.startsWith('0')) p = '62' + p.substring(1);
+        return p;
+      };
+
+      const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
+      const todayDay = new Date().getDate();
+      const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || PACKAGES[1];
+
+      // Kalkulasi Statistik
+      const activeCustomersList = customers.filter(c => c.status === 'Aktif');
+      const inactiveCustomersList = customers.filter(c => c.status === 'Tidak Aktif' || c.status === 'Isolir');
+
+      const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const paidCustomersCount = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).length;
+      const actualPaidRevenue = activeCustomersList
+        .filter(c => c.payments && c.payments[currentPeriodKey])
+        .reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+
+      const dueCustomers = useMemo(() => {
+        return activeCustomersList.filter(c => {
+          const isPaid = c.payments && c.payments[currentPeriodKey];
+          return !isPaid;
+        }).sort((a, b) => a.dueDate - b.dueDate);
+      }, [activeCustomersList, currentPeriodKey]);
+
+      const currentPeriodExpenses = useMemo(() => {
+        return expenses.filter(exp => {
+          if (!exp.date) return false;
+          return exp.date.startsWith(currentPeriodKey);
+        });
+      }, [expenses, currentPeriodKey]);
+
+      const totalExpenseAmount = currentPeriodExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const netProfit = actualPaidRevenue - totalExpenseAmount;
+
+      // --- HANDLER PELANGGAN ---
+      const handleOpenCustomerModal = (cust = null) => {
+        if (cust) {
+          setEditingCustomer(cust);
+          setFormData({
+            name: cust.name || '', block: cust.block || '', phone: cust.phone || '',
+            packageId: cust.packageId || PACKAGES[1].id, installDate: cust.installDate || '',
+            dueDate: cust.dueDate || 1, status: cust.status || 'Aktif', notes: cust.notes || ''
+          });
+        } else {
+          setEditingCustomer(null);
+          setFormData({
+            name: '', block: '', phone: '', packageId: PACKAGES[1].id,
+            installDate: new Date().toISOString().split('T')[0], dueDate: new Date().getDate(),
+            status: 'Aktif', notes: ''
+          });
+        }
+        setIsCustomerModalOpen(true);
+      };
+
+      const handleSaveCustomer = async (e) => {
+        e.preventDefault();
+        if (!user || !db) return alert("Firebase tidak terkonfigurasi");
+        try {
+          const customersRef = collection(db, 'artifacts', appId, 'public', 'data', 'mabu_customers');
+          const payload = {
+            name: formData.name, block: formData.block.toUpperCase(), phone: formData.phone,
+            packageId: formData.packageId, installDate: formData.installDate,
+            dueDate: Number(formData.dueDate), status: formData.status, notes: formData.notes,
+            updatedAt: serverTimestamp()
+          };
+
+          if (editingCustomer) {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_customers', editingCustomer.id), payload);
+          } else {
+            payload.createdAt = serverTimestamp();
+            payload.payments = { [currentPeriodKey]: false };
+            await addDoc(customersRef, payload);
+          }
+          setIsCustomerModalOpen(false);
+        } catch (err) { console.error("Save error:", err); }
+      };
+
+      const toggleCustomerStatus = async (cust) => {
+        if (!user || !db) return;
+        const newStatus = cust.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
+        try {
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_customers', cust.id), {
+            status: newStatus, updatedAt: serverTimestamp()
+          });
+        } catch (err) { console.error(err); }
+      };
+
+      const togglePayment = async (cust) => {
+        if (!user || !db) return;
+        const currentStatus = cust.payments && cust.payments[currentPeriodKey];
+        
+        // Simpan dengan histori
+        const paymentData = !currentStatus ? {
+          status: true,
+          paidAt: new Date().toISOString(),
+          receivedBy: activeAdmin.name
+        } : false;
+
+        try {
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_customers', cust.id), {
+            [`payments.${currentPeriodKey}`]: paymentData,
+            updatedAt: serverTimestamp()
+          });
+        } catch (err) { console.error(err); }
+      };
+
+      const handleDeleteCustomer = async (id) => {
+        if (!user || !db) return;
+        if (confirm('Yakin ingin menghapus pelanggan ini?')) {
+          try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_customers', id)); } 
+          catch (err) { console.error(err); }
+        }
+      };
+
+      // --- HANDLER KAS & EXPORT ---
+      const handleOpenExpenseModal = (exp = null) => {
+        if (exp) {
+          setEditingExpense(exp);
+          setExpenseForm({ date: exp.date, category: exp.category, description: exp.description, amount: exp.amount });
+        } else {
+          setEditingExpense(null);
+          setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Operasional', description: '', amount: '' });
+        }
+        setIsExpenseModalOpen(true);
+      };
+
+      const handleSaveExpense = async (e) => {
+        e.preventDefault();
+        if (!user || !db) return alert("Firebase tidak terkonfigurasi");
+        try {
+          const payload = {
+            date: expenseForm.date, category: expenseForm.category, description: expenseForm.description,
+            amount: Number(expenseForm.amount), admin: activeAdmin.name, updatedAt: serverTimestamp()
+          };
+
+          if (editingExpense) {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_expenses', editingExpense.id), payload);
+          } else {
+            payload.createdAt = serverTimestamp();
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'mabu_expenses'), payload);
+          }
+          setIsExpenseModalOpen(false);
+        } catch (err) { console.error(err); }
+      };
+
+      const handleDeleteExpense = async (id) => {
+        if (!user || !db) return;
+        if (confirm('Hapus pencatatan kas ini?')) {
+          try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'mabu_expenses', id)); } 
+          catch (err) { console.error(err); }
+        }
+      };
+
+      const exportToCSV = (data, filename) => {
+        if (data.length === 0) return alert("Tidak ada data untuk diekspor");
+        const headers = Object.keys(data[0]).join(",");
+        const csvRows = data.map(row => Object.values(row).map(val => `"${String(val).replace(/"/g, '""')}"`).join(","));
+        const csvContent = [headers, ...csvRows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `${filename}_${MONTHS[selectedMonth]}_${selectedYear}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const exportBukuKas = () => {
+        const exportData = currentPeriodExpenses.map(e => ({
+          Tanggal: e.date, Kategori: e.category, Uraian: e.description, Nominal: e.amount, DicatatOleh: e.admin
+        }));
+        exportToCSV(exportData, "Laporan_Kas_MABUNET");
+      };
+
+      // WA Generator
+      const sendWhatsAppNotification = (cust) => {
+        const pkg = getPackage(cust.packageId);
+        const phone = cleanPhone(cust.phone);
+        const amountStr = formatIDR(pkg.price);
+        const periodName = `${MONTHS[selectedMonth]} ${selectedYear}`;
+        const text = 
+          `*PEMBERITAHUAN TAGIHAN INTERNET MABUNET*\n\n` +
+          `Yth. Bapak/Ibu: *${cust.name}*\nLokasi/Blok: *${cust.block}*\n` +
+          `Paket: *${pkg.speed}*\nPeriode: *${periodName}*\nJumlah Tagihan: *${amountStr}*\n` +
+          `Jatuh Tempo: *Tgl ${cust.dueDate} ${MONTHS[selectedMonth]}*\n\n` +
+          `Mohon melakukan pembayaran tagihan tepat waktu agar kelancaran internet tetap terjaga.\n\n` +
+          `*Metode Pembayaran:*\n• BCA: 1234567890 (a.n MABUNET)\n• DANA/GoPay: 081234567890\n\n` +
+          `Konfirmasi bukti bayar ke nomor ini. Abaikan pesan ini bila telah membayar.\n_Salam Hangat, Admin (${activeAdmin.name})_`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+      };
+
+      // Filtered Customers
+      const filteredCustomers = useMemo(() => {
+        return customers.filter(c => {
+          const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
+          const matchBlock = filterBlock === 'Semua Blok' ? true : 
+              (filterBlock === 'Mabu' ? c.notes === '' : (c.notes || '').includes(filterBlock));
+          
+          let matchStatus = true;
+          if (filterStatus === 'Aktif') matchStatus = c.status === 'Aktif';
+          else if (filterStatus === 'Tidak Aktif') matchStatus = c.status === 'Tidak Aktif' || c.status === 'Isolir';
+          else if (filterStatus === 'Belum Lunas') matchStatus = c.status === 'Aktif' && (!c.payments || !c.payments[currentPeriodKey]);
+
+          return matchSearch && matchBlock && matchStatus;
+        }).sort((a, b) => (a.block || '').localeCompare(b.block || ''));
+      }, [customers, searchTerm, filterBlock, filterStatus, currentPeriodKey]);
+
+      // --- TAMPILAN ---
+      if (!activeAdmin) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-md w-full shadow-2xl">
+              <div className="text-center mb-8">
+                <div className="inline-flex p-4 rounded-2xl bg-indigo-600/20 text-indigo-400 mb-4"><Wifi size={44} /></div>
+                <h1 className="text-3xl font-extrabold">MABU<span className="text-indigo-400">NET</span></h1>
+                <p className="text-xs text-slate-400 mt-1">Sistem Penagihan Terpadu (189 Pelanggan)</p>
+              </div>
+              <div className="space-y-3">
+                {ADMINS.map(adm => (
+                  <button key={adm.id} onClick={() => setActiveAdmin(adm)} disabled={!isAuthReady}
+                    className="w-full flex items-center justify-between p-4 bg-slate-800 hover:bg-indigo-600/20 rounded-2xl text-left border border-slate-700 hover:border-indigo-500 transition-colors">
+                    <div>
+                      <h3 className="font-semibold text-slate-200">{adm.name}</h3>
+                      <p className="text-xs text-slate-400">{adm.role}</p>
+                    </div>
+                    <ChevronRight size={18} className="text-slate-500" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col md:flex-row">
+          {/* SIDEBAR */}
+          <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 md:h-screen sticky top-0 z-30">
+            <div className="p-6 border-b border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center"><Wifi size={22} /></div>
+              <div><h1 className="font-extrabold text-lg">MABUNET</h1><p className="text-[10px] text-indigo-400">Billing Ops</p></div>
+            </div>
+            <nav className="p-4 space-y-2 flex-1">
+              <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'dashboard' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}><LayoutDashboard size={18} /> Dashboard</button>
+              <button onClick={() => setActiveTab('customers')} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'customers' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}>
+                <div className="flex items-center gap-3"><Users size={18} /> Data Pelanggan</div>
+                <span className="text-xs bg-slate-800 px-2 rounded-full text-slate-300">{customers.length}</span>
+              </button>
+              <button onClick={() => setActiveTab('ledger')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium ${activeTab === 'ledger' ? 'bg-indigo-600' : 'text-slate-400 hover:bg-slate-800'}`}><BookOpen size={18} /> Buku Kas</button>
+            </nav>
+            <div className="p-4 border-t border-slate-800 bg-slate-900">
+              <div className="flex items-center gap-3 mb-3"><div className="text-sm truncate font-semibold">{activeAdmin.name}</div></div>
+              <button onClick={() => setActiveAdmin(null)} className="w-full flex justify-center gap-2 py-2 text-xs font-semibold text-rose-400 border border-rose-500/20 rounded-lg hover:bg-rose-500/10"><LogOut size={14} /> Ganti Admin</button>
+            </div>
+          </aside>
+
+          {/* KONTEN UTAMA */}
+          <main className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+            
+            {/* TOOLBAR ATAS */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+              <div><h2 className="text-xl font-bold">Periode Penagihan Aktif</h2></div>
+              <div className="flex items-center gap-2">
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm font-semibold outline-none cursor-pointer">
+                  {MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+                </select>
+                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-sm font-semibold outline-none cursor-pointer">
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                {customers.length === 0 && db && (
+                  <button onClick={seedInitialData} className="px-3 py-1.5 bg-indigo-600/30 text-indigo-300 rounded-xl text-xs font-semibold">Muat Data Master (189)</button>
+                )}
+              </div>
+            </div>
+
+            {/* TAB DASHBOARD */}
+            {activeTab === 'dashboard' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"><p className="text-xs text-slate-400">Pelanggan</p><h3 className="text-3xl font-extrabold">{customers.length}</h3><p className="text-xs text-emerald-400 mt-2">{activeCustomersList.length} Aktif</p></div>
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"><p className="text-xs text-slate-400">Potensi Omset</p><h3 className="text-2xl font-extrabold">{formatIDR(totalPotentialRevenue)}</h3></div>
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"><p className="text-xs text-slate-400">Telah Terbayar</p><h3 className="text-2xl font-extrabold text-emerald-400">{formatIDR(actualPaidRevenue)}</h3><p className="text-xs text-slate-400 mt-2">{paidCustomersCount} Lunas</p></div>
+                  <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl"><p className="text-xs text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl font-extrabold ${netProfit >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
+                </div>
+
+                {/* TABEL JATUH TEMPO */}
+                <div className="bg-slate-900 border border-rose-500/30 rounded-2xl overflow-hidden shadow-2xl">
+                  <div className="p-5 bg-gradient-to-r from-rose-950/40 border-b border-rose-500/20 flex justify-between"><h3 className="font-bold flex gap-2"><Bell size={20} className="text-rose-400"/> Alarm Jatuh Tempo ({dueCustomers.length})</h3></div>
+                  <div className="overflow-x-auto p-2">
+                    <table className="w-full text-left text-sm min-w-[700px]">
+                      <thead><tr className="text-slate-400 border-b border-slate-800"><th className="py-3 px-4">Pelanggan</th><th className="py-3 px-4">Tarif</th><th className="py-3 px-4">Jatuh Tempo</th><th className="py-3 px-4 text-right">Aksi</th></tr></thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {dueCustomers.map(cust => {
+                          const pkg = getPackage(cust.packageId);
+                          return (
+                            <tr key={cust.id} className="hover:bg-slate-800/40">
+                              <td className="py-3 px-4"><span className="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded mr-2">{cust.block}</span><span className="font-bold">{cust.name}</span></td>
+                              <td className="py-3 px-4 font-semibold">{formatIDR(pkg.price)}</td>
+                              <td className="py-3 px-4 text-rose-400 font-bold">Tgl {cust.dueDate}</td>
+                              <td className="py-3 px-4 text-right space-x-2">
+                                <button onClick={() => sendWhatsAppNotification(cust)} className="px-3 py-1.5 bg-emerald-600 rounded-lg text-xs font-semibold">WA</button>
+                                <button onClick={() => togglePayment(cust)} className="px-3 py-1.5 bg-indigo-600 rounded-lg text-xs font-semibold">Set Lunas</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB CUSTOMERS */}
+            {activeTab === 'customers' && (
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+                  <input type="text" placeholder="Cari Nama/Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm flex-1"/>
+                  <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm">
+                    {BLOCKS.map(b => <option key={b}>{b}</option>)}
+                  </select>
+                  <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="bg-slate-950 border border-slate-700 rounded-xl px-4 py-2 text-sm">
+                    <option value="Semua">Semua Status</option><option value="Aktif">Hanya Aktif</option><option value="Belum Lunas">Belum Lunas</option>
+                  </select>
+                  <button onClick={() => handleOpenCustomerModal()} className="px-4 py-2 bg-indigo-600 rounded-xl text-sm font-semibold shadow-lg">Tambah Baru</button>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-x-auto shadow-xl">
+                  <table className="w-full text-left text-sm min-w-[900px]">
+                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                      <tr><th className="py-3 px-4">Blok</th><th className="py-3 px-4">Nama Pelanggan</th><th className="py-3 px-4">Paket & Tarif</th><th className="py-3 px-4">Tempo</th><th className="py-3 px-4">Layanan</th><th className="py-3 px-4">Bayar</th><th className="py-3 px-4 text-right">Opsi</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {filteredCustomers.map(cust => {
+                        const pkg = getPackage(cust.packageId);
+                        const isPaid = cust.payments && cust.payments[currentPeriodKey];
+                        return (
+                          <tr key={cust.id} className="hover:bg-slate-800/40">
+                            <td className="py-3 px-4 font-mono font-bold text-indigo-300">{cust.block}<br/><span className="text-[10px] font-normal text-slate-500">{cust.notes}</span></td>
+                            <td className="py-3 px-4 font-semibold">{cust.name}</td>
+                            <td className="py-3 px-4"><span className="font-medium">{pkg.speed}</span><p className="text-xs text-slate-400">{formatIDR(pkg.price)}</p></td>
+                            <td className="py-3 px-4 font-bold">Tgl {cust.dueDate}</td>
+                            <td className="py-3 px-4"><button onClick={() => toggleCustomerStatus(cust)} className={`px-2 py-1 rounded text-xs border ${cust.status === 'Aktif' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>{cust.status}</button></td>
+                            <td className="py-3 px-4"><button onClick={() => togglePayment(cust)} className={`px-2 py-1 rounded text-xs border font-bold ${isPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>{isPaid ? 'Lunas' : 'Belum'}</button></td>
+                            <td className="py-3 px-4 text-right">
+                              <button onClick={() => handleOpenCustomerModal(cust)} className="p-1 text-slate-400 hover:text-indigo-400"><Edit3 size={16} /></button>
+                              <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1 text-slate-400 hover:text-rose-400"><Trash2 size={16} /></button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB BUKU KAS */}
+            {activeTab === 'ledger' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                  <h3 className="text-lg font-bold">Buku Kas ({MONTHS[selectedMonth]})</h3>
+                  <div className="flex gap-2">
+                    <button onClick={exportBukuKas} className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold flex gap-2"><ArrowDownRight size={16}/> Export Excel</button>
+                    <button onClick={() => handleOpenExpenseModal()} className="px-4 py-2 bg-rose-600 text-white rounded-xl text-sm font-semibold flex gap-2"><Plus size={16}/> Catat Pengeluaran</button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400">Pemasukan</p><p className="text-xl font-bold text-emerald-400">{formatIDR(actualPaidRevenue)}</p></div>
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400">Pengeluaran</p><p className="text-xl font-bold text-rose-400">{formatIDR(totalExpenseAmount)}</p></div>
+                  <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl"><p className="text-xs text-slate-400">Saldo Bersih</p><p className="text-xl font-bold text-indigo-400">{formatIDR(netProfit)}</p></div>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                  <table className="w-full text-left text-sm min-w-[700px]">
+                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th className="py-3 px-4">Tanggal</th><th className="py-3 px-4">Uraian</th><th className="py-3 px-4">Admin</th><th className="py-3 px-4">Nominal</th><th className="py-3 px-4 text-right">Aksi</th></tr></thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {currentPeriodExpenses.map(exp => (
+                        <tr key={exp.id}>
+                          <td className="py-3 px-4">{exp.date}</td>
+                          <td className="py-3 px-4 font-medium"><span className="text-[10px] bg-slate-800 px-1 py-0.5 rounded border border-slate-700 mr-2">{exp.category}</span>{exp.description}</td>
+                          <td className="py-3 px-4 text-xs">{exp.admin}</td>
+                          <td className="py-3 px-4 font-bold text-rose-400">{formatIDR(exp.amount)}</td>
+                          <td className="py-3 px-4 text-right">
+                            <button onClick={() => handleOpenExpenseModal(exp)} className="p-1 text-slate-400 hover:text-indigo-400"><Edit3 size={16} /></button>
+                            <button onClick={() => handleDeleteExpense(exp.id)} className="p-1 text-slate-400 hover:text-rose-400"><Trash2 size={16} /></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* MODALS */}
+          {isCustomerModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6">
+                <h3 className="text-lg font-bold mb-4">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
+                <form onSubmit={handleSaveCustomer} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="text" required placeholder="Blok (Misl: A2)" value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm uppercase"/>
+                    <input type="text" required placeholder="Nama Pelanggan" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  </div>
+                  <input type="text" placeholder="No HP/WA (0812...)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  <select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                    {PACKAGES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input type="number" required placeholder="Tgl Tempo (1-31)" min="1" max="31" value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                      <option value="Aktif">Aktif</option><option value="Tidak Aktif">Tidak Aktif</option><option value="Isolir">Isolir</option>
+                    </select>
+                  </div>
+                  <input type="text" placeholder="Keterangan (Lokasi: Ranau, dsb)" value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2 rounded-xl border border-slate-700">Batal</button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-indigo-600 text-white font-semibold">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isExpenseModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6">
+                <h3 className="text-lg font-bold mb-4">Input Kas Keluar</h3>
+                <form onSubmit={handleSaveExpense} className="space-y-4">
+                  <input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm">
+                    <option value="Operasional">Operasional</option><option value="Maintenance">Maintenance</option><option value="FAM / Konsumsi">FAM / Konsumsi</option><option value="Lainnya">Lainnya</option>
+                  </select>
+                  <input type="text" required placeholder="Uraian" value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  <input type="number" required placeholder="Nominal (Rp)" value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm"/>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2 rounded-xl border border-slate-700">Batal</button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-rose-600 text-white font-semibold">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Render Aplikasi ke DOM
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
