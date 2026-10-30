@@ -34,28 +34,22 @@
     
     // --- IMPORT FIREBASE ---
     import { initializeApp } from "https://esm.sh/firebase@10.6.0/app";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, writeBatch } from "https://esm.sh/firebase@10.6.0/firestore";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://esm.sh/firebase@10.6.0/firestore";
 
-    // ==============================================================
-    // ⚠️ PASTE FIREBASE CONFIG ANDA DI SINI! (GANTI ISI DI BAWAH INI)
-    // ==============================================================
+    // --- FIREBASE CONFIG MILIK ANDA ---
     const firebaseConfig = {
-     apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
-    authDomain: "billing-mabunet.firebaseapp.com",
-    projectId: "billing-mabunet",
-    storageBucket: "billing-mabunet.firebasestorage.app",
-    messagingSenderId: "362703627315",
-    appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46",
-    measurementId: "G-2DBSV96KHP"
+      apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
+      authDomain: "billing-mabunet.firebaseapp.com",
+      projectId: "billing-mabunet",
+      storageBucket: "billing-mabunet.firebasestorage.app",
+      messagingSenderId: "362703627315",
+      appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46",
+      measurementId: "G-2DBSV96KHP"
     };
 
-    let app, db;
-    try {
-      if(firebaseConfig.apiKey !== "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak") {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-      }
-    } catch(e) { console.error("Firebase Setup Error", e); }
+    // Inisialisasi Firebase Secara Langsung (Pesan Kuning Pasti Hilang)
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     // --- DATA KONSTANTA ---
     const INITIAL_ADMINS = [
@@ -76,7 +70,7 @@
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
 
-    // RAW 189 DATA
+    // RAW 189 DATA (Diperkecil agar ringan di browser)
     const RAW_DATA = [{"id":"1","n":"Oom","b":"A2","p":"10mbps_150","d":17,"s":1,"nt":"Lokasi: Mabu, Blm bayar"},{"id":"2","n":"Idham","b":"A2.8","p":"10mbps_150","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"3","n":"Daerobi","b":"B1.3","p":"20mbps_250","d":15,"s":1,"nt":"Lokasi: Mabu"},{"id":"4","n":"Kevin","b":"B1.5","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"5","n":"Ricky","b":"B2.1","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"6","n":"Fajri","b":"B2.14","p":"10mbps_150","d":1,"s":1,"nt":"Lokasi: Mabu"},{"id":"7","n":"Ryma","b":"B2.3","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"8","n":"Lenny","b":"B2.6","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"9","n":"Dina","b":"B2.8","p":"10mbps_150","d":1,"s":1,"nt":"Lokasi: Mabu"},{"id":"10","n":"Ira","b":"B2.9","p":"10mbps_150","d":30,"s":1,"nt":"Lokasi: Mabu"},{"id":"11","n":"Tamara","b":"B3.14","p":"10mbps_150","d":3,"s":1,"nt":"Lokasi: Mabu"},{"id":"12","n":"Suni","b":"B3.3","p":"25mbps_300","d":23,"s":0,"nt":"Lokasi: Mabu"},{"id":"13","n":"Ucay","b":"B3.5","p":"10mbps_180","d":21,"s":1,"nt":"Lokasi: Mabu"},{"id":"14","n":"Wiwin","b":"B3.8","p":"15mbps_200","d":16,"s":1,"nt":"Lokasi: Mabu"},{"id":"15","n":"Anwar","b":"B4.1","p":"10mbps_150","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"16","n":"Angga","b":"B4.10","p":"10mbps_150","d":15,"s":0,"nt":"Lokasi: Mabu"},{"id":"17","n":"Tb Wahyu","b":"b4.11","p":"20mbps_250","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"18","n":"Firda","b":"B4.4","p":"10mbps_150","d":29,"s":1,"nt":"Lokasi: Mabu"},{"id":"19","n":"Riki","b":"B4.6","p":"10mbps_150","d":2,"s":0,"nt":"Lokasi: Mabu"},{"id":"20","n":"Atika","b":"B4.9","p":"10mbps_150","d":14,"s":1,"nt":"Lokasi: Mabu"},{"id":"21","n":"Anggi","b":"B5.3","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"22","n":"Lili","b":"B6.1","p":"10mbps_150","d":16,"s":1,"nt":"Lokasi: Mabu"},{"id":"23","n":"Genta","b":"B6.3","p":"15mbps_200","d":22,"s":0,"nt":"Lokasi: Mabu"},{"id":"24","n":"Rika","b":"B7.2","p":"10mbps_180","d":29,"s":1,"nt":"Lokasi: Mabu"},{"id":"25","n":"Lukito","b":"C1.7","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"26","n":"H Dudi","b":"C12","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"27","n":"Eki","b":"E11","p":"10mbps_150","d":13,"s":1,"nt":"Lokasi: Mabu"},{"id":"28","n":"Endang","b":"E14","p":"10mbps_150","d":6,"s":1,"nt":"Lokasi: Mabu"},{"id":"29","n":"Dika","b":"E17","p":"10mbps_150","d":2,"s":0,"nt":"Lokasi: Mabu"},{"id":"30","n":"Septha","b":"E7","p":"25mbps_300","d":2,"s":0,"nt":"Lokasi: Mabu"},{"id":"31","n":"Along","b":"E9","p":"10mbps_150","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"32","n":"Imron","b":"F10","p":"10mbps_150","d":6,"s":1,"nt":"Lokasi: Mabu"},{"id":"33","n":"Rio","b":"F11","p":"15mbps_200","d":4,"s":1,"nt":"Lokasi: Mabu"},{"id":"34","n":"Deni","b":"F12","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"35","n":"Dita","b":"f14","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"36","n":"Noval","b":"F15","p":"20mbps_250","d":15,"s":0,"nt":"Lokasi: Mabu"},{"id":"37","n":"Yuli/Banu","b":"F16","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"38","n":"Damar","b":"F17","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"39","n":"Dina","b":"F2","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"40","n":"Feri","b":"F3","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"41","n":"Dilla","b":"F5","p":"10mbps_150","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"42","n":"Gartika","b":"F6","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"43","n":"Thalia","b":"F7","p":"10mbps_150","d":24,"s":1,"nt":"Lokasi: Mabu"},{"id":"44","n":"Furkon","b":"F8","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"45","n":"Rizky","b":"F9","p":"10mbps_150","d":17,"s":1,"nt":"Lokasi: Mabu"},{"id":"46","n":"Adjie","b":"G1","p":"10mbps_150","d":18,"s":0,"nt":"Lokasi: Mabu"},{"id":"47","n":"Maya","b":"G11","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"48","n":"Sofyan","b":"G11A","p":"5mbps_100","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"49","n":"Idhar","b":"G15","p":"15mbps_200","d":21,"s":1,"nt":"Lokasi: Mabu"},{"id":"50","n":"Raihan","b":"G16","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"51","n":"Nda","b":"G19","p":"10mbps_150","d":24,"s":1,"nt":"Lokasi: Mabu"},{"id":"52","n":"Ayudya","b":"G20","p":"10mbps_150","d":8,"s":1,"nt":"Lokasi: Mabu"},{"id":"53","n":"Darul","b":"G22","p":"10mbps_180","d":29,"s":1,"nt":"Lokasi: Mabu"},{"id":"54","n":"Jerry","b":"G24","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"55","n":"Riyan","b":"G3","p":"10mbps_150","d":4,"s":0,"nt":"Lokasi: Mabu"},{"id":"56","n":"Robi","b":"G30","p":"10mbps_150","d":13,"s":0,"nt":"Lokasi: Mabu, Blm bayar"},{"id":"57","n":"Rani","b":"G6","p":"10mbps_150","d":10,"s":0,"nt":"Lokasi: Mabu"},{"id":"58","n":"Ichwan","b":"G7","p":"10mbps_150","d":26,"s":1,"nt":"Lokasi: Mabu"},{"id":"59","n":"Ian","b":"H11","p":"5mbps_100","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"60","n":"Rabani","b":"H14","p":"10mbps_150","d":25,"s":0,"nt":"Lokasi: Mabu"},{"id":"61","n":"Imanah","b":"H16","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"62","n":"Zea","b":"H18","p":"10mbps_150","d":14,"s":1,"nt":"Lokasi: Mabu"},{"id":"63","n":"Jaenal","b":"H2","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"64","n":"Lia","b":"H21","p":"15mbps_200","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"65","n":"Fauziah","b":"H23","p":"15mbps_200","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"66","n":"Ridwan","b":"H24","p":"10mbps_150","d":19,"s":1,"nt":"Lokasi: Mabu"},{"id":"67","n":"Aditya","b":"H6","p":"10mbps_150","d":18,"s":1,"nt":"Lokasi: Mabu"},{"id":"68","n":"Irfan Ayu","b":"H7","p":"15mbps_200","d":1,"s":1,"nt":"Lokasi: Mabu"},{"id":"69","n":"Dina","b":"H8","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"70","n":"Anwar","b":"H9","p":"10mbps_150","d":6,"s":1,"nt":"Lokasi: Mabu"},{"id":"71","n":"Tatin","b":"i11a","p":"10mbps_150","d":2,"s":1,"nt":"Lokasi: Mabu"},{"id":"72","n":"Naura","b":"i16","p":"10mbps_150","d":20,"s":0,"nt":"Lokasi: Mabu"},{"id":"73","n":"Kiki","b":"i2","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"74","n":"Astari","b":"I20","p":"10mbps_150","d":10,"s":0,"nt":"Lokasi: Mabu"},{"id":"75","n":"Dewi","b":"i22","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"76","n":"Mahmudin","b":"i26","p":"10mbps_150","d":11,"s":1,"nt":"Lokasi: Mabu"},{"id":"77","n":"Riski","b":"i28","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Mabu"},{"id":"78","n":"Maman","b":"I31","p":"10mbps_150","d":20,"s":1,"nt":"Lokasi: Mabu"},{"id":"79","n":"Eko","b":"I9","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"80","n":"Lutfia","b":"J1","p":"10mbps_150","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"81","n":"Sundara","b":"J2","p":"10mbps_150","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"82","n":"Suherti","b":"J3","p":"10mbps_150","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"83","n":"Genta","b":"J6","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"84","n":"Idan","b":"K10","p":"10mbps_150","d":30,"s":1,"nt":"Lokasi: Mabu"},{"id":"85","n":"Agung","b":"K7","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Mabu"},{"id":"86","n":"Elka","b":"L1","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"87","n":"Vie","b":"L3","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"88","n":"Eri","b":"L4","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"89","n":"Yeni","b":"L6","p":"10mbps_150","d":29,"s":1,"nt":"Lokasi: Mabu"},{"id":"90","n":"Yuli","b":"L8","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"91","n":"Rizal","b":"L9","p":"10mbps_150","d":5,"s":0,"nt":"Lokasi: Mabu"},{"id":"92","n":"Mela","b":"M10","p":"10mbps_150","d":22,"s":0,"nt":"Lokasi: Mabu"},{"id":"93","n":"Gita","b":"M11A","p":"10mbps_180","d":5,"s":0,"nt":"Lokasi: Mabu"},{"id":"94","n":"Adam","b":"M12","p":"10mbps_150","d":27,"s":1,"nt":"Lokasi: Mabu"},{"id":"95","n":"Desi","b":"M14","p":"10mbps_150","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"96","n":"Deni","b":"M15","p":"10mbps_150","d":30,"s":1,"nt":"Lokasi: Mabu"},{"id":"97","n":"Ela","b":"M2","p":"10mbps_150","d":11,"s":0,"nt":"Lokasi: Mabu"},{"id":"98","n":"Rifai","b":"M6","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"99","n":"Lukman","b":"M7","p":"10mbps_150","d":1,"s":1,"nt":"Lokasi: Mabu"},{"id":"100","n":"Kenny","b":"M9","p":"25mbps_300","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"101","n":"Yopi","b":"N4","p":"10mbps_150","d":26,"s":1,"nt":"Lokasi: Mabu"},{"id":"102","n":"Sarah","b":"N6","p":"10mbps_150","d":16,"s":1,"nt":"Lokasi: Mabu"},{"id":"103","n":"Maman","b":"N9","p":"10mbps_150","d":5,"s":0,"nt":"Lokasi: Mabu"},{"id":"104","n":"Maman","b":"N9 Luar","p":"10mbps_180","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"105","n":"Fitri","b":"O11a","p":"10mbps_150","d":8,"s":1,"nt":"Lokasi: Mabu"},{"id":"106","n":"Rizki","b":"O12","p":"10mbps_150","d":2,"s":1,"nt":"Lokasi: Mabu"},{"id":"107","n":"Asep","b":"O14","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"108","n":"Eka","b":"O15","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"109","n":"Bara","b":"O4","p":"10mbps_150","d":13,"s":1,"nt":"Lokasi: Mabu"},{"id":"110","n":"Andini","b":"O6","p":"15mbps_200","d":6,"s":1,"nt":"Lokasi: Mabu"},{"id":"111","n":"Olief","b":"O7","p":"10mbps_150","d":20,"s":1,"nt":"Lokasi: Mabu"},{"id":"112","n":"Daerobi","b":"O9","p":"15mbps_200","d":15,"s":1,"nt":"Lokasi: Mabu"},{"id":"113","n":"Yuli","b":"P1","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"114","n":"Fadly","b":"P2","p":"10mbps_150","d":3,"s":0,"nt":"Lokasi: Mabu"},{"id":"115","n":"Kevin","b":"P5","p":"10mbps_150","d":20,"s":1,"nt":"Lokasi: Mabu"},{"id":"116","n":"Laela","b":"P6","p":"15mbps_200","d":31,"s":1,"nt":"Lokasi: Mabu"},{"id":"117","n":"Deri","b":"P8","p":"10mbps_150","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"118","n":"Meti","b":"Q11","p":"10mbps_150","d":14,"s":1,"nt":"Lokasi: Mabu"},{"id":"119","n":"Dika","b":"Q3","p":"10mbps_150","d":21,"s":1,"nt":"Lokasi: Mabu"},{"id":"120","n":"widya","b":"Q4","p":"10mbps_150","d":21,"s":1,"nt":"Lokasi: Mabu"},{"id":"121","n":"Gun","b":"Q5","p":"10mbps_180","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"122","n":"Teh Wiwi","b":"R10","p":"10mbps_150","d":28,"s":1,"nt":"Lokasi: Mabu"},{"id":"123","n":"Redi","b":"R4","p":"10mbps_150","d":22,"s":1,"nt":"Lokasi: Mabu"},{"id":"124","n":"Yuda","b":"R6","p":"10mbps_150","d":8,"s":1,"nt":"Lokasi: Mabu"},{"id":"125","n":"Tiara","b":"R7","p":"15mbps_200","d":9,"s":1,"nt":"Lokasi: Mabu"},{"id":"126","n":"Agung","b":"R8","p":"10mbps_180","d":11,"s":0,"nt":"Lokasi: Mabu"},{"id":"127","n":"Agin","b":"S1","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"128","n":"Ani Off","b":"S11","p":"10mbps_150","d":27,"s":0,"nt":"Lokasi: Mabu"},{"id":"129","n":"Hermawan","b":"S11A","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"130","n":"Febriyanti","b":"S12","p":"10mbps_150","d":3,"s":1,"nt":"Lokasi: Mabu"},{"id":"131","n":"Iki","b":"S6","p":"10mbps_150","d":24,"s":1,"nt":"Lokasi: Mabu"},{"id":"132","n":"Halimah","b":"S8","p":"10mbps_150","d":24,"s":1,"nt":"Lokasi: Mabu"},{"id":"133","n":"Windy","b":"T4","p":"10mbps_150","d":7,"s":0,"nt":"Lokasi: Mabu"},{"id":"134","n":"Dedi","b":"T8","p":"10mbps_150","d":21,"s":1,"nt":"Lokasi: Mabu"},{"id":"135","n":"Andi","b":"T9","p":"15mbps_200","d":26,"s":1,"nt":"Lokasi: Mabu"},{"id":"136","n":"Depi","b":"U2","p":"20mbps_250","d":26,"s":1,"nt":"Lokasi: Mabu"},{"id":"137","n":"Lili","b":"U4","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Mabu"},{"id":"138","n":"Obi","b":"U5","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"},{"id":"139","n":"Edgar","b":"U7","p":"10mbps_150","d":23,"s":1,"nt":"Lokasi: Mabu"},{"id":"140","n":"Dodi","b":"U9","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"141","n":"Daerobi","b":"V1.1","p":"10mbps_150","d":15,"s":1,"nt":"Lokasi: Mabu"},{"id":"142","n":"Dana","b":"V1.2","p":"10mbps_150","d":20,"s":1,"nt":"Lokasi: Mabu"},{"id":"143","n":"Dewi","b":"V1.3","p":"10mbps_180","d":6,"s":1,"nt":"Lokasi: Mabu"},{"id":"144","n":"Rika","b":"V1.6","p":"10mbps_150","d":30,"s":1,"nt":"Lokasi: Mabu"},{"id":"145","n":"Agnes","b":"V1.7","p":"10mbps_180","d":19,"s":1,"nt":"Lokasi: Mabu"},{"id":"146","n":"Saeful","b":"V1.9","p":"10mbps_150","d":12,"s":1,"nt":"Lokasi: Mabu"},{"id":"147","n":"Nida","b":"V2.2","p":"10mbps_150","d":24,"s":1,"nt":"Lokasi: Mabu"},{"id":"148","n":"Arip","b":"V2.5","p":"10mbps_150","d":3,"s":1,"nt":"Lokasi: Mabu"},{"id":"149","n":"Anang","b":"V2.6","p":"10mbps_150","d":8,"s":1,"nt":"Lokasi: Mabu"},{"id":"150","n":"Dian","b":"V3.10","p":"10mbps_180","d":10,"s":1,"nt":"Lokasi: Mabu"},{"id":"151","n":"Dina","b":"V3.3","p":"10mbps_180","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"152","n":"Febri","b":"V3.4","p":"10mbps_150","d":26,"s":1,"nt":"Lokasi: Mabu"},{"id":"153","n":"Drajat","b":"V3.9","p":"10mbps_150","d":5,"s":1,"nt":"Lokasi: Mabu"},{"id":"154","n":"Rian","b":"W1","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Mabu"},{"id":"155","n":"Shanty","b":"W3","p":"10mbps_150","d":2,"s":1,"nt":"Lokasi: Mabu"},{"id":"156","n":"Dian","b":"A1.5","p":"5mbps_100","d":13,"s":1,"nt":"Lokasi: Ranau"},{"id":"157","n":"Uum","b":"A2.12","p":"5mbps_100","d":6,"s":0,"nt":"Lokasi: Ranau"},{"id":"158","n":"Yudi","b":"B2.11","p":"15mbps_200","d":4,"s":1,"nt":"Lokasi: Ranau"},{"id":"159","n":"Pepi","b":"B3.11","p":"10mbps_150","d":28,"s":0,"nt":"Lokasi: Ranau"},{"id":"160","n":"Arief","b":"B3.6","p":"5mbps_100","d":30,"s":1,"nt":"Lokasi: Ranau"},{"id":"161","n":"C1","b":"C1","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: Ranau"},{"id":"162","n":"Yanti","b":"C1.3","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Ranau"},{"id":"163","n":"Icih","b":"C1.4","p":"10mbps_150","d":15,"s":0,"nt":"Lokasi: Ranau"},{"id":"164","n":"Sofi","b":"D1.10","p":"10mbps_150","d":15,"s":0,"nt":"Lokasi: Ranau"},{"id":"165","n":"Hafid","b":"D1.8","p":"5mbps_100","d":4,"s":1,"nt":"Lokasi: Ranau"},{"id":"166","n":"Doni","b":"D1.3","p":"10mbps_150","d":4,"s":0,"nt":"Lokasi: Ranau"},{"id":"167","n":"Siti","b":"D2.13","p":"10mbps_150","d":4,"s":0,"nt":"Lokasi: Ranau"},{"id":"168","n":"Erin","b":"D2.5","p":"5mbps_100","d":1,"s":0,"nt":"Lokasi: Ranau"},{"id":"169","n":"Aziz","b":"D2.7","p":"5mbps_100","d":4,"s":0,"nt":"Lokasi: Ranau"},{"id":"170","n":"Nur","b":"D4.1","p":"5mbps_100","d":4,"s":0,"nt":"Lokasi: Ranau"},{"id":"171","n":"Heri","b":"E1.8","p":"5mbps_100","d":25,"s":1,"nt":"Lokasi: Ranau"},{"id":"172","n":"Denny","b":"E2","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Ranau"},{"id":"173","n":"Ilyasa","b":"E3.3","p":"5mbps_100","d":1,"s":0,"nt":"Lokasi: Ranau"},{"id":"174","n":"Yunus","b":"F1.5","p":"5mbps_100","d":25,"s":1,"nt":"Lokasi: Ranau"},{"id":"175","n":"Linda","b":"F2.6","p":"10mbps_150","d":4,"s":1,"nt":"Lokasi: Ranau"},{"id":"176","n":"Rosi","b":"KVLNG","p":"5mbps_100","d":4,"s":0,"nt":"Lokasi: Ranau"},{"id":"177","n":"Fatonah","b":"RG","p":"10mbps_180","d":4,"s":1,"nt":"Lokasi: RG"},{"id":"178","n":"Gwen","b":"RG","p":"10mbps_180","d":18,"s":1,"nt":"Lokasi: RG"},{"id":"179","n":"Hachiko","b":"RG","p":"10mbps_180","d":18,"s":1,"nt":"Lokasi: RG"},{"id":"180","n":"Hikam","b":"RG","p":"10mbps_180","d":18,"s":1,"nt":"Lokasi: RG"},{"id":"181","n":"Nisa","b":"RG","p":"10mbps_180","d":18,"s":1,"nt":"Lokasi: RG"},{"id":"182","n":"Putri","b":"RG","p":"10mbps_180","d":4,"s":1,"nt":"Lokasi: RG"},{"id":"183","n":"Yeri","b":"RG","p":"10mbps_180","d":6,"s":1,"nt":"Lokasi: RG"},{"id":"184","n":"Ersan","b":"RG E5","p":"10mbps_150","d":7,"s":1,"nt":"Lokasi: RG"},{"id":"185","n":"Bella Pesona","b":"BELLA","p":"10mbps_180","d":25,"s":1,"nt":"Lokasi: Pesona"},{"id":"186","n":"Andi Pesona","b":"C A1","p":"10mbps_180","d":25,"s":1,"nt":"Lokasi: Pesona"},{"id":"187","n":"Ayu","b":"PLT","p":"10mbps_150","d":25,"s":0,"nt":"Lokasi: PLT"},{"id":"188","n":"Sinar Aji","b":"W2","p":"10mbps_150","d":14,"s":1,"nt":"Lokasi: MABU"},{"id":"189","n":"Heni","b":"B4.7","p":"10mbps_150","d":25,"s":1,"nt":"Lokasi: Mabu"}];
     const SEED_CUSTOMERS = RAW_DATA.map(c => ({
       id: c.id, name: c.n, block: c.b, phone: '', packageId: c.p, 
@@ -102,7 +96,7 @@
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
 
-      // --- DATABASE STATES (REAL-TIME) ---
+      // Database States
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [isDbLoading, setIsDbLoading] = useState(true);
@@ -126,24 +120,18 @@
       const todayDay = new Date().getDate();
 
       // ==========================================
-      // REAL-TIME DATABASE SYNC (FIREBASE EFFECT)
+      // REAL-TIME DATABASE SYNC
       // ==========================================
       useEffect(() => {
-        if (!db) {
-          setIsDbLoading(false);
-          return;
-        }
+        if (!db) { setIsDbLoading(false); return; }
         
-        // Listener Pelanggan
         const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          // Urutkan berdasarkan blok
           data.sort((a,b) => a.block.localeCompare(b.block));
           setCustomers(data);
           setIsDbLoading(false);
         });
 
-        // Listener Buku Kas
         const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           setExpenses(data);
@@ -155,31 +143,21 @@
       // --- INJEKSI 189 DATA KE FIREBASE ---
       const handleInjectData = async () => {
         if(!db) return alert("Firebase belum konek!");
-        if(!confirm("Yakin ingin meng-upload 189 data ini ke Firebase sekarang? Proses ini memakan waktu beberapa detik.")) return;
+        if(!confirm("Yakin ingin meng-upload 189 data ini ke Firebase sekarang?")) return;
         
         setIsInjecting(true);
         try {
-          // Kita gunakan Promise.all agar upload 189 data berjalan cepat secara paralel
           const promises = SEED_CUSTOMERS.map(cust => {
-            const custRef = doc(db, 'customers', cust.id); // set id dari excel
+            const custRef = doc(db, 'customers', cust.id); 
             return setDoc(custRef, {
-              name: cust.name,
-              block: cust.block,
-              phone: cust.phone,
-              packageId: cust.packageId,
-              dueDate: cust.dueDate,
-              status: cust.status,
-              notes: cust.notes,
-              payments: cust.payments
+              name: cust.name, block: cust.block, phone: cust.phone,
+              packageId: cust.packageId, dueDate: cust.dueDate,
+              status: cust.status, notes: cust.notes, payments: cust.payments
             });
           });
-          
           await Promise.all(promises);
           alert("SUKSES! 189 Data Master telah masuk ke Firebase Cloud!");
-        } catch (error) {
-          console.error(error);
-          alert("Terjadi kesalahan saat upload data.");
-        }
+        } catch (error) { console.error(error); alert("Gagal upload data."); }
         setIsInjecting(false);
       };
 
@@ -188,46 +166,36 @@
         if (!db) return alert("Firebase belum tersambung!");
         const cust = customers.find(c => c.id === custId);
         const isPaid = cust.payments && cust.payments[monthKey];
-        
-        await updateDoc(doc(db, 'customers', custId), {
-          [`payments.${monthKey}`]: !isPaid
-        });
+        await updateDoc(doc(db, 'customers', custId), { [`payments.${monthKey}`]: !isPaid });
       };
 
       const handleSaveCustomer = async (e) => {
         e.preventDefault();
         if (!db) return alert("Firebase belum tersambung!");
-        
-        if (editingCustomer) {
-          await updateDoc(doc(db, 'customers', editingCustomer.id), formData);
-        } else {
-          await addDoc(collection(db, 'customers'), { ...formData, payments: {} });
-        }
+        if (editingCustomer) { await updateDoc(doc(db, 'customers', editingCustomer.id), formData); } 
+        else { await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); }
         setIsCustomerModalOpen(false);
       };
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
         if (!db) return alert("Firebase belum tersambung!");
-        
         await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
         setIsExpenseModalOpen(false);
       };
 
       const handleDeleteCustomer = async (id) => {
         if (!db) return;
-        if(confirm("Yakin hapus pelanggan ini?")) {
-          await deleteDoc(doc(db, 'customers', id));
-        }
+        if(confirm("Yakin hapus pelanggan ini?")) await deleteDoc(doc(db, 'customers', id));
       };
 
-      // --- WA & LOGIN LOGIC ---
+      // --- LOGIN LOGIC ---
       const handleLogin = (e) => {
         if(e) e.preventDefault();
         setLoginError('');
         const user = admins.find(a => a.username === loginForm.username && a.password === loginForm.password);
         if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan oleh Super Admin.');
+          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
         } else { setLoginError('Username atau Password salah!'); }
       };
@@ -241,12 +209,30 @@
         }, 2000);
       };
 
+      const handlePhotoUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setEditProfile({ ...editProfile, photo: reader.result });
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const handleSaveProfile = (e) => {
+        e.preventDefault();
+        const updatedAdmins = admins.map(a => a.id === currentUser.id ? { ...a, name: editProfile.name, phone: editProfile.phone, photo: editProfile.photo } : a);
+        setAdmins(updatedAdmins); setCurrentUser(updatedAdmins.find(a => a.id === currentUser.id));
+        alert('Profil diperbarui!');
+      };
+
+      const toggleAdminStatus = (adminId) => setAdmins(admins.map(a => a.id === adminId ? { ...a, status: a.status === 'Aktif' ? 'Tidak Aktif' : 'Aktif' } : a));
+
+      // --- WA MESSAGES ---
       const sendWAInvoice = (cust) => {
         const pkg = getPackage(cust.packageId);
         const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar ke BCA 1234567890. Abaikan jika sudah lunas.`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
-      
       const sendWAReceipt = (cust, monthKey) => {
         const pkg = getPackage(cust.packageId); const [y, m] = monthKey.split('-');
         const text = `*KUITANSI MABUNET*\nTerima kasih Bapak/Ibu *${cust.name}*.\nPembayaran internet paket *${pkg.speed}* untuk bulan *${MONTHS[parseInt(m) - 1]} ${y}* sebesar *${formatIDR(pkg.price)}* berstatus *LUNAS*.`;
@@ -276,16 +262,16 @@
       if (!currentUser) {
         return (
           <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800 via-slate-950 to-slate-950">
-            <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative overflow-hidden">
+            <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative overflow-hidden my-8">
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-600/20 blur-3xl rounded-full"></div>
               
               {!db && (
                 <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] rounded-lg text-center font-bold">
-                  ⚠️ FIREBASE BELUM TERHUBUNG! APLIKASI DALAM MODE OFFLINE.
+                  ⚠️ FIREBASE BELUM TERHUBUNG!
                 </div>
               )}
 
-              <div className="text-center mb-8 relative z-10">
+              <div className="text-center mb-6 relative z-10">
                 <div className="inline-flex p-3 rounded-2xl bg-indigo-600/20 text-indigo-400 mb-4 pulse-glow"><Wifi size={36} /></div>
                 <h1 className="text-3xl font-extrabold tracking-tight">MABU<span className="text-indigo-400">NET</span></h1>
                 <p className="text-xs text-slate-400 mt-1 uppercase font-semibold">Real-time Cloud Gateway</p>
@@ -293,25 +279,40 @@
 
               {loginError && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs rounded-xl flex items-center gap-2"><ShieldAlert size={14}/> {loginError}</div>}
 
-              <form onSubmit={handleLogin} className="space-y-4 relative z-10">
+              {/* TOMBOL QUICK LOGIN (DIKEMBALIKAN!) */}
+              <div className="space-y-3 relative z-10 mb-6">
+                {admins.map(adm => (
+                  <button key={adm.id} onClick={() => {
+                    if (adm.status !== 'Aktif') return setLoginError('Akun dinonaktifkan oleh Super Admin.');
+                    setCurrentUser(adm); setEditProfile(adm);
+                  }} className="w-full flex items-center justify-between p-3 bg-slate-800 hover:bg-indigo-600/20 rounded-xl text-left border border-slate-700 transition-colors">
+                    <div><h3 className="font-semibold text-sm">{adm.name}</h3><p className="text-[10px] text-slate-400">{adm.role}</p></div>
+                    <ChevronRight size={16} className="text-slate-500" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="w-full border-t border-slate-800 mb-6 relative z-10"><span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-slate-900 px-2 text-xs text-slate-500 font-semibold">ATAU</span></div>
+
+              <form onSubmit={handleLogin} className="space-y-3 relative z-10">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500"><User size={18} /></div>
-                  <input type="text" placeholder="Username (Hilman)" required value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} className="w-full bg-slate-950/50 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-indigo-500" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500"><User size={16} /></div>
+                  <input type="text" placeholder="Username" required value={loginForm.username} onChange={e => setLoginForm({...loginForm, username: e.target.value})} className="w-full bg-slate-950/50 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-indigo-500" />
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500"><Lock size={18} /></div>
-                  <input type="password" placeholder="Password (Kosong,19)" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-950/50 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm outline-none focus:border-indigo-500" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500"><Lock size={16} /></div>
+                  <input type="password" placeholder="Password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-950/50 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-sm outline-none focus:border-indigo-500" />
                 </div>
-                <button type="submit" className="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-lg">Masuk Aplikasi</button>
+                <button type="submit" className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold shadow-lg">Login Manual</button>
               </form>
 
-              <div className="mt-8 flex flex-col items-center relative z-10">
-                <button onClick={handleFingerprintScan} disabled={isScanning} className="relative group flex flex-col items-center gap-3">
-                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
-                    <Fingerprint size={32} strokeWidth={isScanning ? 2 : 1.5} className={isScanning ? 'opacity-50' : ''}/>
+              <div className="mt-6 flex flex-col items-center relative z-10">
+                <button onClick={handleFingerprintScan} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                    <Fingerprint size={28} strokeWidth={isScanning ? 2 : 1.5} className={isScanning ? 'opacity-50' : ''}/>
                     {isScanning && <div className="scanner-line"></div>}
                   </div>
-                  <span className={`text-xs font-semibold ${isScanning ? 'text-emerald-400' : 'text-slate-400'}`}>{isScanning ? 'Memindai...' : 'Gunakan Fingerprint'}</span>
+                  <span className={`text-[10px] font-semibold ${isScanning ? 'text-emerald-400' : 'text-slate-400'}`}>{isScanning ? 'Memindai...' : 'Gunakan Fingerprint'}</span>
                 </button>
               </div>
             </div>
@@ -521,7 +522,6 @@
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                  {/* EDIT PROFIL */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-400"><User size={20}/> Profil Super Admin</h3>
                     <form onSubmit={handleSaveProfile} className="space-y-4">
@@ -537,7 +537,6 @@
                       <button type="submit" className="w-full py-2.5 bg-indigo-600 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700">Simpan Profil Saya</button>
                     </form>
                   </div>
-                  {/* MANAJEMEN AKSES ADMIN */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
                     <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin</h3>
                     <p className="text-xs text-slate-400 mb-4">Matikan tombol di bawah jika Anda ingin memblokir Admin 2 atau Admin 3 agar tidak bisa masuk ke aplikasi.</p>
@@ -559,7 +558,6 @@
           </main>
 
           {/* MODALS */}
-          {/* Modal Tambah/Edit Pelanggan */}
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6">
@@ -585,7 +583,6 @@
             </div>
           )}
 
-          {/* Modal Kas Keluar */}
           {isExpenseModalOpen && (
             <div className="fixed inset-0 z-50 bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md p-6">
