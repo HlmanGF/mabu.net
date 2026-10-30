@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MABUNET - Master Billing & Network</title>
   
-  <!-- PWA MANIFEST -->
+  <!-- PWA MANIFEST & ICON WEB MABUNET -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
+  <link rel="icon" href="./mabunetlogo.png" type="image/png">
   <link rel="apple-touch-icon" href="./mabunetlogo.png">
+  <link rel="shortcut icon" href="./mabunetlogo.png">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -50,7 +52,7 @@
       Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, 
       Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
       Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp
+      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -109,6 +111,10 @@
       const [editProfile, setEditProfile] = useState({});
       const [isEditingProfile, setIsEditingProfile] = useState(false); 
       
+      // State Edit Admin Lain oleh Admin 1
+      const [targetAdmin, setTargetAdmin] = useState(null);
+      const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
+      
       const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
       const [searchTerm, setSearchTerm] = useState('');
@@ -162,12 +168,17 @@
             } else {
               const cloudAdmins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               setAdmins(cloudAdmins);
+              
+              // AUTO-LOGIN (MENCEGAH LOGOUT SAAT REFRESH)
+              const sessionUid = localStorage.getItem('mabunet_session');
               setCurrentUser(prevUser => {
-                if (prevUser) {
-                  const updatedUser = cloudAdmins.find(a => a.id === prevUser.id);
-                  return updatedUser || prevUser;
+                const activeUid = prevUser ? prevUser.id : sessionUid;
+                if (activeUid) {
+                  const activeUser = cloudAdmins.find(a => a.id === activeUid);
+                  if (activeUser && activeUser.status === 'Aktif') return activeUser;
+                  else localStorage.removeItem('mabunet_session'); // Kick jika diblokir
                 }
-                return prevUser;
+                return null;
               });
             }
           });
@@ -231,8 +242,13 @@
         if (user) {
           if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
-          localStorage.setItem('mabunet_device_user', user.id); 
+          localStorage.setItem('mabunet_session', user.id); 
         } else { setLoginError('Username atau Password salah!'); }
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        localStorage.removeItem('mabunet_session');
       };
 
       // FINGERPRINT LOGIC
@@ -259,7 +275,7 @@
         setIsScanning(true); setLoginError('');
         try {
           const savedUserId = localStorage.getItem('mabunet_device_user');
-          if (!savedUserId) throw new Error('Perangkat belum dikenali. Login Manual dahulu.');
+          if (!savedUserId) throw new Error('Perangkat belum dikenali. Login Manual dahulu lalu seting di Profil.');
           const savedUser = admins.find(a => a.id === savedUserId);
           if (!savedUser || savedUser.status !== 'Aktif') throw new Error('Akun dinonaktifkan atau hilang.');
           if (!savedUser.fingerprintEnabled || !savedUser.credentialId) throw new Error('Sidik Jari belum diaktifkan.');
@@ -269,12 +285,16 @@
           const assertion = await navigator.credentials.get({
             publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" }
           });
-          if (assertion) { setCurrentUser(savedUser); setEditProfile(savedUser); }
+          if (assertion) { 
+            setCurrentUser(savedUser); 
+            setEditProfile(savedUser);
+            localStorage.setItem('mabunet_session', savedUser.id);
+          }
         } catch (err) { setLoginError(err.message || 'Verifikasi Sidik Jari gagal.'); } finally { setIsScanning(false); }
       };
 
       // AUTO-CROP IMAGE NATIVE
-      const handlePhotoUpload = (e) => {
+      const handlePhotoUpload = (e, isTargetAdmin = false) => {
         const file = e.target.files[0];
         if (file) {
           const reader = new FileReader();
@@ -288,7 +308,12 @@
               const startX = (img.width - size) / 2;
               const startY = (img.height - size) / 2;
               ctx.drawImage(img, startX, startY, size, size, 0, 0, 400, 400);
-              setEditProfile({ ...editProfile, photo: canvas.toDataURL('image/jpeg', 0.8) });
+              
+              if (isTargetAdmin) {
+                setTargetAdmin({ ...targetAdmin, photo: canvas.toDataURL('image/jpeg', 0.8) });
+              } else {
+                setEditProfile({ ...editProfile, photo: canvas.toDataURL('image/jpeg', 0.8) });
+              }
             };
             img.src = reader.result;
           };
@@ -308,6 +333,24 @@
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
+      };
+
+      // ADMIN 1 MENGEDIT ADMIN LAIN
+      const handleSaveTargetAdmin = async (e) => {
+        e.preventDefault();
+        try {
+          await updateDoc(doc(db, 'admins', targetAdmin.id), {
+            name: targetAdmin.name,
+            username: targetAdmin.username,
+            password: targetAdmin.password,
+            email: targetAdmin.email || '',
+            phone: targetAdmin.phone || '',
+            photo: targetAdmin.photo || ''
+          });
+          alert(`Profil ${targetAdmin.name} berhasil diperbarui!`);
+          setIsTargetAdminModalOpen(false);
+          writeLog(`Mengedit profil admin: ${targetAdmin.name}`);
+        } catch (error) { alert('Gagal menyimpan data admin.'); }
       };
 
       const toggleAdminStatus = async (adminId, currentStatus) => {
@@ -363,7 +406,6 @@
         { name: 'Net', Rp: netProfit }
       ];
 
-      // MENGHITUNG NILAI TERTINGGI UNTUK GRAFIK NATIVE
       const maxChartVal = Math.max(...chartData.map(d => Math.abs(d.Rp))) || 1;
 
       const filteredCustomers = customers.filter(c => {
@@ -418,13 +460,13 @@
               <div className="w-full border-t border-slate-300 dark:border-slate-800 my-6 relative z-10"><span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-white dark:bg-slate-900 px-2 text-xs text-slate-500 font-semibold transition-colors">ATAU</span></div>
 
               <div className="mt-2 flex flex-col items-center relative z-10">
-                <button onClick={handleFingerprintScan} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
+                <button onClick={() => { localStorage.setItem('mabunet_device_user', loginForm.username ? admins.find(a=>a.username===loginForm.username)?.id || '' : ''); handleFingerprintScan(); }} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                     <Fingerprint size={28} strokeWidth={isScanning ? 2 : 1.5} className={isScanning ? 'opacity-50' : ''}/>
                     {isScanning && <div className="scanner-line"></div>}
                   </div>
                   <span className={`text-[10px] font-semibold text-center ${isScanning ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                    {isScanning ? 'Memindai...' : 'Login Sidik Jari Asli'} <br/> <span className="font-normal text-[8px] opacity-70">(Otentikasi Perangkat)</span>
+                    {isScanning ? 'Memindai...' : 'Login Sidik Jari Asli'} <br/> <span className="font-normal text-[8px] opacity-70">(Ingat Perangkat Saya)</span>
                   </span>
                 </button>
               </div>
@@ -512,7 +554,7 @@
                 <span className="hidden md:block absolute left-16 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium z-50">Profil & Pengaturan</span>
               </button>
 
-              <button onClick={() => { setCurrentUser(null); localStorage.removeItem('mabunet_device_user'); }} className="md:hidden relative group flex justify-center p-3 rounded-xl text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
+              <button onClick={handleLogout} className="md:hidden relative group flex justify-center p-3 rounded-xl text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
                 <LogOut size={22} />
               </button>
             </nav>
@@ -526,7 +568,7 @@
                 {db ? <Server size={18} className="text-emerald-500 dark:text-emerald-400" /> : <Server size={18} className="text-rose-500 dark:text-rose-400 animate-pulse" />}
                 <span className="absolute left-10 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-slate-200 dark:border-slate-700 z-50">Status Server</span>
               </div>
-              <button onClick={() => { setCurrentUser(null); localStorage.removeItem('mabunet_device_user'); }} className="relative group w-full flex justify-center p-3 rounded-xl text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
+              <button onClick={handleLogout} className="relative group w-full flex justify-center p-3 rounded-xl text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all">
                 <LogOut size={22} />
                 <span className="absolute left-16 top-1/2 -translate-y-1/2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap border border-rose-200 dark:border-rose-900 font-bold z-50">Keluar</span>
               </button>
@@ -559,7 +601,7 @@
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl transition-colors"><p className="text-xs text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl font-extrabold ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
                 </div>
 
-                {/* GRAFIK ANALITIK NATIVE (AMAN & RINGAN) */}
+                {/* GRAFIK ANALITIK NATIVE (AMAN & RINGAN KHUSUS PC) */}
                 <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-xl transition-colors">
                   <h3 className="font-bold flex items-center gap-2 mb-4 text-indigo-600 dark:text-indigo-400"><TrendingUp size={20}/> Grafik Keuangan Bulan Ini</h3>
                   <div className="flex items-end h-64 gap-6 pt-4 border-b border-slate-200 dark:border-slate-800 relative">
@@ -714,7 +756,7 @@
             {activeTab === 'settings' && (
               <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto items-start">
                 
-                {/* KARTU PROFIL */}
+                {/* KARTU PROFIL SAYA */}
                 <div className="w-full lg:w-[360px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
                     // === TAMPILAN BACA (READ-ONLY) ===
@@ -777,7 +819,7 @@
                               {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
                               <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer">
                                 <Camera size={16} className="text-white" />
-                                <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                                <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e, false)} className="hidden" />
                               </label>
                             </div>
                             <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Auto-Crop 1:1.</p></div>
@@ -842,19 +884,30 @@
                       <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert size={20}/> Kelola Akses Admin Sistem</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {admins.filter(a => a.id !== 'admin1').map(admin => (
-                          <div key={admin.id} className={`flex items-center justify-between p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-                                {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User size={20} className="text-slate-400" />}
-                              </div>
-                              <div>
-                                <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                          <div key={admin.id} className={`flex flex-col p-4 rounded-xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+                                  {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User size={20} className="text-slate-400" />}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-sm text-slate-800 dark:text-slate-100">{admin.name}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                                </div>
                               </div>
                             </div>
-                            <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
-                              {admin.status === 'Aktif' ? <ToggleRight size={20}/> : <ToggleLeft size={20}/>}
-                            </button>
+                            
+                            <div className="flex items-center gap-2 border-t border-slate-200 dark:border-slate-700 pt-3">
+                              {/* TOMBOL EDIT ADMIN LAIN (MODAL) */}
+                              <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
+                                <UserCog size={16}/> Edit Profil
+                              </button>
+                              
+                              <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
+                                {admin.status === 'Aktif' ? 'Blokir' : 'Aktifkan'}
+                                {admin.status === 'Aktif' ? <ToggleRight size={16}/> : <ToggleLeft size={16}/>}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -884,6 +937,39 @@
               </div>
             )}
           </main>
+
+          {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 */}
+          {isTargetAdminModalOpen && targetAdmin && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl transition-colors relative">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog size={20}/> Edit {targetAdmin.role}</h3>
+                <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="relative w-16 h-16 rounded-full border-2 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
+                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
+                      <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer">
+                        <Camera size={16} className="text-white" />
+                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e, true)} className="hidden" />
+                      </label>
+                    </div>
+                    <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Ganti foto admin ini.</p></div>
+                  </div>
+                  
+                  <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Password</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">Batal</button>
+                    <button type="submit" className="flex-1 py-2 rounded-xl bg-indigo-600 text-white font-semibold shadow-lg hover:bg-indigo-700">Simpan Data</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
