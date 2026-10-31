@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MABUNET - Master Billing & Network</title>
   
-  <!-- PWA MANIFEST & ICON WEB MABUNET -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="./mabunetlogo.png" type="image/png">
@@ -52,7 +51,7 @@
       Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, 
       Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
       Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Power
+      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Power, Wallet
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -107,6 +106,7 @@
       const [isDarkMode, setIsDarkMode] = useState(true); 
       
       const [activeTab, setActiveTab] = useState('dashboard');
+      const [ledgerTab, setLedgerTab] = useState('Jurnal'); // STATE BARU UNTUK BILAH JURNAL
       const [editProfile, setEditProfile] = useState({});
       const [isEditingProfile, setIsEditingProfile] = useState(false); 
       
@@ -130,13 +130,12 @@
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
       
-      // FORM DATA ADA PPPOE_USER
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       
-      const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Operasional', description: '', notes: '', amount: '' });
+      // FORM KAS UPDATE KATEGORI DEFAULT: 'Belanja'
+      const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
 
-      // STATE CROPPER INTERAKTIF
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
       const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -192,6 +191,8 @@
           });
           const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // Urutkan pengeluaran berdasarkan tanggal terbaru
+            data.sort((a,b) => new Date(b.date) - new Date(a.date));
             setExpenses(data);
           });
           const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
@@ -226,7 +227,7 @@
       const handleSaveExpense = async (e) => {
         e.preventDefault();
         await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
-        writeLog(`Mencatat kas keluar: ${formatIDR(expenseForm.amount)} (${expenseForm.description})`);
+        writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
         setIsExpenseModalOpen(false);
       };
 
@@ -238,7 +239,13 @@
         }
       };
 
-      // FUNGSI ISOLIR/AKTIF MANUAL
+      const handleDeleteExpense = async (id) => {
+        if(confirm("Yakin hapus catatan pengeluaran ini?")) {
+          await deleteDoc(doc(db, 'expenses', id));
+          writeLog(`Menghapus data pengeluaran (ID: ${id})`);
+        }
+      };
+
       const toggleIsolirManual = async (cust) => {
         if(confirm(`Yakin ingin ${cust.status === 'Aktif' ? 'MENGISOLIR' : 'MENGAKTIFKAN'} internet pelanggan ${cust.name}?`)) {
           const newStatus = cust.status === 'Aktif' ? 'Non-Aktif' : 'Aktif';
@@ -305,7 +312,6 @@
         } catch (err) { setLoginError(err.message || 'Verifikasi Sidik Jari gagal.'); } finally { setIsScanning(false); }
       };
 
-      // --- LOGIC CROP PHOTO ---
       const handlePhotoUploadInit = (e, isTargetAdmin = false) => {
         const file = e.target.files[0];
         if (file) {
@@ -315,7 +321,7 @@
           };
           reader.readAsDataURL(file);
         }
-        e.target.value = null; // reset
+        e.target.value = null; 
       };
 
       const handleCropDragStart = (e) => {
@@ -341,7 +347,6 @@
           canvas.width = 400; canvas.height = 400;
           const ctx = canvas.getContext('2d');
           
-          // Kalkulasi Native Zoom dan Pan
           const minDim = Math.min(img.width, img.height);
           const scale = (400 / minDim) * cropState.zoom;
           const scaledW = img.width * scale;
@@ -364,7 +369,6 @@
         };
         img.src = cropState.src;
       };
-      // --- END LOGIC CROP PHOTO ---
 
       const handleSaveProfile = async (e) => {
         e.preventDefault();
@@ -433,14 +437,28 @@
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
+      // ---- KALKULASI DATA GLOBAL ----
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       
       const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const totalExpenseAmount = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const netProfit = actualPaidRevenue - totalExpenseAmount;
+      
+      // LOGIKA BUKU KAS JURNAL & FAM
+      const currentMonthExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
+      
+      const jurnalExpenses = currentMonthExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category));
+      const famExpenses = currentMonthExpenses.filter(e => e.category === 'Fam');
+      
+      const totalJurnal = jurnalExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const totalFam = famExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const totalExpenseAmount = totalJurnal + totalFam; // Total pengeluaran keseluruhan
+      
+      const netProfit = actualPaidRevenue - totalExpenseAmount; // Sisa Kas Bersih (Total Uang)
+      
+      // Data untuk ditampilkan di tabel ledger sesuai tab yang aktif
+      const displayedExpenses = ledgerTab === 'Jurnal' ? jurnalExpenses : famExpenses;
       
       const chartData = [
         { name: 'Potensi', Rp: totalPotentialRevenue },
@@ -723,7 +741,7 @@
                           <th className="py-2 px-2 md:py-3 md:px-4 w-32 md:w-48">Pelanggan</th>
                           <th className="py-2 px-2 md:py-3 md:px-4 w-24 md:w-32">Paket</th>
                           {MONTHS.map((m, i) => <th key={i} className="py-2 px-1 md:py-3 md:px-0 text-center w-6 md:w-8 text-[8px] md:text-[10px] uppercase tracking-wider">{m.substring(0,3)}</th>)}
-                          <th className="py-2 px-2 md:py-3 md:px-4 text-left md:text-right w-24 md:w-48">Opsi & Print</th>
+                          <th className="py-2 px-2 md:py-3 md:px-4 text-left md:text-right w-32 md:w-56">Opsi & Print</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -753,11 +771,9 @@
                             })}
                             
                             <td className="py-2 px-2 md:py-3 md:px-4 text-left md:text-right space-x-0.5 md:space-x-1 whitespace-nowrap">
-                              {/* TOMBOL ISOLIR MANUAL */}
                               <button onClick={() => toggleIsolirManual(cust)} className={`p-1 md:p-2 shadow-sm rounded ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
                                 <Power size={14} />
                               </button>
-                              
                               <button onClick={() => triggerPrint(cust)} className="p-1 md:p-2 bg-slate-100 dark:bg-slate-800 rounded hover:text-indigo-500 text-slate-400 shadow-sm" title="Print Struk"><Printer size={14} /></button>
                               <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1 md:p-2 hover:text-emerald-500 text-slate-400" title="Kirim WA"><FileText size={14} /></button>
                               <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1 md:p-2 hover:text-indigo-500 text-slate-400" title="Edit"><Edit3 size={14} /></button>
@@ -772,28 +788,72 @@
               </div>
             )}
 
+            {/* TAB BUKU KAS (DIPERBARUI DENGAN JURNAL & JURNAL FAM) */}
             {activeTab === 'ledger' && (
               <div className="space-y-6">
-                <div className="flex justify-between bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors">
-                  <h3 className="text-lg font-bold">Buku Kas Pengeluaran</h3>
-                  <div className="flex gap-2">
-                    <button onClick={() => exportCSV('expenses')} className="px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-lg hover:bg-emerald-700 flex items-center gap-2"><Download size={16}/> <span className="hidden sm:inline">Export</span></button>
-                    <button onClick={() => setIsExpenseModalOpen(true)} className="px-4 py-2 bg-rose-600 rounded-xl text-white text-sm font-semibold flex gap-2 shadow-lg hover:bg-rose-700"><Plus size={16}/> <span className="hidden sm:inline">Catat Kas</span></button>
+                
+                {/* 4 PANEL RINGKASAN AKUMULASI */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                    <p className="text-[10px] uppercase font-bold text-slate-500">Pemasukan Bulan Ini</p>
+                    <h3 className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{formatIDR(actualPaidRevenue)}</h3>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                    <p className="text-[10px] uppercase font-bold text-slate-500">Total Keluar (Jurnal Umum)</p>
+                    <h3 className="text-xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">{formatIDR(totalJurnal)}</h3>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+                    <p className="text-[10px] uppercase font-bold text-slate-500">Total Keluar (Jurnal Fam)</p>
+                    <h3 className="text-xl font-extrabold text-rose-600 dark:text-rose-400 mt-1">{formatIDR(totalFam)}</h3>
+                  </div>
+                  <div className={`border p-4 rounded-2xl shadow-sm ${netProfit >= 0 ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}`}>
+                    <p className={`text-[10px] uppercase font-bold flex items-center gap-1 ${netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}><Wallet size={12}/> Total Uang (Sisa Kas)</p>
+                    <h3 className={`text-xl font-extrabold mt-1 ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-colors">
-                  <table className="w-full text-left text-sm min-w-[700px]">
-                    <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800"><tr><th className="py-3 px-4">Tanggal</th><th className="py-3 px-4">Uraian</th><th className="py-3 px-4">Catatan Manual</th><th className="py-3 px-4">Admin</th><th className="py-3 px-4">Nominal</th></tr></thead>
+
+                {/* HEADER & TOMBOL AKSI */}
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors">
+                  <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 w-full sm:w-auto">
+                    <button onClick={() => setLedgerTab('Jurnal')} className={`px-4 py-2 text-sm transition-all ${ledgerTab === 'Jurnal' ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-slate-700'}`}>Jurnal Umum</button>
+                    <button onClick={() => setLedgerTab('Jurnal Fam')} className={`px-4 py-2 text-sm transition-all ${ledgerTab === 'Jurnal Fam' ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-slate-700'}`}>Jurnal Fam</button>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => exportCSV('expenses')} className="px-3 py-2 bg-emerald-600 rounded-xl text-white text-xs font-semibold shadow-lg hover:bg-emerald-700 flex items-center gap-2"><Download size={14}/> <span className="hidden sm:inline">Export</span></button>
+                    <button onClick={() => { setExpenseForm({...expenseForm, category: 'Belanja'}); setIsExpenseModalOpen(true); }} className="px-3 py-2 bg-rose-600 rounded-xl text-white text-xs font-semibold flex gap-2 shadow-lg hover:bg-rose-700"><Plus size={14}/> <span className="hidden sm:inline">Catat Kas</span></button>
+                  </div>
+                </div>
+                
+                {/* TABEL BUKU KAS YANG AKTIF */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
+                  <table className="w-full text-left text-xs md:text-sm min-w-[700px]">
+                    <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                      <tr>
+                        <th className="py-3 px-4">Tanggal</th>
+                        <th className="py-3 px-4">Kategori & Uraian</th>
+                        <th className="py-3 px-4">Catatan</th>
+                        <th className="py-3 px-4">Admin</th>
+                        <th className="py-3 px-4 text-right">Nominal</th>
+                        <th className="py-3 px-4 text-center w-16">Hapus</th>
+                      </tr>
+                    </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {expenses.filter(e => e.date.startsWith(currentPeriodKey)).map(exp => (
-                        <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                          <td className="py-3 px-4">{exp.date}</td>
-                          <td className="py-3 px-4 font-medium"><span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span>{exp.description}</td>
-                          <td className="py-3 px-4 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
-                          <td className="py-3 px-4 text-xs">{exp.admin}</td>
-                          <td className="py-3 px-4 font-bold text-rose-600 dark:text-rose-400">{formatIDR(exp.amount)}</td>
-                        </tr>
-                      ))}
+                      {displayedExpenses.length === 0 ? (
+                        <tr><td colSpan="6" className="text-center py-8 text-slate-400">Belum ada pengeluaran di {ledgerTab} bulan ini.</td></tr>
+                      ) : (
+                        displayedExpenses.map(exp => (
+                          <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-4">{exp.date}</td>
+                            <td className="py-3 px-4 font-medium"><span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span>{exp.description}</td>
+                            <td className="py-3 px-4 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
+                            <td className="py-3 px-4 text-xs">{exp.admin}</td>
+                            <td className="py-3 px-4 font-bold text-rose-600 dark:text-rose-400 text-right">{formatIDR(exp.amount)}</td>
+                            <td className="py-3 px-4 text-center">
+                              <button onClick={() => handleDeleteExpense(exp.id)} className="p-1 text-slate-400 hover:text-rose-500 transition-colors" title="Hapus Pengeluaran"><Trash2 size={14}/></button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1055,7 +1115,18 @@
                 <h3 className="text-lg font-bold mb-4">Catat Kas Keluar</h3>
                 <form onSubmit={handleSaveExpense} className="space-y-4">
                   <div><label className="block text-xs font-semibold mb-1">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
-                  <div><label className="block text-xs font-semibold mb-1">Kategori</label><select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none"><option>Operasional</option><option>Gaji</option><option>Alat/Material</option><option>Lainnya</option></select></div>
+                  
+                  {/* KATEGORI JURNAL DIPERBARUI */}
+                  <div>
+                    <label className="block text-xs font-semibold mb-1">Kategori</label>
+                    <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none">
+                      <option>Belanja</option>
+                      <option>Perbaikan/Pemasangan</option>
+                      <option>Operasional</option>
+                      <option>Fam</option>
+                    </select>
+                  </div>
+                  
                   <div><label className="block text-xs font-semibold mb-1">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
                   <div><label className="block text-xs font-semibold mb-1">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
                   <div className="flex gap-3 pt-2">
