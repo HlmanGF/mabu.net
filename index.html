@@ -26,6 +26,8 @@
     .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    
     @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
     .scanner-line { position: absolute; width: 100%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80; animation: scan 1.5s linear infinite; }
     
@@ -51,7 +53,7 @@
       Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, 
       Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
       Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Power, Wallet
+      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Power, Wallet, Search
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -117,6 +119,8 @@
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
+      
+      const [dueSearchTerm, setDueSearchTerm] = useState(''); // State pencarian tagihan belum lunas
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
@@ -439,6 +443,11 @@
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       
+      const filteredDueCustomers = dueCustomers.filter(c => 
+        (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || 
+        (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase())
+      );
+      
       const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
@@ -454,14 +463,6 @@
       const netProfit = actualPaidRevenue - totalExpenseAmount; 
       
       const displayedExpenses = ledgerTab === 'Jurnal' ? jurnalExpenses : famExpenses;
-      
-      const chartData = [
-        { name: 'Potensi', Rp: totalPotentialRevenue },
-        { name: 'Masuk', Rp: actualPaidRevenue },
-        { name: 'Keluar', Rp: totalExpenseAmount },
-        { name: 'Net', Rp: netProfit }
-      ];
-      const maxChartVal = Math.max(...chartData.map(d => Math.abs(d.Rp))) || 1;
 
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -551,19 +552,19 @@
             </div>
           )}
 
-          {/* TOP NAVIGATION BAR FULL RESPONSIVE (TANPA SIDEBAR) */}
-          <header className="fixed top-0 inset-x-0 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-4 md:px-8 shadow-sm dark:shadow-lg transition-colors">
+          {/* TOP NAVIGATION BAR FULL RESPONSIVE */}
+          <header className="fixed top-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-4 md:px-6 shadow-sm transition-colors">
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-1/4">
               <img src="./mabunetlogo.png" alt="Mabunet" className="w-10 h-10 object-contain drop-shadow-md" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
               <div>
                 <h2 className="font-bold text-sm md:text-base leading-tight text-slate-800 dark:text-slate-200">MABUNET</h2>
-                <p className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 uppercase font-bold">{currentUser.role} ({currentUser.name})</p>
+                <p className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 uppercase font-bold hidden sm:block">{currentUser.role}</p>
               </div>
             </div>
 
             {/* Menu Navigasi Tengah / Atas */}
-            <nav className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <nav className="hidden lg:flex flex-1 justify-center items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
                 <LayoutDashboard className="w-4 h-4" /> Dashboard
               </button>
@@ -578,23 +579,34 @@
               </button>
             </nav>
 
-            {/* Tombol Kanan (Theme, Status Server, Logout) */}
-            <div className="flex items-center gap-3">
-              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-500">
+            {/* Tombol Kanan (Profil Admin, Theme, Status Server, Logout) */}
+            <div className="flex items-center justify-end gap-3 w-1/4">
+              <div className="hidden md:flex items-center gap-2 mr-1">
+                <div className="flex flex-col text-right">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">{currentUser.name}</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{currentUser.username}</span>
+                </div>
+                {currentUser.photo ? (
+                  <img src={currentUser.photo} className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-600" />
+                ) : (
+                  <User className="w-9 h-9 p-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500" />
+                )}
+              </div>
+              <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-500 ml-2 border border-slate-200 dark:border-slate-700">
                 {db ? <Server className="w-4 h-4 text-emerald-500" /> : <Server className="w-4 h-4 text-rose-500 animate-pulse" />}
-                <span>{db ? 'Cloud Terhubung' : 'Offline'}</span>
+                <span>{db ? 'Cloud' : 'Offline'}</span>
               </div>
               <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-slate-500 hover:text-indigo-500 transition-colors">
                 {isDarkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}
               </button>
               <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 text-xs md:text-sm font-bold transition-colors">
-                <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Keluar</span>
+                <LogOut className="w-4 h-4"/>
               </button>
             </div>
           </header>
 
           {/* Menu Mobile (Bawah khusus layar HP kecil) */}
-          <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 shadow-lg">
+          <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
             <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
               <LayoutDashboard className="w-5 h-5" />
               <span className="text-[10px] mt-0.5">Home</span>
@@ -613,91 +625,82 @@
             </button>
           </nav>
 
-          {/* KONTEN UTAMA (Menyesuaikan ukuran device penuh, max-width diatur agar rapi di layar lebar PC/Laptop/Tablet) */}
-          <main className="flex-1 w-full max-w-7xl mx-auto pt-24 pb-24 md:pb-12 px-4 md:px-8 space-y-6 md:space-y-8">
+          {/* KONTEN UTAMA DIBATASI 1600px UNTUK LAYAR PC/TABLET */}
+          <main className="flex-1 w-full max-w-[1600px] mx-auto pt-24 pb-24 lg:pb-12 px-2 sm:px-6 space-y-6 md:space-y-8">
             
-            {activeTab !== 'settings' && (
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                <div className="flex items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
-                  <h2 className="text-xl md:text-2xl font-bold">Periode Aktif</h2>
-                  <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
-                    {alarmEnabled ? <Volume2 className="w-4 h-4 md:w-5 md:h-5"/> : <VolumeX className="w-4 h-4 md:w-5 md:h-5"/>} <span className="hidden sm:inline">Alarm</span> {alarmEnabled ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 w-full lg:w-auto">
-                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="w-full lg:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-full lg:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                </div>
-              </div>
-            )}
-
+            {/* DASHBOARD TAB (LEBAR KHUSUS DIPERKECIL MENJADI max-w-5xl) */}
             {activeTab === 'dashboard' && (
-              <div className="space-y-6 md:space-y-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-3xl md:text-4xl font-extrabold mt-1 md:mt-2">{customers.length}</h3><p className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mt-2">{activeCustomersList.length} Aktif</p></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl md:text-3xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
+              <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 px-2 sm:px-0">
+                
+                {/* Periode Aktif khusus Dashboard */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
+                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-2 px-3 py-1.5 md:py-2 rounded-lg text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
+                      {alarmEnabled ? <Volume2 className="w-4 h-4"/> : <VolumeX className="w-4 h-4"/>} Alarm {alarmEnabled ? 'ON' : 'OFF'}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                  </div>
                 </div>
 
-                <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl transition-colors">
-                  <h3 className="font-bold flex items-center gap-2 mb-6 text-indigo-600 dark:text-indigo-400 text-lg md:text-xl"><TrendingUp className="w-5 h-5 md:w-6 md:h-6"/> Grafik Keuangan Bulan Ini</h3>
-                  <div className="flex items-end h-64 md:h-80 gap-6 pt-4 border-b border-slate-200 dark:border-slate-800 relative">
-                    {chartData.map((data, index) => {
-                       const height = Math.abs(data.Rp) / maxChartVal * 100;
-                       const isNegative = data.Rp < 0;
-                       const color = index === 2 ? 'bg-rose-500' : index === 3 ? (isNegative ? 'bg-rose-500' : 'bg-indigo-500') : 'bg-emerald-500';
-                       
-                       return (
-                         <div key={index} className="flex-1 flex flex-col justify-end items-center group relative h-full">
-                           <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[11px] md:text-sm font-bold py-1 md:py-1.5 px-3 md:px-4 rounded pointer-events-none z-10 whitespace-nowrap shadow-lg">
-                             {formatIDR(data.Rp)}
-                           </div>
-                           <div className={`w-full max-w-[80px] md:max-w-[120px] ${color} rounded-t-md transition-all duration-500 hover:brightness-110`} style={{ height: `${height}%`, minHeight: '4px' }}></div>
-                           <div className="absolute -bottom-8 text-xs md:text-sm font-semibold text-slate-500 text-center w-full truncate">{data.name}</div>
-                         </div>
-                       )
-                    })}
-                  </div>
-                  <div className="mt-10"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-3xl font-extrabold mt-1 md:mt-2">{customers.length}</h3><p className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mt-2">{activeCustomersList.length} Aktif</p></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
                 </div>
 
                 {customersDueToday.length > 0 && (
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/50 p-5 md:p-6 rounded-2xl shadow-[0_4px_20px_rgba(244,63,94,0.1)] dark:shadow-[0_0_20px_rgba(244,63,94,0.2)] transition-colors">
-                    <div className="flex items-center gap-4 md:gap-6">
-                      <div className="p-3 md:p-4 bg-rose-200 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full animate-ring"><BellRing className="w-7 h-7 md:w-8 md:h-8"/></div>
-                      <div><h3 className="text-lg md:text-xl font-bold text-rose-700 dark:text-rose-400">Peringatan Jatuh Tempo! (Tgl {todayDay})</h3><p className="text-sm md:text-base text-slate-600 dark:text-slate-300 mt-1">Ada {customersDueToday.length} pelanggan yang harus ditagih hari ini.</p></div>
+                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/50 p-5 md:p-6 rounded-2xl shadow-[0_4px_20px_rgba(244,63,94,0.1)] transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-rose-200 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full animate-ring"><BellRing className="w-6 h-6"/></div>
+                      <div><h3 className="text-lg font-bold text-rose-700 dark:text-rose-400">Peringatan Jatuh Tempo! (Tgl {todayDay})</h3><p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Ada {customersDueToday.length} pelanggan yang harus ditagih hari ini.</p></div>
                     </div>
                   </div>
                 )}
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-colors">
-                  <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-800"><h3 className="font-bold flex items-center gap-2 text-base md:text-lg"><Bell className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3></div>
-                  <div className="overflow-x-auto">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
+                  {/* Bilah pencarian ini dibuat Sticky (menempel saat di-scroll ke bawah) */}
+                  <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg p-4 md:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                    <h3 className="font-bold flex items-center gap-2 text-base md:text-lg"><Bell className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3>
+                    <div className="relative w-full sm:w-72">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                      <input type="text" placeholder="Cari Pelanggan/Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[60vh] overflow-y-auto custom-scrollbar relative">
                     <table className="w-full text-left text-xs md:text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
-                      <thead>
+                      <thead className="sticky top-0 z-20 shadow-sm">
                         <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
-                          <th className="py-2.5 px-3 md:py-4 md:px-6">Pelanggan</th>
-                          <th className="py-2.5 px-3 md:py-4 md:px-6">Tagihan</th>
-                          <th className="py-2.5 px-3 md:py-4 md:px-6">Jatuh Tempo</th>
-                          <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right">Aksi</th>
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 bg-slate-50 dark:bg-slate-950">Pelanggan</th>
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 bg-slate-50 dark:bg-slate-950">Tagihan</th>
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 bg-slate-50 dark:bg-slate-950">Jatuh Tempo</th>
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right bg-slate-50 dark:bg-slate-950">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {dueCustomers.map(cust => (
-                          <tr key={cust.id} className={cust.dueDate === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6">
-                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
-                              <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-0.5 md:mt-1">Blok {cust.block}</div>
-                            </td>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
-                            <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right space-y-1.5 md:space-y-0 md:space-x-3 flex flex-col md:flex-row md:justify-end">
-                              <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
-                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
-                            </td>
-                          </tr>
-                        ))}
+                        {filteredDueCustomers.length === 0 ? (
+                          <tr><td colSpan="4" className="text-center py-6 text-slate-500 text-sm">Tidak ada tagihan yang cocok dengan pencarian.</td></tr>
+                        ) : (
+                          filteredDueCustomers.map(cust => (
+                            <tr key={cust.id} className={cust.dueDate === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
+                              <td className="py-2.5 px-3 md:py-4 md:px-6">
+                                <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
+                                <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-0.5 md:mt-1">Blok {cust.block}</div>
+                              </td>
+                              <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
+                              <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
+                              <td className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right space-y-1.5 md:space-y-0 md:space-x-3 flex flex-col md:flex-row md:justify-end">
+                                <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
+                                <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -705,81 +708,115 @@
               </div>
             )}
 
+            {/* PELANGGAN TAB (TETAP MENGGUNAKAN LEBAR FULL HINGGA 1600px AGAR TABEL TIDAK TERPOTONG) */}
             {activeTab === 'customers' && (
-              <div className="space-y-6 md:space-y-8">
-                <div className="flex flex-col md:flex-row gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  <div className="flex flex-col sm:flex-row gap-4 w-full">
-                    <input type="text" placeholder="Cari Nama/Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base flex-1 text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
-                    <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+              <div className="space-y-6 md:space-y-8 px-2 sm:px-0">
+                
+                {/* BAR GABUNGAN: PERIODE AKTIF + PENCARIAN (SATU BARIS DI PC) */}
+                <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                  
+                  {/* Grup 1: Periode Aktif */}
+                  <div className="flex flex-wrap items-center gap-2 lg:pr-4 lg:border-r border-slate-200 dark:border-slate-700 shrink-0">
+                    <h2 className="text-sm font-bold mr-1 hidden xl:block">Periode:</h2>
+                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
+                      {alarmEnabled ? <Volume2 className="w-3.5 h-3.5"/> : <VolumeX className="w-3.5 h-3.5"/>} Alarm
+                    </button>
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
-                  <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
-                    <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none px-4 py-2.5 md:py-3 bg-emerald-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-2" title="Download Excel"><Download className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none px-4 py-2.5 md:py-3 bg-indigo-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Tambah</span></button>
+
+                  {/* Grup 2: Pencarian & Filter (Lebih Lentur/Memanjang Otomatis) */}
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                      <input type="text" placeholder="Cari Nama atau Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
+                    </div>
+                    <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                  </div>
+
+                  {/* Grup 3: Tombol Aksi */}
+                  <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <button onClick={() => exportCSV('customers')} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-emerald-700 flex items-center justify-center gap-2" title="Download Excel"><Download className="w-4 h-4"/> <span className="inline">Export</span></button>
+                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4"/> <span className="inline">Tambah</span></button>
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden">
                   {isDbLoading ? (
                     <div className="p-12 md:p-16 text-center text-slate-500 dark:text-slate-400 animate-pulse text-sm md:text-base">Memuat Data dari Cloud...</div>
                   ) : customers.length === 0 ? (
                     <div className="p-12 md:p-16 text-center text-rose-500 font-bold text-sm md:text-base">Data Pelanggan Kosong!</div>
                   ) : (
-                    <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-max md:min-w-[1300px]">
-                      <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                        <tr>
-                          <th className="py-2.5 px-3 md:py-4 md:px-6 w-32 md:w-56">Pelanggan</th>
-                          <th className="py-2.5 px-2 md:py-4 md:px-4 w-24 md:w-40">Paket</th>
-                          {MONTHS.map((m, i) => <th key={i} className="py-2.5 px-1 md:py-4 md:px-2 text-center w-6 md:w-10 text-[8px] md:text-xs uppercase tracking-wider">{m.substring(0,3)}</th>)}
-                          <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right w-32 md:w-64">Opsi & Print</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {filteredCustomers.map(cust => (
-                          <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-2 px-3 md:py-4 md:px-6">
-                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
-                              <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust.block}</div>
-                              <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
-                            </td>
-                            <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm">
-                              <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
-                              <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
-                              <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate}</span>
-                            </td>
-                            
-                            {MONTHS.map((m, i) => {
-                              const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
-                              const isPaid = cust.payments && cust.payments[monthKey];
-                              return (
-                                <td key={i} className="py-2 px-0 text-center">
-                                  <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-6 h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
-                                    {isPaid ? <Check className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} /> : <span className="text-[8px] md:text-xs">{i+1}</span>}
-                                  </button>
-                                </td>
-                              );
-                            })}
-                            
-                            <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
-                              <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                <Power className="w-4 h-4 md:w-5 md:h-5" />
-                              </button>
-                              <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
-                              <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
-                              <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                              <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                            </td>
+                    <div className="overflow-x-auto overflow-y-auto max-h-[75vh] custom-scrollbar">
+                      <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-max md:min-w-[1300px]">
+                        <thead className="sticky top-0 z-30 shadow-sm border-b border-slate-200 dark:border-slate-800">
+                          <tr>
+                            <th className="py-2.5 px-3 md:py-4 md:px-6 w-32 md:w-56 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Pelanggan</th>
+                            <th className="py-2.5 px-2 md:py-4 md:px-4 w-24 md:w-40 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Paket</th>
+                            {MONTHS.map((m, i) => <th key={i} className="py-2.5 px-1 md:py-4 md:px-2 text-center w-6 md:w-10 text-[8px] md:text-xs uppercase tracking-wider bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">{m.substring(0,3)}</th>)}
+                            <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right w-32 md:w-64 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Opsi & Print</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {filteredCustomers.map(cust => (
+                            <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-2 px-3 md:py-4 md:px-6">
+                                <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
+                                <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust.block}</div>
+                                <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
+                              </td>
+                              <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm">
+                                <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
+                                <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
+                                <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate}</span>
+                              </td>
+                              
+                              {MONTHS.map((m, i) => {
+                                const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
+                                const isPaid = cust.payments && cust.payments[monthKey];
+                                return (
+                                  <td key={i} className="py-2 px-0 text-center">
+                                    <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-6 h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                                      {isPaid ? <Check className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} /> : <span className="text-[8px] md:text-xs">{i+1}</span>}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                              
+                              <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
+                                <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
+                                  <Power className="w-4 h-4 md:w-5 md:h-5" />
+                                </button>
+                                <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
             )}
 
+            {/* LEDGER TAB */}
             {activeTab === 'ledger' && (
-              <div className="space-y-6 md:space-y-8">
+              <div className="space-y-6 md:space-y-8 px-2 sm:px-0 max-w-[1600px] mx-auto">
                 
+                {/* Periode Aktif khusus Ledger */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
                     <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan Bulan Ini</p>
@@ -845,8 +882,9 @@
               </div>
             )}
 
+            {/* SETTINGS TAB */}
             {activeTab === 'settings' && (
-              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 max-w-7xl mx-auto items-start">
+              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 mx-auto items-start px-2 sm:px-0">
                 
                 <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
@@ -993,7 +1031,7 @@
 
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors">
                       <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Activity className="w-5 h-5 md:w-6 md:h-6"/> Riwayat Aktivitas Sistem (Log)</h3>
-                      <div className="h-64 md:h-80 overflow-y-auto pr-2 md:pr-4">
+                      <div className="h-64 md:h-80 overflow-y-auto pr-2 md:pr-4 custom-scrollbar">
                         {auditLogs.length === 0 ? (
                           <p className="text-center text-slate-500 py-10 md:py-14 text-sm md:text-base">Belum ada aktivitas tercatat.</p>
                         ) : (
@@ -1019,7 +1057,7 @@
           {/* MODAL CROP PHOTO */}
           {cropState.isOpen && (
             <div className="fixed inset-0 z-[70] bg-slate-900/80 dark:bg-slate-950/90 flex flex-col items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Crop className="w-5 h-5 md:w-6 md:h-6"/> Atur Posisi Foto</h3>
                 
                 <div className="flex justify-center mb-6 md:mb-8">
@@ -1064,10 +1102,10 @@
             </div>
           )}
 
-          {/* MODAL PELANGGAN */}
+          {/* MODAL PELANGGAN - DIBUAT RESPONSIF MAX-HEIGHT 90VH DENGAN SCROLL */}
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
                 <form onSubmit={handleSaveCustomer} className="space-y-4 md:space-y-5">
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
@@ -1079,7 +1117,7 @@
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Paket</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6">
+                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
                     <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
                     <button type="submit" className="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-indigo-700 shadow-lg transition-colors">Simpan</button>
                   </div>
@@ -1088,10 +1126,10 @@
             </div>
           )}
 
-          {/* MODAL KAS KELUAR */}
+          {/* MODAL KAS KELUAR - RESPONSIVE SCROLL */}
           {isExpenseModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">Catat Kas Keluar</h3>
                 <form onSubmit={handleSaveExpense} className="space-y-4 md:space-y-5">
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
@@ -1108,7 +1146,7 @@
                   
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6">
+                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
                     <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
                     <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Catat Kas</button>
                   </div>
@@ -1117,10 +1155,10 @@
             </div>
           )}
 
-          {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 */}
+          {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 - RESPONSIVE SCROLL */}
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog className="w-5 h-5 md:w-6 md:h-6"/> Edit {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4 md:space-y-5">
                   <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6">
@@ -1140,7 +1178,7 @@
                   <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                   <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
 
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6">
+                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
                     <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2.5 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
                     <button type="submit" className="flex-1 py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-lg hover:bg-indigo-700 transition-colors">Simpan Data</button>
                   </div>
