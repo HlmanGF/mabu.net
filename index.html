@@ -138,6 +138,7 @@
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
 
+      // STATE KHUSUS BALLOON MENU DI HP
       const [mobileActionMenu, setMobileActionMenu] = useState(null);
 
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
@@ -678,17 +679,17 @@
                   </div>
                 )}
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl md:rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
-                  {/* Header Pencarian Statis, 1 Baris, Ringkas untuk semua device */}
-                  <div className="bg-slate-50/80 dark:bg-slate-900/80 p-2.5 md:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between gap-2 shadow-sm">
-                    <h3 className="font-bold flex items-center gap-1.5 md:gap-2 text-[11px] sm:text-sm md:text-lg truncate"><Bell className="w-3.5 h-3.5 md:w-5 md:h-5 text-rose-500 dark:text-rose-400 shrink-0"/> <span className="hidden sm:inline">Daftar Tagihan</span><span className="sm:hidden">Tagihan</span> Belum Lunas ({dueCustomers.length})</h3>
-                    <div className="relative w-[140px] sm:w-64 shrink-0">
-                      <div className="absolute inset-y-0 left-0 pl-2 md:pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
-                      <input type="text" placeholder="Cari..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md md:rounded-xl pl-7 md:pl-9 pr-2 py-1 md:py-2 text-[10px] md:text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
+                  {/* Bilah pencarian ini dibuat Sticky (menempel saat di-scroll ke bawah) */}
+                  <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg p-3 md:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <h3 className="font-bold flex items-center gap-2 text-sm md:text-lg"><Bell className="w-4 h-4 md:w-5 md:h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3>
+                    <div className="relative w-full sm:w-72">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-3.5 h-3.5 md:w-4 md:h-4" /></div>
+                      <input type="text" placeholder="Cari Pelanggan/Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg md:rounded-xl pl-8 pr-4 py-1.5 md:py-2 text-[11px] md:text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto max-h-[50vh] md:max-h-[60vh] overflow-y-auto custom-scrollbar relative">
+                  <div className="overflow-x-auto max-h-[60vh] overflow-y-auto custom-scrollbar relative">
                     <table className="w-full text-left text-xs md:text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
                       <thead className="sticky top-0 z-20 shadow-sm">
                         <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
@@ -1190,4 +1191,80 @@
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
                   <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsCustomerModalOpen
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-indigo-700 shadow-lg transition-colors">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL KAS KELUAR - RESPONSIVE SCROLL */}
+          {isExpenseModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">Catat Kas Keluar</h3>
+                <form onSubmit={handleSaveExpense} className="space-y-4 md:space-y-5">
+                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                  
+                  <div>
+                    <label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Kategori</label>
+                    <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors">
+                      <option>Belanja</option>
+                      <option>Perbaikan/Pemasangan</option>
+                      <option>Operasional</option>
+                      <option>Fam</option>
+                    </select>
+                  </div>
+                  
+                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Catat Kas</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 - RESPONSIVE SCROLL */}
+          {isTargetAdminModalOpen && targetAdmin && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog className="w-5 h-5 md:w-6 md:h-6"/> Edit {targetAdmin.role}</h3>
+                <form onSubmit={handleSaveTargetAdmin} className="space-y-4 md:space-y-5">
+                  <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6">
+                    <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 md:border-4 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group shrink-0">
+                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 md:w-8 md:h-8 text-slate-400" />}
+                      <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                        <Camera className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
+                      </label>
+                    </div>
+                    <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
+                  </div>
+                  
+                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Username Login</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Password</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+
+                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
+                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2.5 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-lg hover:bg-indigo-700 transition-colors">Simpan Data</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
