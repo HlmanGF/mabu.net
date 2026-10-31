@@ -120,7 +120,7 @@
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
       
-      const [dueSearchTerm, setDueSearchTerm] = useState(''); // State pencarian tagihan belum lunas
+      const [dueSearchTerm, setDueSearchTerm] = useState(''); 
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
@@ -137,6 +137,9 @@
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
+
+      // STATE KHUSUS BALLOON MENU DI HP
+      const [mobileActionMenu, setMobileActionMenu] = useState(null);
 
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
@@ -606,7 +609,7 @@
           </header>
 
           {/* Menu Mobile (Bawah khusus layar HP kecil) */}
-          <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
+          <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-40 flex items-center justify-around px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
             <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
               <LayoutDashboard className="w-5 h-5" />
               <span className="text-[10px] mt-0.5">Home</span>
@@ -708,7 +711,7 @@
               </div>
             )}
 
-            {/* PELANGGAN TAB (TETAP MENGGUNAKAN LEBAR FULL HINGGA 1600px AGAR TABEL TIDAK TERPOTONG) */}
+            {/* PELANGGAN TAB */}
             {activeTab === 'customers' && (
               <div className="space-y-6 md:space-y-8 px-2 sm:px-0">
                 
@@ -725,7 +728,7 @@
                     <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
 
-                  {/* Grup 2: Pencarian & Filter (Lebih Lentur/Memanjang Otomatis) */}
+                  {/* Grup 2: Pencarian & Filter */}
                   <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
                     <div className="relative flex-1">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
@@ -783,14 +786,26 @@
                                 );
                               })}
                               
-                              <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
-                                <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                  <Power className="w-4 h-4 md:w-5 md:h-5" />
-                                </button>
-                                <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                              <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right whitespace-nowrap">
+                                
+                                {/* UI DESKTOP/TABLET: Tampilkan 5 Tombol Penuh */}
+                                <div className="hidden md:flex justify-end space-x-1 md:space-x-1.5">
+                                  <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
+                                    <Power className="w-4 h-4 md:w-5 md:h-5" />
+                                  </button>
+                                  <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                </div>
+                                
+                                {/* UI MOBILE/HP: Tampilkan hanya 1 Ikon Gear */}
+                                <div className="md:hidden flex justify-start">
+                                  <button onClick={() => setMobileActionMenu(cust)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 active:scale-95 transition-transform" title="Menu Opsi">
+                                    <Settings className="w-4 h-4" />
+                                  </button>
+                                </div>
+
                               </td>
                             </tr>
                           ))}
@@ -1053,6 +1068,41 @@
               </div>
             )}
           </main>
+
+          {/* MODAL OPSI MOBILE (BALLOON MENU UNTUK TOMBOL AKSI) */}
+          {mobileActionMenu && (
+            <div className="fixed inset-0 z-[80] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4 md:hidden" onClick={() => setMobileActionMenu(null)}>
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-64 shadow-2xl flex flex-col gap-2 border border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
+                
+                <div className="text-center mb-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <p className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{mobileActionMenu.name}</p>
+                  <p className="text-[10px] text-slate-500 uppercase mt-0.5 font-bold">Pilih Aksi</p>
+                </div>
+                
+                <button onClick={() => { toggleIsolirManual(mobileActionMenu); setMobileActionMenu(null); }} className={`flex items-center gap-3 p-3 rounded-xl text-sm font-semibold transition-colors ${mobileActionMenu.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-slate-700' : 'bg-rose-500 text-white hover:bg-emerald-500'}`}>
+                  <Power className="w-4 h-4" /> {mobileActionMenu.status === 'Aktif' ? 'Isolir Manual' : 'Aktifkan Internet'}
+                </button>
+                
+                <button onClick={() => { triggerPrint(mobileActionMenu); setMobileActionMenu(null); }} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-500 text-sm font-semibold transition-colors">
+                  <Printer className="w-4 h-4" /> Print Struk
+                </button>
+                
+                <button onClick={() => { sendWAReceipt(mobileActionMenu, currentPeriodKey); setMobileActionMenu(null); }} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-emerald-500 text-sm font-semibold transition-colors">
+                  <FileText className="w-4 h-4" /> Kirim WA Kuitansi
+                </button>
+                
+                <button onClick={() => { setEditingCustomer(mobileActionMenu); setFormData({ ...mobileActionMenu, pppoe_user: mobileActionMenu.pppoe_user || '' }); setIsCustomerModalOpen(true); setMobileActionMenu(null); }} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-indigo-500 text-sm font-semibold transition-colors">
+                  <Edit3 className="w-4 h-4" /> Edit Pelanggan
+                </button>
+                
+                <button onClick={() => { handleDeleteCustomer(mobileActionMenu.id); setMobileActionMenu(null); }} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-500 text-sm font-semibold transition-colors">
+                  <Trash2 className="w-4 h-4" /> Hapus Data
+                </button>
+
+                <button onClick={() => setMobileActionMenu(null)} className="mt-2 p-3 w-full border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-500 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Tutup</button>
+              </div>
+            </div>
+          )}
 
           {/* MODAL CROP PHOTO */}
           {cropState.isOpen && (
