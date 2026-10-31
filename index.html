@@ -18,6 +18,12 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <style>
+    /* Mengamankan agar body tidak pernah overlap/scroll horizontal ke samping */
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     .dark ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -434,7 +440,6 @@
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
-      // ---- KALKULASI DATA GLOBAL ----
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
@@ -621,7 +626,7 @@
             </div>
           </aside>
 
-          <main className="flex-1 w-full pt-20 pb-24 px-4 md:pt-10 md:pb-10 md:px-10 md:ml-20 overflow-y-auto space-y-6 md:space-y-8">
+          <main className="flex-1 w-full max-w-full overflow-hidden pt-20 pb-24 px-4 md:pt-10 md:pb-10 md:px-10 md:ml-20 space-y-6 md:space-y-8">
             
             {activeTab !== 'settings' && (
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
@@ -680,8 +685,8 @@
 
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-colors">
                   <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-800"><h3 className="font-bold flex items-center gap-2 text-base md:text-lg"><Bell className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3></div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs md:text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
+                  <div className="overflow-x-auto w-full">
+                    <table className="w-full text-left text-xs md:text-sm lg:text-base table-auto">
                       <thead>
                         <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
                           <th className="py-2.5 px-3 md:py-4 md:px-6">Pelanggan</th>
@@ -693,15 +698,15 @@
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {dueCustomers.map(cust => (
                           <tr key={cust.id} className={cust.dueDate === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6">
+                            <td className="py-2.5 px-3 md:py-4 md:px-6 break-words">
                               <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
                               <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-0.5 md:mt-1">Blok {cust.block}</div>
                             </td>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
-                            <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
+                            <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold whitespace-nowrap">{formatIDR(getPackage(cust.packageId).price)}</td>
+                            <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold whitespace-nowrap ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
                             <td className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right space-y-1.5 md:space-y-0 md:space-x-3 flex flex-col md:flex-row md:justify-end">
-                              <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
-                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
+                              <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors whitespace-nowrap">WA Tagih</button>
+                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap">Set Lunas</button>
                             </td>
                           </tr>
                         ))}
@@ -725,40 +730,41 @@
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto w-full shadow-xl transition-colors">
                   {isDbLoading ? (
                     <div className="p-12 md:p-16 text-center text-slate-500 dark:text-slate-400 animate-pulse text-sm md:text-base">Memuat Data dari Cloud...</div>
                   ) : customers.length === 0 ? (
                     <div className="p-12 md:p-16 text-center text-rose-500 font-bold text-sm md:text-base">Data Pelanggan Kosong!</div>
                   ) : (
-                    <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-max md:min-w-[1300px]">
+                    <table className="w-full text-left text-xs md:text-sm lg:text-base table-auto">
                       <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                         <tr>
-                          <th className="py-2.5 px-3 md:py-4 md:px-6 w-32 md:w-56">Pelanggan</th>
-                          <th className="py-2.5 px-2 md:py-4 md:px-4 w-24 md:w-40">Paket</th>
-                          {MONTHS.map((m, i) => <th key={i} className="py-2.5 px-1 md:py-4 md:px-2 text-center w-6 md:w-10 text-[8px] md:text-xs uppercase tracking-wider">{m.substring(0,3)}</th>)}
-                          <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right w-32 md:w-64">Opsi & Print</th>
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 w-auto">Pelanggan</th>
+                          <th className="py-2.5 px-2 md:py-4 md:px-4 w-auto">Paket</th>
+                          {MONTHS.map((m, i) => <th key={i} className="py-2.5 px-1 md:py-4 md:px-2 text-center text-[8px] md:text-xs uppercase tracking-wider hidden sm:table-cell">{m.substring(0,3)}</th>)}
+                          <th className="py-2.5 px-3 md:py-4 md:px-6 text-right w-auto whitespace-nowrap">Opsi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {filteredCustomers.map(cust => (
                           <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-2 px-3 md:py-4 md:px-6">
+                            <td className="py-2 px-3 md:py-4 md:px-6 break-words">
                               <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
                               <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust.block}</div>
                               <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
                             </td>
-                            <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm">
+                            <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm whitespace-nowrap">
                               <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
                               <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
                               <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate}</span>
                             </td>
                             
+                            {/* Di HP, bulan disembunyikan agar tabel tidak melebar, hanya muncul di PC/Tablet */}
                             {MONTHS.map((m, i) => {
                               const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
                               const isPaid = cust.payments && cust.payments[monthKey];
                               return (
-                                <td key={i} className="py-2 px-0 text-center">
+                                <td key={i} className="py-2 px-0 text-center hidden sm:table-cell">
                                   <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-6 h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                                     {isPaid ? <Check className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} /> : <span className="text-[8px] md:text-xs">{i+1}</span>}
                                   </button>
@@ -766,7 +772,7 @@
                               );
                             })}
                             
-                            <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
+                            <td className="py-2 px-3 md:py-4 md:px-6 text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
                               <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
                                 <Power className="w-4 h-4 md:w-5 md:h-5" />
                               </button>
@@ -779,30 +785,30 @@
                         ))}
                       </tbody>
                     </table>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
 
             {activeTab === 'ledger' && (
-              <div className="space-y-6 md:space-y-8">
+              <div className="space-y-6 md:space-y-8 w-full">
                 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
                     <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan Bulan Ini</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3>
+                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2 truncate">{formatIDR(actualPaidRevenue)}</h3>
                   </div>
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
                     <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Total Keluar (Jurnal)</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalJurnal)}</h3>
+                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2 truncate">{formatIDR(totalJurnal)}</h3>
                   </div>
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
                     <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Total Keluar (Fam)</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalFam)}</h3>
+                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2 truncate">{formatIDR(totalFam)}</h3>
                   </div>
                   <div className={`border p-4 md:p-6 rounded-2xl shadow-sm ${netProfit >= 0 ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}`}>
                     <p className={`text-[10px] md:text-xs uppercase font-bold flex items-center gap-1.5 ${netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}><Wallet className="w-3 h-3 md:w-4 md:h-4"/> Total Uang (Sisa Kas)</p>
-                    <h3 className={`text-xl md:text-2xl lg:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
+                    <h3 className={`text-xl md:text-2xl lg:text-3xl font-extrabold mt-1 md:mt-2 truncate ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
                   </div>
                 </div>
 
@@ -817,30 +823,30 @@
                   </div>
                 </div>
                 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
-                  <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-[700px] md:min-w-full">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto w-full shadow-xl transition-colors">
+                  <table className="w-full text-left text-xs md:text-sm lg:text-base table-auto">
                     <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                       <tr>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Tanggal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Kategori & Uraian</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Catatan</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Admin</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-right">Nominal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-16 md:w-24">Hapus</th>
+                        <th className="py-3 px-3 md:py-4 md:px-6 w-auto">Tanggal</th>
+                        <th className="py-3 px-3 md:py-4 md:px-6 w-full">Uraian</th>
+                        <th className="py-3 px-3 md:py-4 md:px-6 text-right whitespace-nowrap">Nominal</th>
+                        <th className="py-3 px-3 md:py-4 md:px-6 text-center w-16">Opsi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {displayedExpenses.length === 0 ? (
-                        <tr><td colSpan="6" className="text-center py-8 md:py-12 text-slate-400 text-sm md:text-base">Belum ada pengeluaran di {ledgerTab} bulan ini.</td></tr>
+                        <tr><td colSpan="4" className="text-center py-8 md:py-12 text-slate-400 text-sm md:text-base">Belum ada pengeluaran di {ledgerTab} bulan ini.</td></tr>
                       ) : (
                         displayedExpenses.map(exp => (
                           <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4 md:py-4 md:px-6 whitespace-nowrap">{exp.date}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span><span className="text-sm md:text-base">{exp.description}</span></td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-[10px] md:text-sm">{exp.admin}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-center">
+                            <td className="py-3 px-3 md:py-4 md:px-6 whitespace-nowrap">{exp.date}</td>
+                            <td className="py-3 px-3 md:py-4 md:px-6 break-words">
+                               <div className="font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span><span className="text-sm md:text-base text-slate-800 dark:text-slate-100">{exp.description}</span></div>
+                               {exp.notes && <div className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic mt-1">{exp.notes}</div>}
+                               <div className="text-[8px] md:text-[10px] text-slate-400 mt-1 uppercase">Opr: {exp.admin}</div>
+                            </td>
+                            <td className="py-3 px-3 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap align-top">{formatIDR(exp.amount)}</td>
+                            <td className="py-3 px-3 md:py-4 md:px-6 text-center align-top">
                               <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 md:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran"><Trash2 className="w-4 h-4 md:w-5 md:h-5"/></button>
                             </td>
                           </tr>
@@ -853,7 +859,7 @@
             )}
 
             {activeTab === 'settings' && (
-              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 max-w-7xl mx-auto items-start">
+              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full max-w-7xl mx-auto items-start">
                 
                 <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
@@ -867,29 +873,29 @@
                         <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                           {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />}
                         </div>
-                        <div>
-                          <p className="font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 leading-tight">{currentUser.name}</p>
-                          <p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-1 md:mt-2">{currentUser.role}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 leading-tight truncate">{currentUser.name}</p>
+                          <p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-1 md:mt-2 truncate">{currentUser.role}</p>
                         </div>
                       </div>
 
                       <div className="space-y-4 md:space-y-6">
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
                           <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Username Login</span>
-                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.username}</span>
+                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser.username}</span>
                         </div>
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3 relative">
                           <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Password</span>
                           <div className="flex justify-between items-center mt-0.5">
-                            <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
-                            <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5">
+                            <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest break-all">{showPassword ? currentUser.password : '••••••••'}</span>
+                            <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5 shrink-0 ml-2">
                               {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}
                             </button>
                           </div>
                         </div>
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
                           <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Email</span>
-                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.email || '-'}</span>
+                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser.email || '-'}</span>
                         </div>
                         {currentUser.id === 'admin1' && (
                           <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
@@ -917,7 +923,7 @@
                               <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, false)} className="hidden" />
                             </label>
                           </div>
-                          <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
+                          <div className="min-w-0"><p className="text-sm md:text-base font-semibold truncate">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">Pilih foto & atur posisi.</p></div>
                         </div>
                         
                         <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
@@ -964,7 +970,7 @@
                 </div>
                 
                 {currentUser.id === 'admin1' && (
-                  <div className="flex-1 w-full space-y-6 md:space-y-8">
+                  <div className="flex-1 w-full space-y-6 md:space-y-8 min-w-0">
                     
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors">
                       <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert className="w-5 h-5 md:w-6 md:h-6"/> Kelola Akses Admin Sistem</h3>
@@ -972,18 +978,18 @@
                         {admins.filter(a => a.id !== 'admin1').map(admin => (
                           <div key={admin.id} className={`flex flex-col p-4 md:p-5 rounded-2xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
                             <div className="flex items-center justify-between mb-4 md:mb-5">
-                              <div className="flex items-center gap-3 md:gap-4">
+                              <div className="flex items-center gap-3 md:gap-4 w-full">
                                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
                                   {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />}
                                 </div>
-                                <div>
-                                  <p className="font-bold text-sm md:text-base text-slate-800 dark:text-slate-100">{admin.name}</p>
-                                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-sm md:text-base text-slate-800 dark:text-slate-100 truncate">{admin.name}</p>
+                                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5 truncate">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-2 md:gap-3 border-t border-slate-200 dark:border-slate-700 pt-3 md:pt-4">
+                            <div className="flex items-center gap-2 md:gap-3 border-t border-slate-200 dark:border-slate-700 pt-3 md:pt-4 mt-auto">
                               <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-2 md:py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
                                 <UserCog className="w-4 h-4 md:w-5 md:h-5"/> Edit Profil
                               </button>
@@ -1006,9 +1012,9 @@
                         ) : (
                           <ul className="space-y-3 md:space-y-4">
                             {auditLogs.map((log) => (
-                              <li key={log.id} className="flex gap-3 md:gap-4 text-xs md:text-sm p-3 md:p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <div className="text-slate-400 w-24 md:w-28 shrink-0 text-[10px] md:text-xs font-mono">{log.dateStr}</div>
-                                <div><span className="font-bold text-indigo-600 dark:text-indigo-400">{log.admin}</span>: <span className="text-slate-700 dark:text-slate-300 ml-1">{log.action}</span></div>
+                              <li key={log.id} className="flex flex-col sm:flex-row gap-1 sm:gap-3 md:gap-4 text-xs md:text-sm p-3 md:p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <div className="text-slate-400 w-full sm:w-24 md:w-28 shrink-0 text-[10px] md:text-xs font-mono">{log.dateStr}</div>
+                                <div className="break-words"><span className="font-bold text-indigo-600 dark:text-indigo-400">{log.admin}</span>: <span className="text-slate-700 dark:text-slate-300 ml-1">{log.action}</span></div>
                               </li>
                             ))}
                           </ul>
@@ -1074,7 +1080,7 @@
           {/* MODAL PELANGGAN */}
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative overflow-y-auto max-h-[90vh]">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
                 <form onSubmit={handleSaveCustomer} className="space-y-4 md:space-y-5">
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
@@ -1127,7 +1133,7 @@
           {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 */}
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative overflow-y-auto max-h-[90vh]">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog className="w-5 h-5 md:w-6 md:h-6"/> Edit {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4 md:space-y-5">
                   <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6">
@@ -1138,7 +1144,7 @@
                         <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
                       </label>
                     </div>
-                    <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
+                    <div className="min-w-0"><p className="text-sm md:text-base font-semibold truncate">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">Pilih foto & atur posisi.</p></div>
                   </div>
                   
                   <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
