@@ -8,9 +8,19 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="./mabunetlogo.png" type="image/png">
-  <link rel="apple-touch-icon" href="./mabunetlogo.png">
-  <link rel="shortcut icon" href="./mabunetlogo.png">
   
+  <!-- SCRIPT PENGHANCUR CACHE PWA LAMA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for(let registration of registrations) {
+          registration.unregister();
+          console.log("Service Worker lama dihapus agar kode baru bisa jalan.");
+        }
+      });
+    }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { darkMode: 'class', theme: { extend: {} } }
@@ -24,10 +34,8 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-    .scanner-line { position: absolute; width: 100%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80; animation: scan 1.5s linear infinite; }
+    .scanner-line { position: absolute; width: 100%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80; animation: scan 1.5s linear infinite; }
     @media print {
       body * { visibility: hidden; }
       #print-receipt, #print-receipt * { visibility: visible; }
@@ -51,7 +59,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
       authDomain: "billing-mabunet.firebaseapp.com",
@@ -68,14 +75,9 @@
       db = getFirestore(app);
     } catch(e) { console.error("Gagal Firebase:", e); }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Error:', err));
-    }
-
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
-      { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
-      { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
+      { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
     ];
 
     const PACKAGES = [
@@ -124,7 +126,7 @@
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
       
-      const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
+      const [formData, setFormData] = useState({ name: '', block: 'Mabu', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
 
@@ -146,7 +148,7 @@
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
         try {
-          await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc });
+          await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser?.name || 'Sistem', action: actionDesc });
         } catch(e) {}
       };
 
@@ -172,18 +174,17 @@
           });
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => String(a.block || '').localeCompare(String(b.block || '')));
+            data.sort((a,b) => String(a?.block || '').localeCompare(String(b?.block || '')));
             setCustomers(data); setIsDbLoading(false);
           });
           const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // ANTI-CRASH: Amankan tanggal yang kosong
-            data.sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+            data.sort((a,b) => new Date(b?.date || 0) - new Date(a?.date || 0));
             setExpenses(data);
           });
           const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => (b.time || 0) - (a.time || 0)); 
+            data.sort((a,b) => (b?.time || 0) - (a?.time || 0)); 
             setAuditLogs(data);
           });
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); };
@@ -193,7 +194,8 @@
       const togglePayment = async (custId, monthKey) => {
         if (!db) return;
         const cust = customers.find(c => c.id === custId);
-        const isPaid = cust.payments && cust.payments[monthKey];
+        if(!cust) return;
+        const isPaid = cust?.payments?.[monthKey];
         await updateDoc(doc(db, 'customers', custId), { [`payments.${monthKey}`]: !isPaid });
         writeLog(isPaid ? `Membatalkan lunas tagihan: ${cust.name}` : `Menandai LUNAS tagihan: ${cust.name}`);
       };
@@ -212,7 +214,7 @@
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
-        await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
+        await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser?.name || 'Admin' });
         writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
         setIsExpenseModalOpen(false);
       };
@@ -221,7 +223,7 @@
         const cust = customers.find(c => c.id === id);
         if(confirm("Yakin hapus pelanggan ini?")) {
           await deleteDoc(doc(db, 'customers', id));
-          writeLog(`Menghapus pelanggan: ${cust.name}`);
+          writeLog(`Menghapus pelanggan: ${cust?.name}`);
         }
       };
 
@@ -318,7 +320,7 @@
         e.preventDefault();
         try {
           const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
-          if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
+          if (currentUser?.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
@@ -340,9 +342,9 @@
       const exportCSV = (type) => {
         let csv = '';
         if (type === 'customers') {
-          csv = 'Nama,Blok,Paket,Harga,Status\n'; customers.forEach(c => csv += `${c.name || ''},${c.block || ''},${getPackage(c.packageId).speed},${getPackage(c.packageId).price},${c.status || ''}\n`);
+          csv = 'Nama,Blok,Paket,Harga,Status\n'; customers.forEach(c => csv += `${c?.name || ''},${c?.block || ''},${getPackage(c?.packageId).speed},${getPackage(c?.packageId).price},${c?.status || ''}\n`);
         } else {
-          csv = 'Tanggal,Kategori,Uraian,Nominal,Admin\n'; expenses.forEach(e => csv += `${e.date || ''},${e.category || ''},${e.description || ''},${e.amount || 0},${e.admin || ''}\n`);
+          csv = 'Tanggal,Kategori,Uraian,Nominal,Admin\n'; expenses.forEach(e => csv += `${e?.date || ''},${e?.category || ''},${e?.description || ''},${e?.amount || 0},${e?.admin || ''}\n`);
         }
         const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MABUNET_${type}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
       };
@@ -350,40 +352,33 @@
       const triggerPrint = (cust) => { setPrintData(cust); setTimeout(() => { window.print(); setPrintData(null); }, 300); };
 
       const sendWAInvoice = (cust) => {
-        if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const pkg = getPackage(cust.packageId);
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name || ''}* (Blok ${cust.block || ''})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
-        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+        if (!cust?.phone) return alert("Nomor HP pelanggan belum diisi!");
+        const pkg = getPackage(cust?.packageId);
+        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust?.name || ''}* (Blok ${cust?.block || ''})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust?.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
+        window.open(`https://wa.me/${cleanPhone(cust?.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
 
       const sendWAReceipt = (cust, periodKey) => {
-        if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const pkg = getPackage(cust.packageId);
-        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name || ''}* (Blok ${cust.block || ''})\n\nTerima kasih, pembayaran internet untuk bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(pkg.price)}* telah kami terima dan berstatus *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
-        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+        if (!cust?.phone) return alert("Nomor HP pelanggan belum diisi!");
+        const pkg = getPackage(cust?.packageId);
+        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust?.name || ''}* (Blok ${cust?.block || ''})\n\nTerima kasih, pembayaran internet untuk bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(pkg.price)}* telah kami terima dan berstatus *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
+        window.open(`https://wa.me/${cleanPhone(cust?.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
       // ---- KALKULASI DATA GLOBAL (DIJAMIN ANTI-CRASH) ----
-      const activeCustomersList = customers.filter(c => (c.status || 'Aktif') === 'Aktif');
+      const activeCustomersList = customers.filter(c => (c?.status || 'Aktif') === 'Aktif');
+      const dueCustomers = activeCustomersList.filter(c => !c?.payments || !c?.payments[currentPeriodKey]).sort((a, b) => (Number(a?.dueDate) || 0) - (Number(b?.dueDate) || 0));
+      const customersDueToday = dueCustomers.filter(c => Number(c?.dueDate) === todayDay);
       
-      // Mengamankan nilai dueDate agar tidak NaN saat di sort
-      const dueCustomers = activeCustomersList
-        .filter(c => !c.payments || !c.payments[currentPeriodKey])
-        .sort((a, b) => (Number(a.dueDate) || 0) - (Number(b.dueDate) || 0));
-        
-      const customersDueToday = dueCustomers.filter(c => Number(c.dueDate) === todayDay);
+      const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + (getPackage(c?.packageId)?.price || 0), 0);
+      const actualPaidRevenue = activeCustomersList.filter(c => c?.payments?.[currentPeriodKey]).reduce((sum, c) => sum + (getPackage(c?.packageId)?.price || 0), 0);
       
-      const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + (getPackage(c.packageId).price || 0), 0);
-      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + (getPackage(c.packageId).price || 0), 0);
+      const currentMonthExpenses = expenses.filter(e => String(e?.date || '').startsWith(currentPeriodKey));
+      const jurnalExpenses = currentMonthExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e?.category || ''));
+      const famExpenses = currentMonthExpenses.filter(e => (e?.category || '') === 'Fam');
       
-      // Mengamankan pembacaan 'startsWith' jika date belum berformat string
-      const currentMonthExpenses = expenses.filter(e => String(e.date || '').startsWith(currentPeriodKey));
-      
-      const jurnalExpenses = currentMonthExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category || ''));
-      const famExpenses = currentMonthExpenses.filter(e => (e.category || '') === 'Fam');
-      
-      const totalJurnal = jurnalExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const totalFam = famExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      const totalJurnal = jurnalExpenses.reduce((sum, e) => sum + Number(e?.amount || 0), 0);
+      const totalFam = famExpenses.reduce((sum, e) => sum + Number(e?.amount || 0), 0);
       const totalExpenseAmount = totalJurnal + totalFam; 
       const netProfit = actualPaidRevenue - totalExpenseAmount; 
       
@@ -393,8 +388,8 @@
       const maxChartVal = Math.max(...chartData.map(d => Math.abs(Number(d.Rp) || 0))) || 1;
 
       const filteredCustomers = customers.filter(c => {
-        const matchSearch = String(c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || String(c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
-        const matchBlock = filterBlock === 'Semua Blok' ? true : String(c.notes || '').includes(filterBlock) || String(c.block || '').includes(filterBlock);
+        const matchSearch = String(c?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || String(c?.block || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const matchBlock = filterBlock === 'Semua Blok' ? true : String(c?.notes || '').includes(filterBlock) || String(c?.block || '').includes(filterBlock);
         return matchSearch && matchBlock;
       });
 
@@ -406,9 +401,7 @@
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-300 dark:border-slate-800 p-8 md:p-10 rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden my-8">
               <div className="absolute -top-20 -right-20 w-40 h-40 md:w-56 md:h-56 bg-indigo-600/20 blur-3xl rounded-full"></div>
               {!db && ( <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs md:text-sm rounded-lg text-center font-bold">⚠️ KONEKSI FIREBASE TERGANGGU. COBA REFRESH.</div> )}
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-4 right-4 md:top-6 md:right-6 text-slate-500 hover:text-indigo-500 transition-colors">
-                {isDarkMode ? <Sun className="w-5 h-5 md:w-6 md:h-6"/> : <Moon className="w-5 h-5 md:w-6 md:h-6"/>}
-              </button>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-4 right-4 md:top-6 md:right-6 text-slate-500 hover:text-indigo-500 transition-colors"><Sun className="w-5 h-5 md:w-6 md:h-6 hidden dark:block"/><Moon className="w-5 h-5 md:w-6 md:h-6 block dark:hidden"/></button>
               <div className="text-center mb-6 md:mb-8 relative z-10 flex flex-col items-center">
                 <img src="./mabunetlogo.png" alt="MABUNET Logo" className="w-28 h-28 md:w-36 md:h-36 object-contain mb-4 drop-shadow-[0_0_15px_rgba(79,70,229,0.4)]" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
                 <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 dark:text-white">MABU<span className="text-indigo-600 dark:text-indigo-400">NET</span></h1>
@@ -423,7 +416,7 @@
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500"><Lock className="w-4 h-4 md:w-5 md:h-5" /></div>
                   <input type={showPassword ? "text" : "password"} placeholder="Password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 md:pl-12 pr-10 md:pr-12 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400"><EyeOff className="w-4 h-4 md:w-5 md:h-5"/></button>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">{showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}</button>
                 </div>
                 <button type="submit" className="w-full py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white text-sm md:text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors mt-2">Masuk Aplikasi</button>
               </form>
@@ -447,10 +440,10 @@
           <header className="md:hidden fixed top-0 inset-x-0 h-16 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-40 flex items-center justify-between px-4 shadow-sm dark:shadow-lg transition-colors">
             <div className="flex items-center gap-3">
               <img src="./mabunetlogo.png" alt="Mabunet" className="w-10 h-10 object-contain drop-shadow-md" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-              <div><h2 className="font-bold text-sm leading-tight text-slate-800 dark:text-slate-200">MABUNET</h2><p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold">{currentUser.role}</p></div>
+              <div><h2 className="font-bold text-sm leading-tight text-slate-800 dark:text-slate-200">MABUNET</h2><p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold">{currentUser?.role || 'Admin'}</p></div>
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-slate-500 hover:text-indigo-500">{isDarkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}</button>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-slate-500 hover:text-indigo-500"><Sun className="w-5 h-5 hidden dark:block"/><Moon className="w-5 h-5 block dark:hidden"/></button>
               {db ? <Server className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> : <Server className="w-5 h-5 text-rose-500 dark:text-rose-400 animate-pulse" />}
             </div>
           </header>
@@ -464,17 +457,17 @@
               <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'customers' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><div className="relative"><Users className="w-5 h-5 md:w-6 md:h-6" />{isDbLoading && <span className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>}</div></button>
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><BookOpen className="w-5 h-5 md:w-6 md:h-6" /></button>
               <div className="hidden md:block w-full h-px bg-slate-200 dark:bg-slate-800 my-2"></div>
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{currentUser.photo ? <img src={currentUser.photo} className="w-[20px] h-[20px] md:w-[24px] md:h-[24px] rounded-full object-cover border border-slate-300 dark:border-slate-600" /> : <Settings className="w-5 h-5 md:w-6 md:h-6" />}</button>
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`relative group flex justify-center p-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{currentUser?.photo ? <img src={currentUser.photo} className="w-[20px] h-[20px] md:w-[24px] md:h-[24px] rounded-full object-cover border border-slate-300 dark:border-slate-600" /> : <Settings className="w-5 h-5 md:w-6 md:h-6" />}</button>
               <button onClick={handleLogout} className="md:hidden relative group flex justify-center p-3 rounded-xl text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all"><LogOut className="w-5 h-5" /></button>
             </nav>
             <div className="hidden md:flex mt-auto px-4 w-full flex-col gap-4 items-center">
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="relative group flex justify-center p-3 rounded-xl text-amber-500 hover:bg-amber-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-all">{isDarkMode ? <Sun className="w-6 h-6"/> : <Moon className="w-6 h-6"/>}</button>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="relative group flex justify-center p-3 rounded-xl text-amber-500 hover:bg-amber-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-all"><Sun className="w-6 h-6 hidden dark:block"/><Moon className="w-6 h-6 block dark:hidden"/></button>
               <div className="relative group cursor-help">{db ? <Server className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> : <Server className="w-5 h-5 text-rose-500 dark:text-rose-400 animate-pulse" />}</div>
               <button onClick={handleLogout} className="relative group w-full flex justify-center p-3 rounded-xl text-rose-500 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/10 transition-all"><LogOut className="w-6 h-6" /></button>
             </div>
           </aside>
 
-          <main className="flex-1 w-full max-w-full pt-20 pb-24 px-4 md:pt-10 md:pb-10 md:px-10 md:ml-20 space-y-6 md:space-y-8">
+          <main className="flex-1 w-full max-w-full overflow-y-auto pt-20 pb-24 px-4 md:pt-10 md:pb-10 md:px-10 md:ml-20 space-y-6 md:space-y-8">
             
             {activeTab !== 'settings' && (
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
@@ -494,10 +487,10 @@
             {activeTab === 'dashboard' && (
               <div className="space-y-6 md:space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-3xl md:text-4xl font-extrabold mt-1 md:mt-2">{customers.length}</h3><p className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mt-2">{activeCustomersList.length} Aktif</p></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl md:text-3xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-3xl md:text-4xl font-extrabold mt-1 md:mt-2">{customers.length || 0}</h3><p className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mt-2">{activeCustomersList.length || 0} Aktif</p></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 truncate">{formatIDR(totalPotentialRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2 truncate">{formatIDR(actualPaidRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl md:text-3xl font-extrabold mt-1 md:mt-2 truncate ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
                 </div>
 
                 <div className="hidden md:block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl transition-colors">
@@ -507,12 +500,9 @@
                        const height = maxChartVal > 0 ? (Math.abs(Number(data.Rp) || 0) / maxChartVal * 100) : 0;
                        const isNegative = (Number(data.Rp) || 0) < 0;
                        const color = index === 2 ? 'bg-rose-500' : index === 3 ? (isNegative ? 'bg-rose-500' : 'bg-indigo-500') : 'bg-emerald-500';
-                       
                        return (
                          <div key={index} className="flex-1 flex flex-col justify-end items-center group relative h-full">
-                           <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[11px] md:text-sm font-bold py-1 md:py-1.5 px-3 md:px-4 rounded pointer-events-none z-10 whitespace-nowrap shadow-lg">
-                             {formatIDR(data.Rp)}
-                           </div>
+                           <div className="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[11px] md:text-sm font-bold py-1 md:py-1.5 px-3 md:px-4 rounded pointer-events-none z-10 whitespace-nowrap shadow-lg">{formatIDR(data.Rp)}</div>
                            <div className={`w-full max-w-[80px] md:max-w-[120px] ${color} rounded-t-md transition-all duration-500 hover:brightness-110`} style={{ height: `${height}%`, minHeight: '4px' }}></div>
                            <div className="absolute -bottom-8 text-xs md:text-sm font-semibold text-slate-500 text-center w-full truncate">{data.name}</div>
                          </div>
@@ -545,16 +535,16 @@
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {dueCustomers.map(cust => (
-                          <tr key={cust.id} className={Number(cust.dueDate) === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
+                          <tr key={cust.id} className={Number(cust?.dueDate) === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
                             <td className="py-2.5 px-3 md:py-4 md:px-6 break-words">
-                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name || 'Tanpa Nama'}</div>
-                              <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-0.5 md:mt-1">Blok {cust.block || '-'}</div>
+                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust?.name || 'Tanpa Nama'}</div>
+                              <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-0.5 md:mt-1">Blok {cust?.block || '-'}</div>
                             </td>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold whitespace-nowrap">{formatIDR(getPackage(cust.packageId).price)}</td>
-                            <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold whitespace-nowrap ${Number(cust.dueDate) === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate || '-'}</td>
-                            <td className="py-2.5 px-3 md:py-4 md:px-6 text-right space-y-1.5 md:space-y-0 md:space-x-3 flex flex-col md:flex-row md:justify-end">
-                              <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors whitespace-nowrap">WA Tagih</button>
-                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap">Set Lunas</button>
+                            <td className="py-2.5 px-3 md:py-4 md:px-6 font-semibold whitespace-nowrap">{formatIDR(getPackage(cust?.packageId).price)}</td>
+                            <td className={`py-2.5 px-3 md:py-4 md:px-6 font-bold whitespace-nowrap ${Number(cust?.dueDate) === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust?.dueDate || '-'}</td>
+                            <td className="py-2.5 px-3 md:py-4 md:px-6 text-right space-x-1.5 whitespace-nowrap">
+                              <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors whitespace-nowrap inline-flex">WA Tagih</button>
+                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-4 md:py-2 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap inline-flex">Set Lunas</button>
                             </td>
                           </tr>
                         ))}
@@ -574,7 +564,7 @@
                   </div>
                   <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
                     <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none px-4 py-2.5 md:py-3 bg-emerald-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-2" title="Download Excel"><Download className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none px-4 py-2.5 md:py-3 bg-indigo-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Tambah</span></button>
+                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: 'Mabu', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none px-4 py-2.5 md:py-3 bg-indigo-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Tambah</span></button>
                   </div>
                 </div>
 
@@ -597,19 +587,18 @@
                         {filteredCustomers.map(cust => (
                           <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                             <td className="py-2 px-3 md:py-4 md:px-6 break-words">
-                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name || 'Tanpa Nama'}</div>
-                              <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust.block || '-'}</div>
-                              <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status || 'Aktif'}</div>
+                              <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust?.name || 'Tanpa Nama'}</div>
+                              <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust?.block || '-'}</div>
+                              <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust?.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust?.status || 'Aktif'}</div>
                             </td>
                             <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm whitespace-nowrap">
-                              <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
-                              <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
-                              <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate || '-'}</span>
+                              <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust?.packageId).speed}</span><br/>
+                              <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust?.packageId).price)}</span><br/>
+                              <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust?.dueDate || '-'}</span>
                             </td>
-                            
                             {MONTHS.map((m, i) => {
                               const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
-                              const isPaid = cust.payments && cust.payments[monthKey];
+                              const isPaid = cust?.payments?.[monthKey];
                               return (
                                 <td key={i} className="py-2 px-0 text-center hidden lg:table-cell">
                                   <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-6 h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
@@ -618,14 +607,11 @@
                                 </td>
                               );
                             })}
-                            
                             <td className="py-2 px-3 md:py-4 md:px-6 text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
-                              <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                <Power className="w-4 h-4 md:w-5 md:h-5" />
-                              </button>
+                              <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust?.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust?.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}><Power className="w-4 h-4 md:w-5 md:h-5" /></button>
                               <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
                               <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
-                              <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                              <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust?.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
                               <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
                             </td>
                           </tr>
@@ -639,7 +625,6 @@
 
             {activeTab === 'ledger' && (
               <div className="space-y-6 md:space-y-8 w-full">
-                
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
                     <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan Bulan Ini</p>
@@ -686,11 +671,11 @@
                       ) : (
                         displayedExpenses.map(exp => (
                           <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-3 md:py-4 md:px-6 whitespace-nowrap">{exp.date || '-'}</td>
+                            <td className="py-3 px-3 md:py-4 md:px-6 whitespace-nowrap">{exp?.date || '-'}</td>
                             <td className="py-3 px-3 md:py-4 md:px-6 break-words">
-                               <div className="font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category || '-'}</span><span className="text-sm md:text-base text-slate-800 dark:text-slate-100">{exp.description || '-'}</span></div>
-                               {exp.notes && <div className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic mt-1">{exp.notes}</div>}
-                               <div className="text-[8px] md:text-[10px] text-slate-400 mt-1 uppercase">Opr: {exp.admin || '-'}</div>
+                               <div className="font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp?.category || '-'}</span><span className="text-sm md:text-base text-slate-800 dark:text-slate-100">{exp?.description || '-'}</span></div>
+                               {exp?.notes && <div className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 italic mt-1">{exp.notes}</div>}
+                               <div className="text-[8px] md:text-[10px] text-slate-400 mt-1 uppercase">Opr: {exp?.admin || '-'}</div>
                             </td>
                             <td className="py-3 px-3 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap align-top">{formatIDR(exp.amount)}</td>
                             <td className="py-3 px-3 md:py-4 md:px-6 text-center align-top">
@@ -707,33 +692,24 @@
 
             {activeTab === 'settings' && (
               <div className="flex flex-col lg:flex-row gap-6 md:gap-8 w-full max-w-7xl mx-auto items-start">
-                
                 <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
                     <>
                       <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-6 right-6 md:top-8 md:right-8 p-2 md:p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
                       <h3 className="text-lg md:text-xl font-bold mb-6 md:mb-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User className="w-5 h-5 md:w-6 md:h-6"/> Profil Saya</h3>
                       <div className="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                          {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 leading-tight truncate">{currentUser.name || 'Admin'}</p>
-                          <p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-1 md:mt-2 truncate">{currentUser.role || '-'}</p>
-                        </div>
+                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">{currentUser?.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />}</div>
+                        <div className="min-w-0"><p className="font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 leading-tight truncate">{currentUser?.name || 'Admin'}</p><p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-1 md:mt-2 truncate">{currentUser?.role || '-'}</p></div>
                       </div>
                       <div className="space-y-4 md:space-y-6">
-                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Username Login</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser.username || '-'}</span></div>
+                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Username Login</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser?.username || '-'}</span></div>
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3 relative">
                           <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Password</span>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest break-all">{showPassword ? currentUser.password : '••••••••'}</span>
-                            <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5 shrink-0 ml-2">{showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}</button>
-                          </div>
+                          <div className="flex justify-between items-center mt-0.5"><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest break-all">{showPassword ? currentUser?.password : '••••••••'}</span><button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5 shrink-0 ml-2">{showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}</button></div>
                         </div>
-                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Email</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser.email || '-'}</span></div>
-                        {currentUser.id === 'admin1' && (<div><div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">No. WhatsApp</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.phone || '-'}</span></div></div>)}
-                        <div className="mt-4 md:mt-6 flex items-center gap-2 md:gap-3"><div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${currentUser.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div><span className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span></div>
+                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Email</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5 break-all">{currentUser?.email || '-'}</span></div>
+                        {currentUser?.id === 'admin1' && (<div><div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3"><span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">No. WhatsApp</span><span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser?.phone || '-'}</span></div></div>)}
+                        <div className="mt-4 md:mt-6 flex items-center gap-2 md:gap-3"><div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${currentUser?.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div><span className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser?.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span></div>
                       </div>
                     </>
                   ) : (
@@ -755,7 +731,7 @@
                           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 md:bottom-2.5 right-3 md:right-4 text-slate-400 hover:text-indigo-500">{showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}</button>
                         </div>
                         <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Email Anda</label><input type="email" placeholder="Contoh: admin@gmail.com" value={editProfile.email || ''} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base outline-none transition-colors" /></div>
-                        {currentUser.id === 'admin1' && (<div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Nomor WhatsApp</label><input type="text" required value={editProfile.phone || ''} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base outline-none transition-colors" /></div>)}
+                        {currentUser?.id === 'admin1' && (<div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Nomor WhatsApp</label><input type="text" required value={editProfile.phone || ''} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base outline-none transition-colors" /></div>)}
                         <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-slate-200 dark:border-slate-800">
                           <label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 md:mb-3">Keamanan Biometrik (WebAuthn)</label>
                           {!editProfile.credentialId ? (
@@ -776,7 +752,7 @@
                   )}
                 </div>
                 
-                {currentUser.id === 'admin1' && (
+                {currentUser?.id === 'admin1' && (
                   <div className="flex-1 w-full space-y-6 md:space-y-8 min-w-0">
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors">
                       <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert className="w-5 h-5 md:w-6 md:h-6"/> Kelola Akses Admin Sistem</h3>
@@ -903,7 +879,6 @@
       );
     }
 
-    // --- ANTI CRASH COMPONENT ---
     class ErrorBoundary extends React.Component {
       constructor(props) { super(props); this.state = { hasError: false, error: null }; }
       static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -912,12 +887,9 @@
           return (
             <div className="min-h-screen flex items-center justify-center bg-rose-50 dark:bg-rose-950 p-6">
               <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border border-rose-200 dark:border-rose-900">
-                <h2 className="text-xl md:text-2xl font-bold text-rose-600 dark:text-rose-500 mb-4">Ups! Terjadi Kesalahan Render</h2>
-                <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm md:text-base">Ada data lama di database (Firebase) yang formatnya belum sesuai, sehingga sistem perhitungan otomatis terhenti.</p>
-                <div className="bg-slate-100 dark:bg-slate-950 p-4 rounded-xl text-left overflow-auto text-xs md:text-sm text-rose-500 dark:text-rose-400 font-mono mb-6">
-                  [Error]: {this.state.error.message}
-                </div>
-                <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl shadow-lg hover:bg-rose-700 transition-colors">Muat Ulang (Refresh)</button>
+                <h2 className="text-xl md:text-2xl font-bold text-rose-600 dark:text-rose-500 mb-4">Aplikasi Terhenti (Error)</h2>
+                <div className="bg-slate-100 dark:bg-slate-950 p-4 rounded-xl text-left overflow-auto text-xs md:text-sm text-rose-500 dark:text-rose-400 font-mono mb-6">[{this.state.error.name}]: {this.state.error.message}</div>
+                <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-rose-600 text-white font-bold rounded-xl shadow-lg hover:bg-rose-700 transition-colors">Muat Ulang Layar</button>
               </div>
             </div>
           );
