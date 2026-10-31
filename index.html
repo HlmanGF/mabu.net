@@ -243,6 +243,7 @@
           if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
           localStorage.setItem('mabunet_session', user.id); 
+          localStorage.setItem('mabunet_device_user', user.id); // FIX: Simpan session untuk fingerprint
         } else { setLoginError('Username atau Password salah!'); }
       };
 
@@ -327,9 +328,9 @@
           const updateData = {
             name: editProfile.name, username: editProfile.username, password: editProfile.password,
             email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false,
-            credentialId: editProfile.credentialId || ''
+            credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' // FIX: Allow save photo for all
           };
-          if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; updateData.photo = editProfile.photo; }
+          if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
@@ -384,9 +385,18 @@
         }, 300);
       };
 
+      // FIX: Pesan Tagihan WA & Kuitansi Lunas
       const sendWAInvoice = (cust) => {
+        if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
         const pkg = getPackage(cust.packageId);
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar ke BCA 1234567890. Abaikan jika sudah lunas.`;
+        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
+        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+      };
+
+      const sendWAReceipt = (cust, periodKey) => {
+        if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
+        const pkg = getPackage(cust.packageId);
+        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet untuk bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(pkg.price)}* telah kami terima dan berstatus *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -460,7 +470,7 @@
               <div className="w-full border-t border-slate-300 dark:border-slate-800 my-6 relative z-10"><span className="absolute left-1/2 -translate-x-1/2 -top-2.5 bg-white dark:bg-slate-900 px-2 text-xs text-slate-500 font-semibold transition-colors">ATAU</span></div>
 
               <div className="mt-2 flex flex-col items-center relative z-10">
-                <button onClick={() => { localStorage.setItem('mabunet_device_user', loginForm.username ? admins.find(a=>a.username===loginForm.username)?.id || '' : ''); handleFingerprintScan(); }} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
+                <button onClick={() => handleFingerprintScan()} disabled={isScanning} className="relative group flex flex-col items-center gap-2">
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                     <Fingerprint size={28} strokeWidth={isScanning ? 2 : 1.5} className={isScanning ? 'opacity-50' : ''}/>
                     {isScanning && <div className="scanner-line"></div>}
@@ -683,7 +693,7 @@
                         <tr>
                           <th className="py-3 px-4 w-48">Pelanggan</th>
                           <th className="py-3 px-4 w-32">Paket</th>
-                          {MONTHS.map((m, i) => <th key={i} className="py-3 px-1 text-center text-[10px] uppercase tracking-wider">{m.substring(0,3)}</th>)}
+                          {MONTHS.map((m, i) => <th key={i} className="py-3 px-0 text-center w-8 text-[10px] uppercase tracking-wider">{m.substring(0,3)}</th>)}
                           <th className="py-3 px-4 text-right w-48">Opsi & Print</th>
                         </tr>
                       </thead>
@@ -701,8 +711,8 @@
                               const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
                               const isPaid = cust.payments && cust.payments[monthKey];
                               return (
-                                <td key={i} className="py-3 px-1 text-center">
-                                  <button onClick={() => togglePayment(cust.id, monthKey)} className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                                <td key={i} className="py-2 px-0 text-center">
+                                  <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-7 h-7 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                                     {isPaid ? <Check size={16} strokeWidth={3} /> : <span className="text-[10px]">{i+1}</span>}
                                   </button>
                                 </td>
@@ -813,25 +823,16 @@
                       <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Edit3 size={20}/> Edit Profil</h3>
                       <form onSubmit={handleSaveProfile} className="space-y-4">
                         
-                        {currentUser.id === 'admin1' ? (
-                          <div className="flex items-center gap-4 mb-6">
-                            <div className="relative w-16 h-16 rounded-full border-2 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
-                              {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
-                              <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer">
-                                <Camera size={16} className="text-white" />
-                                <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e, false)} className="hidden" />
-                              </label>
-                            </div>
-                            <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Auto-Crop 1:1.</p></div>
+                        <div className="flex items-center gap-4 mb-6">
+                          <div className="relative w-16 h-16 rounded-full border-2 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
+                            {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
+                            <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer">
+                              <Camera size={16} className="text-white" />
+                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e, false)} className="hidden" />
+                            </label>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-4 mb-6">
-                             <div className="w-16 h-16 rounded-full border-2 border-slate-300 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                              {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User size={24} className="text-slate-400" />}
-                            </div>
-                            <div><p className="text-sm font-semibold text-slate-500">Foto Terkunci</p><p className="text-[10px] text-slate-400">Hubungi Super Admin.</p></div>
-                          </div>
-                        )}
+                          <div><p className="text-sm font-semibold">Foto Profil</p><p className="text-[10px] text-slate-500 dark:text-slate-400">Auto-Crop 1:1.</p></div>
+                        </div>
                         
                         <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                         <div><label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
@@ -937,6 +938,46 @@
               </div>
             )}
           </main>
+
+          {/* MODAL PELANGGAN */}
+          {isCustomerModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl transition-colors relative">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
+                <form onSubmit={handleSaveCustomer} className="space-y-4">
+                  <div><label className="block text-xs font-semibold mb-1">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div><label className="block text-xs font-semibold mb-1">Blok</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
+                  <div><label className="block text-xs font-semibold mb-1">No HP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div><label className="block text-xs font-semibold mb-1">Paket</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+                  <div><label className="block text-xs font-semibold mb-1">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500" /></div>
+                  <div><label className="block text-xs font-semibold mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-500"><option>Aktif</option><option>Non-Aktif</option></select></div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700">Simpan</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL KAS KELUAR */}
+          {isExpenseModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl transition-colors relative">
+                <h3 className="text-lg font-bold mb-4">Catat Kas Keluar</h3>
+                <form onSubmit={handleSaveExpense} className="space-y-4">
+                  <div><label className="block text-xs font-semibold mb-1">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
+                  <div><label className="block text-xs font-semibold mb-1">Kategori</label><select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none"><option>Operasional</option><option>Gaji</option><option>Alat/Material</option><option>Lainnya</option></select></div>
+                  <div><label className="block text-xs font-semibold mb-1">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
+                  <div><label className="block text-xs font-semibold mb-1">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none" /></div>
+                  <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 border border-slate-300 dark:border-slate-700 rounded-xl font-semibold">Batal</button>
+                    <button type="submit" className="flex-1 py-2.5 bg-rose-600 text-white rounded-xl font-semibold hover:bg-rose-700">Catat Kas</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 */}
           {isTargetAdminModalOpen && targetAdmin && (
