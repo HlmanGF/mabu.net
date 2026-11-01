@@ -9,7 +9,6 @@
   <meta name="theme-color" content="#4f46e5">
   <link rel="icon" href="./mabunetlogo.png" type="image/png">
   
-  <!-- PENGHAPUS CACHE PWA (Agar selalu memuat update terbaru) -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -25,7 +24,6 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <style>
-    /* Mengunci layar agar tidak bisa digeser ke samping (No Slidebar) */
     html, body { max-width: 100%; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     .dark ::-webkit-scrollbar-track { background: #0f172a; }
@@ -47,9 +45,8 @@
     import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
-      Users, LayoutDashboard, LogOut, Check, Wifi, BookOpen, Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
-      Bell, BellRing, Plus, Edit3, Trash2, FileText, ChevronRight, Volume2, VolumeX, CloudLightning, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Wallet
+      Users, LayoutDashboard, LogOut, Check, BookOpen, Fingerprint, Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
+      Bell, BellRing, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server, Eye, EyeOff, Sun, Moon, Printer, Download, Activity, TrendingUp, UserCog, Crop, Wallet
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -142,9 +139,7 @@
 
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
-        try {
-          await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser?.name || 'Sistem', action: actionDesc });
-        } catch(e) {}
+        try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser?.name || 'Sistem', action: actionDesc }); } catch(e) {}
       };
 
       useEffect(() => {
@@ -216,17 +211,11 @@
 
       const handleDeleteCustomer = async (id) => {
         const cust = customers.find(c => c.id === id);
-        if(confirm("Yakin hapus pelanggan ini?")) {
-          await deleteDoc(doc(db, 'customers', id));
-          writeLog(`Menghapus pelanggan: ${cust?.name}`);
-        }
+        if(confirm("Yakin hapus pelanggan ini?")) { await deleteDoc(doc(db, 'customers', id)); writeLog(`Menghapus pelanggan: ${cust?.name}`); }
       };
 
       const handleDeleteExpense = async (id) => {
-        if(confirm("Yakin hapus catatan pengeluaran ini?")) {
-          await deleteDoc(doc(db, 'expenses', id));
-          writeLog(`Menghapus data pengeluaran (ID: ${id})`);
-        }
+        if(confirm("Yakin hapus catatan pengeluaran ini?")) { await deleteDoc(doc(db, 'expenses', id)); writeLog(`Menghapus data pengeluaran (ID: ${id})`); }
       };
 
       const handleLogin = (e) => {
@@ -241,10 +230,7 @@
         } else { setLoginError('Username atau Password salah!'); }
       };
 
-      const handleLogout = () => {
-        setCurrentUser(null);
-        localStorage.removeItem('mabunet_session');
-      };
+      const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
       const registerFingerprint = async () => {
         try {
@@ -530,7 +516,7 @@
               </div>
             )}
 
-            {/* TABEL PELANGGAN (AUTO FIT LAYAR, TANPA TOMBOL ISOLIR MANUAL) */}
+            {/* TABEL PELANGGAN */}
             {activeTab === 'customers' && (
               <div className="space-y-6 md:space-y-8">
                 <div className="flex flex-col md:flex-row gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
