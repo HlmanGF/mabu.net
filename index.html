@@ -120,7 +120,7 @@
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
       
-      const [dueSearchTerm, setDueSearchTerm] = useState(''); // State pencarian tagihan belum lunas
+      const [dueSearchTerm, setDueSearchTerm] = useState('');
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
@@ -137,6 +137,7 @@
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
+      const [editingExpense, setEditingExpense] = useState(null);
 
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
@@ -227,9 +228,15 @@
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
-        await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
-        writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        if (editingExpense) {
+          await updateDoc(doc(db, 'expenses', editingExpense.id), { ...expenseForm });
+          writeLog(`Mengedit kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        } else {
+          await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
+          writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        }
         setIsExpenseModalOpen(false);
+        setEditingExpense(null); 
       };
 
       const handleDeleteCustomer = async (id) => {
@@ -438,7 +445,6 @@
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
-      // ---- KALKULASI DATA GLOBAL ----
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
@@ -563,7 +569,6 @@
               </div>
             </div>
 
-            {/* Menu Navigasi Tengah / Atas */}
             <nav className="hidden lg:flex flex-1 justify-center items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
                 <LayoutDashboard className="w-4 h-4" /> Dashboard
@@ -579,7 +584,6 @@
               </button>
             </nav>
 
-            {/* Tombol Kanan (Profil Admin, Theme, Status Server, Logout) */}
             <div className="flex items-center justify-end gap-3 w-1/4">
               <div className="hidden md:flex items-center gap-2 mr-1">
                 <div className="flex flex-col text-right">
@@ -605,7 +609,6 @@
             </div>
           </header>
 
-          {/* Menu Mobile (Bawah khusus layar HP kecil) */}
           <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
             <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
               <LayoutDashboard className="w-5 h-5" />
@@ -625,14 +628,11 @@
             </button>
           </nav>
 
-          {/* KONTEN UTAMA DIBATASI 1600px UNTUK LAYAR PC/TABLET */}
           <main className="flex-1 w-full max-w-[1600px] mx-auto pt-24 pb-24 lg:pb-12 px-2 sm:px-6 space-y-6 md:space-y-8">
             
-            {/* DASHBOARD TAB (LEBAR KHUSUS DIPERKECIL MENJADI max-w-5xl) */}
             {activeTab === 'dashboard' && (
               <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 px-2 sm:px-0">
                 
-                {/* Periode Aktif khusus Dashboard */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   <div className="flex items-center gap-4">
                     <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
@@ -663,8 +663,7 @@
                 )}
 
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
-                  {/* Bilah pencarian ini dibuat Sticky (menempel saat di-scroll ke bawah) */}
-                  <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg p-4 md:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                  <div className="sticky top-[64px] mt-2 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg p-4 md:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
                     <h3 className="font-bold flex items-center gap-2 text-base md:text-lg"><Bell className="w-5 h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3>
                     <div className="relative w-full sm:w-72">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
@@ -708,14 +707,11 @@
               </div>
             )}
 
-            {/* PELANGGAN TAB (TETAP MENGGUNAKAN LEBAR FULL HINGGA 1600px AGAR TABEL TIDAK TERPOTONG) */}
             {activeTab === 'customers' && (
               <div className="space-y-6 md:space-y-8 px-2 sm:px-0">
                 
-                {/* BAR GABUNGAN: PERIODE AKTIF + PENCARIAN (SATU BARIS DI PC) */}
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   
-                  {/* Grup 1: Periode Aktif */}
                   <div className="flex flex-wrap items-center gap-2 lg:pr-4 lg:border-r border-slate-200 dark:border-slate-700 shrink-0">
                     <h2 className="text-sm font-bold mr-1 hidden xl:block">Periode:</h2>
                     <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
@@ -725,7 +721,6 @@
                     <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
 
-                  {/* Grup 2: Pencarian & Filter (Lebih Lentur/Memanjang Otomatis) */}
                   <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
                     <div className="relative flex-1">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
@@ -734,7 +729,6 @@
                     <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
                   </div>
 
-                  {/* Grup 3: Tombol Aksi */}
                   <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
                     <button onClick={() => exportCSV('customers')} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-emerald-700 flex items-center justify-center gap-2" title="Download Excel"><Download className="w-4 h-4"/> <span className="inline">Export</span></button>
                     <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4"/> <span className="inline">Tambah</span></button>
@@ -783,14 +777,16 @@
                                 );
                               })}
                               
-                              <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
-                                <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                  <Power className="w-4 h-4 md:w-5 md:h-5" />
-                                </button>
-                                <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                              <td className="py-3 px-3 md:py-4 md:px-6 align-middle">
+                                <div className="flex flex-wrap items-center justify-start md:justify-end gap-2">
+                                  <button onClick={() => toggleIsolirManual(cust)} className={`p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir"}>
+                                    <Power className="w-4 h-4 md:w-5 md:h-5" />
+                                  </button>
+                                  <button onClick={() => triggerPrint(cust)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                  <button onClick={() => handleDeleteCustomer(cust.id)} className="p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -802,11 +798,9 @@
               </div>
             )}
 
-            {/* LEDGER TAB */}
             {activeTab === 'ledger' && (
               <div className="space-y-6 md:space-y-8 px-2 sm:px-0 max-w-[1600px] mx-auto">
                 
-                {/* Periode Aktif khusus Ledger */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   <div className="flex items-center gap-4">
                     <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
@@ -843,7 +837,13 @@
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
                     <button onClick={() => exportCSV('expenses')} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-emerald-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-2"><Download className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setExpenseForm({...expenseForm, category: 'Belanja'}); setIsExpenseModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-rose-600 rounded-xl text-white text-sm md:text-base font-semibold flex justify-center gap-2 shadow-lg hover:bg-rose-700"><Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span></button>
+                    <button onClick={() => { 
+                      setEditingExpense(null);
+                      setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' }); 
+                      setIsExpenseModalOpen(true); 
+                    }} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-rose-600 rounded-xl text-white text-sm md:text-base font-semibold flex justify-center gap-2 shadow-lg hover:bg-rose-700">
+                      <Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span>
+                    </button>
                   </div>
                 </div>
                 
@@ -856,7 +856,7 @@
                         <th className="py-3 px-4 md:py-4 md:px-6">Catatan</th>
                         <th className="py-3 px-4 md:py-4 md:px-6">Admin</th>
                         <th className="py-3 px-4 md:py-4 md:px-6 text-right">Nominal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-16 md:w-24">Hapus</th>
+                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-20 md:w-28">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -866,12 +866,38 @@
                         displayedExpenses.map(exp => (
                           <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
                             <td className="py-3 px-4 md:py-4 md:px-6 whitespace-nowrap">{exp.date}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span><span className="text-sm md:text-base">{exp.description}</span></td>
+                            <td className="py-3 px-4 md:py-5 md:px-6 align-middle">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <span className="w-fit text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                  {exp.category}
+                                </span>
+                                <span className="text-sm md:text-base leading-snug break-words">
+                                  {exp.description}
+                                </span>
+                              </div>
+                            </td>
                             <td className="py-3 px-4 md:py-4 md:px-6 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
                             <td className="py-3 px-4 md:py-4 md:px-6 text-[10px] md:text-sm">{exp.admin}</td>
                             <td className="py-3 px-4 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-center">
-                              <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 md:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran"><Trash2 className="w-4 h-4 md:w-5 md:h-5"/></button>
+                            <td className="py-3 px-4 md:py-5 md:px-6 align-middle">
+                              <div className="flex flex-wrap items-center justify-center gap-2">
+                                <button onClick={() => { 
+                                  setEditingExpense(exp);
+                                  setExpenseForm({
+                                    date: exp.date,
+                                    category: exp.category,
+                                    description: exp.description,
+                                    notes: exp.notes || '',
+                                    amount: exp.amount
+                                  });
+                                  setIsExpenseModalOpen(true);
+                                }} className="p-2 text-slate-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Edit Pengeluaran">
+                                  <Edit3 className="w-4 h-4 md:w-5 md:h-5"/>
+                                </button>
+                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran">
+                                  <Trash2 className="w-4 h-4 md:w-5 md:h-5"/>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -882,7 +908,6 @@
               </div>
             )}
 
-            {/* SETTINGS TAB */}
             {activeTab === 'settings' && (
               <div className="flex flex-col lg:flex-row gap-6 md:gap-8 mx-auto items-start px-2 sm:px-0">
                 
@@ -1054,7 +1079,6 @@
             )}
           </main>
 
-          {/* MODAL CROP PHOTO */}
           {cropState.isOpen && (
             <div className="fixed inset-0 z-[70] bg-slate-900/80 dark:bg-slate-950/90 flex flex-col items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -1102,7 +1126,6 @@
             </div>
           )}
 
-          {/* MODAL PELANGGAN - DIBUAT RESPONSIF MAX-HEIGHT 90VH DENGAN SCROLL */}
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
@@ -1126,11 +1149,10 @@
             </div>
           )}
 
-          {/* MODAL KAS KELUAR - RESPONSIVE SCROLL */}
           {isExpenseModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">Catat Kas Keluar</h3>
+                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingExpense ? 'Edit Kas Keluar' : 'Catat Kas Keluar'}</h3>
                 <form onSubmit={handleSaveExpense} className="space-y-4 md:space-y-5">
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   
@@ -1148,14 +1170,13 @@
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
                     <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Catat Kas</button>
+                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Simpan</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
 
-          {/* MODAL EDIT ADMIN LAIN OLEH ADMIN 1 - RESPONSIVE SCROLL */}
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
