@@ -137,6 +137,7 @@
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
+      const [editingExpense, setEditingExpense] = useState(null);
 
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
@@ -227,9 +228,17 @@
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
-        await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
-        writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        if (editingExpense) {
+          // Mode Edit: Update data yang sudah ada di Firebase
+          await updateDoc(doc(db, 'expenses', editingExpense.id), { ...expenseForm });
+          writeLog(`Mengedit kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        } else {
+          // Mode Tambah Baru
+          await addDoc(collection(db, 'expenses'), { ...expenseForm, admin: currentUser.name });
+          writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
+        }
         setIsExpenseModalOpen(false);
+        setEditingExpense(null); // Bersihkan state setelah disimpan
       };
 
       const handleDeleteCustomer = async (id) => {
@@ -843,7 +852,13 @@
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
                     <button onClick={() => exportCSV('expenses')} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-emerald-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-2"><Download className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setExpenseForm({...expenseForm, category: 'Belanja'}); setIsExpenseModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-rose-600 rounded-xl text-white text-sm md:text-base font-semibold flex justify-center gap-2 shadow-lg hover:bg-rose-700"><Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span></button>
+                    <button onClick={() => { 
+                      setEditingExpense(null);
+                      setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' }); 
+                      setIsExpenseModalOpen(true); 
+                    }} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-rose-600 rounded-xl text-white text-sm md:text-base font-semibold flex justify-center gap-2 shadow-lg hover:bg-rose-700">
+                      <Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span>
+                    </button>
                   </div>
                 </div>
                 
@@ -856,7 +871,7 @@
                         <th className="py-3 px-4 md:py-4 md:px-6">Catatan</th>
                         <th className="py-3 px-4 md:py-4 md:px-6">Admin</th>
                         <th className="py-3 px-4 md:py-4 md:px-6 text-right">Nominal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-16 md:w-24">Hapus</th>
+                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-20 md:w-28">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -870,8 +885,23 @@
                             <td className="py-3 px-4 md:py-4 md:px-6 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
                             <td className="py-3 px-4 md:py-4 md:px-6 text-[10px] md:text-sm">{exp.admin}</td>
                             <td className="py-3 px-4 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-center">
-                              <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 md:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran"><Trash2 className="w-4 h-4 md:w-5 md:h-5"/></button>
+                            <td className="py-3 px-4 md:py-4 md:px-6 text-center whitespace-nowrap space-x-1">
+                              <button onClick={() => { 
+                                setEditingExpense(exp);
+                                setExpenseForm({
+                                  date: exp.date,
+                                  category: exp.category,
+                                  description: exp.description,
+                                  notes: exp.notes || '',
+                                  amount: exp.amount
+                                });
+                                setIsExpenseModalOpen(true);
+                              }} className="p-1.5 md:p-2 text-slate-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Edit Pengeluaran">
+                                <Edit3 className="w-4 h-4 md:w-5 md:h-5"/>
+                              </button>
+                              <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 md:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran">
+                                <Trash2 className="w-4 h-4 md:w-5 md:h-5"/>
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -1130,7 +1160,7 @@
           {isExpenseModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6">Catat Kas Keluar</h3>
+                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingExpense ? 'Edit Kas Keluar' : 'Catat Kas Keluar'}</h3>
                 <form onSubmit={handleSaveExpense} className="space-y-4 md:space-y-5">
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   
@@ -1148,7 +1178,7 @@
                   <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
                     <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Catat Kas</button>
+                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Simpan</button>
                   </div>
                 </form>
               </div>
