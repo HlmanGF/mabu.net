@@ -120,7 +120,7 @@
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
       
-      const [dueSearchTerm, setDueSearchTerm] = useState(''); // State pencarian tagihan belum lunas
+      const [dueSearchTerm, setDueSearchTerm] = useState(''); 
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
@@ -558,9 +558,8 @@
             </div>
           )}
 
-          {/* TOP NAVIGATION BAR FULL RESPONSIVE */}
+          {/* TOP NAVIGATION BAR */}
           <header className="fixed top-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-4 md:px-6 shadow-sm transition-colors">
-            
             <div className="flex items-center gap-3 w-1/4">
               <img src="./mabunetlogo.png" alt="Mabunet" className="w-10 h-10 object-contain drop-shadow-md" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
               <div>
@@ -596,10 +595,6 @@
                   <User className="w-9 h-9 p-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500" />
                 )}
               </div>
-              <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium text-slate-500 ml-2 border border-slate-200 dark:border-slate-700">
-                {db ? <Server className="w-4 h-4 text-emerald-500" /> : <Server className="w-4 h-4 text-rose-500 animate-pulse" />}
-                <span>{db ? 'Cloud' : 'Offline'}</span>
-              </div>
               <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-slate-500 hover:text-indigo-500 transition-colors">
                 {isDarkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}
               </button>
@@ -628,58 +623,59 @@
             </button>
           </nav>
 
-          <main className="flex-1 w-full max-w-[1600px] mx-auto pt-24 pb-24 lg:pb-12 px-2 sm:px-6 space-y-6 md:space-y-8">
+          <main className="flex-1 w-full max-w-[1600px] mx-auto pt-20 pb-24 lg:pb-10 px-2 sm:px-6 space-y-4 md:space-y-8">
             
             {activeTab === 'dashboard' && (
-              <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 px-2 sm:px-0">
+              <div className="max-w-5xl mx-auto space-y-4 md:space-y-8">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                  <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto">
                     <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
                     <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-2 px-3 py-1.5 md:py-2 rounded-lg text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
                       {alarmEnabled ? <Volume2 className="w-4 h-4"/> : <VolumeX className="w-4 h-4"/>} Alarm {alarmEnabled ? 'ON' : 'OFF'}
                     </button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-3xl font-extrabold mt-1 md:mt-2">{customers.length}</h3><p className="text-xs md:text-sm text-emerald-600 dark:text-emerald-400 mt-2">{activeCustomersList.length} Aktif</p></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-2xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-2xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Total Pelanggan</p><h3 className="text-2xl md:text-3xl font-extrabold mt-1 md:mt-2">{customers.length}</h3><p className="text-[10px] md:text-sm text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{activeCustomersList.length} Aktif</p></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-lg md:text-2xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-lg md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-lg md:text-2xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
                 </div>
 
                 {customersDueToday.length > 0 && (
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/50 p-5 md:p-6 rounded-2xl shadow-[0_4px_20px_rgba(244,63,94,0.1)] transition-colors">
+                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/50 p-4 md:p-6 rounded-2xl shadow-[0_4px_20px_rgba(244,63,94,0.1)] transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-rose-200 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full animate-ring"><BellRing className="w-6 h-6"/></div>
-                      <div><h3 className="text-lg font-bold text-rose-700 dark:text-rose-400">Peringatan Jatuh Tempo! (Tgl {todayDay})</h3><p className="text-sm text-slate-600 dark:text-slate-300 mt-1">Ada {customersDueToday.length} pelanggan yang harus ditagih hari ini.</p></div>
+                      <div className="p-3 bg-rose-200 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full animate-ring shrink-0"><BellRing className="w-5 h-5 md:w-6 md:h-6"/></div>
+                      <div><h3 className="text-sm md:text-lg font-bold text-rose-700 dark:text-rose-400">Peringatan Jatuh Tempo! (Tgl {todayDay})</h3><p className="text-[11px] md:text-sm text-slate-600 dark:text-slate-300 mt-1">Ada {customersDueToday.length} pelanggan yang harus ditagih hari ini.</p></div>
                     </div>
                   </div>
                 )}
 
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
-                  {/* BAR GABUNGAN: JUDUL & PENCARIAN DIJADIKAN SATU BARIS UNTUK MENGHILANGKAN RUANG KOSONG */}
-                  <div className="sticky top-16 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-lg p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                    <h3 className="font-bold flex items-center gap-2 text-sm md:text-base"><Bell className="w-4 h-4 md:w-5 md:h-5 text-rose-500 dark:text-rose-400"/> Daftar Tagihan Belum Lunas ({dueCustomers.length})</h3>
+                  {/* BAR HEADER TIDAK LAGI STICKY AGAR TIDAK MENUTUPI TEKS SAAT SCROLL DI HP */}
+                  <div className="bg-white dark:bg-slate-900 p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <h3 className="font-bold flex items-center gap-2 text-sm md:text-base"><Bell className="w-4 h-4 md:w-5 md:h-5 text-rose-500 dark:text-rose-400"/> Tagihan Belum Lunas ({dueCustomers.length})</h3>
                     <div className="relative w-full sm:w-64">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-3.5 h-3.5" /></div>
-                      <input type="text" placeholder="Cari Pelanggan/Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 text-xs md:text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
+                      <input type="text" placeholder="Cari Pelanggan/Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto max-h-[60vh] overflow-y-auto custom-scrollbar relative">
-                    <table className="w-full text-left text-xs md:text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
+                  {/* DESKTOP TABLE VIEW */}
+                  <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto custom-scrollbar relative">
+                    <table className="w-full text-left text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
                       <thead className="sticky top-0 z-20 shadow-sm">
                         <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
-                          <th className="py-2.5 px-3 md:py-3 md:px-6 bg-slate-50 dark:bg-slate-950">Pelanggan</th>
-                          <th className="py-2.5 px-3 md:py-3 md:px-6 bg-slate-50 dark:bg-slate-950">Tagihan</th>
-                          <th className="py-2.5 px-3 md:py-3 md:px-6 bg-slate-50 dark:bg-slate-950">Jatuh Tempo</th>
-                          <th className="py-2.5 px-3 md:py-3 md:px-6 text-left md:text-right bg-slate-50 dark:bg-slate-950">Aksi</th>
+                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Pelanggan</th>
+                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Tagihan</th>
+                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Jatuh Tempo</th>
+                          <th className="py-3 px-6 text-right bg-slate-50 dark:bg-slate-950">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -688,15 +684,15 @@
                         ) : (
                           filteredDueCustomers.map(cust => (
                             <tr key={cust.id} className={cust.dueDate === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
-                              <td className="py-2.5 px-3 md:py-3 md:px-6">
-                                <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
-                                <div className="text-[10px] md:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded inline-block mt-0.5">Blok {cust.block}</div>
+                              <td className="py-3 px-6">
+                                <div className="font-semibold text-slate-800 dark:text-slate-100">{cust.name}</div>
+                                <div className="text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded inline-block mt-0.5">Blok {cust.block}</div>
                               </td>
-                              <td className="py-2.5 px-3 md:py-3 md:px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
-                              <td className={`py-2.5 px-3 md:py-3 md:px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
-                              <td className="py-2.5 px-3 md:py-3 md:px-6 text-left md:text-right space-y-1.5 md:space-y-0 md:space-x-3 flex flex-col md:flex-row md:justify-end">
-                                <button onClick={() => sendWAInvoice(cust)} className="px-2.5 py-1.5 md:px-3 md:py-1.5 bg-rose-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
-                                <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-2.5 py-1.5 md:px-3 md:py-1.5 bg-indigo-600 rounded-lg text-white text-[10px] md:text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
+                              <td className="py-3 px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
+                              <td className={`py-3 px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
+                              <td className="py-3 px-6 text-right space-x-3 flex justify-end">
+                                <button onClick={() => sendWAInvoice(cust)} className="px-3 py-1.5 bg-rose-600 rounded-lg text-white text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
+                                <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-3 py-1.5 bg-indigo-600 rounded-lg text-white text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
                               </td>
                             </tr>
                           ))
@@ -704,35 +700,62 @@
                       </tbody>
                     </table>
                   </div>
+
+                  {/* MOBILE CARDS VIEW */}
+                  <div className="md:hidden flex flex-col gap-2 p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    {filteredDueCustomers.length === 0 ? (
+                      <div className="text-center py-6 text-slate-500 text-sm">Tidak ada tagihan.</div>
+                    ) : (
+                      filteredDueCustomers.map(cust => (
+                        <div key={cust.id} className={`p-3 rounded-2xl border shadow-sm ${cust.dueDate === todayDay ? 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700'}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="font-bold text-sm text-slate-800 dark:text-slate-100">{cust.name}</div>
+                              <div className="text-[10px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md font-bold mt-1 inline-block">Blok {cust.block}</div>
+                            </div>
+                            <div className="text-right flex flex-col items-end">
+                              <div className="font-extrabold text-sm text-slate-800 dark:text-slate-100">{formatIDR(getPackage(cust.packageId).price)}</div>
+                              <div className={`text-[10px] font-bold mt-1 px-2 py-0.5 rounded ${cust.dueDate === todayDay ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400' : 'text-slate-500'}`}>Jatuh Tempo: Tgl {cust.dueDate}</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-1">
+                            <button onClick={() => sendWAInvoice(cust)} className="flex-1 py-1.5 bg-rose-600 rounded-xl text-white text-[11px] font-bold hover:bg-rose-700 shadow-sm transition-colors flex justify-center items-center gap-1.5"><FileText className="w-3.5 h-3.5"/> WA Tagih</button>
+                            <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="flex-1 py-1.5 bg-indigo-600 rounded-xl text-white text-[11px] font-bold hover:bg-indigo-700 shadow-sm transition-colors flex justify-center items-center gap-1.5"><Check className="w-3.5 h-3.5"/> Set Lunas</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
                 </div>
               </div>
             )}
 
             {activeTab === 'customers' && (
-              <div className="space-y-6 md:space-y-8 px-2 sm:px-0">
+              <div className="space-y-4 md:space-y-8">
                 
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   
                   <div className="flex flex-wrap items-center gap-2 lg:pr-4 lg:border-r border-slate-200 dark:border-slate-700 shrink-0">
                     <h2 className="text-sm font-bold mr-1 hidden xl:block">Periode:</h2>
-                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
+                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
                       {alarmEnabled ? <Volume2 className="w-3.5 h-3.5"/> : <VolumeX className="w-3.5 h-3.5"/>} Alarm
                     </button>
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
+                  <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full lg:w-auto">
                     <div className="relative flex-1">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                      <input type="text" placeholder="Cari Nama atau Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
+                      <input type="text" placeholder="Cari Nama atau Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 md:py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
                     </div>
-                    <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                    <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-1.5 md:py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
                   </div>
 
                   <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
-                    <button onClick={() => exportCSV('customers')} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-emerald-700 flex items-center justify-center gap-2"><Download className="w-4 h-4"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2 bg-indigo-600 rounded-xl text-white text-sm font-semibold shadow-md hover:bg-indigo-700 flex items-center justify-center gap-2"><Plus className="w-4 h-4"/> <span className="inline">Tambah</span></button>
+                    <button onClick={() => exportCSV('customers')} className="flex-1 sm:flex-none px-4 py-2 md:py-2 bg-emerald-600 rounded-xl text-white text-xs md:text-sm font-bold shadow-md hover:bg-emerald-700 flex items-center justify-center gap-1.5"><Download className="w-4 h-4"/> <span className="inline">Export</span></button>
+                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2 md:py-2 bg-indigo-600 rounded-xl text-white text-xs md:text-sm font-bold shadow-md hover:bg-indigo-700 flex items-center justify-center gap-1.5"><Plus className="w-4 h-4"/> <span className="inline">Tambah</span></button>
                   </div>
                 </div>
 
@@ -742,188 +765,267 @@
                   ) : customers.length === 0 ? (
                     <div className="p-12 md:p-16 text-center text-rose-500 font-bold text-sm md:text-base">Data Pelanggan Kosong!</div>
                   ) : (
-                    <div className="overflow-x-auto overflow-y-auto max-h-[75vh] custom-scrollbar">
-                      <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-max md:min-w-[1300px]">
-                        <thead className="sticky top-0 z-30 shadow-sm border-b border-slate-200 dark:border-slate-800">
-                          <tr>
-                            <th className="py-2.5 px-3 md:py-4 md:px-6 w-32 md:w-56 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Pelanggan</th>
-                            <th className="py-2.5 px-2 md:py-4 md:px-4 w-24 md:w-40 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Paket</th>
-                            {MONTHS.map((m, i) => <th key={i} className="py-2.5 px-1 md:py-4 md:px-2 text-center w-6 md:w-10 text-[8px] md:text-xs uppercase tracking-wider bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">{m.substring(0,3)}</th>)}
-                            <th className="py-2.5 px-3 md:py-4 md:px-6 text-left md:text-right w-32 md:w-64 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Opsi & Print</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {filteredCustomers.map(cust => (
-                            <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                              <td className="py-2 px-3 md:py-4 md:px-6">
-                                <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm md:text-base">{cust.name}</div>
-                                <div className="font-bold text-indigo-600 dark:text-indigo-300 text-[10px] md:text-sm mt-0.5 md:mt-1">Blok {cust.block}</div>
-                                <div className={`text-[8px] md:text-[10px] border px-1.5 py-0.5 md:px-2 md:py-1 rounded inline-block mt-1 ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
-                              </td>
-                              <td className="py-2 px-2 md:py-4 md:px-4 text-[10px] md:text-sm">
-                                <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
-                                <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
-                                <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate}</span>
-                              </td>
-                              
+                    <>
+                      {/* DESKTOP TABLE VIEW */}
+                      <div className="hidden lg:block overflow-x-auto overflow-y-auto max-h-[75vh] custom-scrollbar">
+                        <table className="w-full text-left text-sm lg:text-base min-w-[1300px]">
+                          <thead className="sticky top-0 z-30 shadow-sm border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                              <th className="py-4 px-6 w-56 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Pelanggan</th>
+                              <th className="py-4 px-4 w-40 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Paket</th>
+                              {MONTHS.map((m, i) => <th key={i} className="py-4 px-2 text-center w-10 text-xs uppercase tracking-wider bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">{m.substring(0,3)}</th>)}
+                              <th className="py-4 px-6 text-right w-64 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Opsi & Print</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredCustomers.map(cust => (
+                              <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="py-4 px-6">
+                                  <div className="font-semibold text-slate-800 dark:text-slate-100 text-base">{cust.name}</div>
+                                  <div className="font-bold text-indigo-600 dark:text-indigo-300 text-sm mt-1">Blok {cust.block}</div>
+                                  <div className={`text-[10px] border px-2 py-1 rounded inline-block mt-1 font-bold ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
+                                </td>
+                                <td className="py-4 px-4 text-sm">
+                                  <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
+                                  <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
+                                  <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Tgl {cust.dueDate}</span>
+                                </td>
+                                
+                                {MONTHS.map((m, i) => {
+                                  const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
+                                  const isPaid = cust.payments && cust.payments[monthKey];
+                                  return (
+                                    <td key={i} className="py-2 px-0 text-center">
+                                      <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-8 h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                                        {/* Angka dihilangkan, diganti span kosong jika belum bayar */}
+                                        {isPaid ? <Check className="w-5 h-5" strokeWidth={3} /> : <span className="w-5 h-5 block"></span>}
+                                      </button>
+                                    </td>
+                                  );
+                                })}
+                                
+                                <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
+                                  <button onClick={() => toggleIsolirManual(cust)} className={`p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
+                                    <Power className="w-5 h-5" />
+                                  </button>
+                                  <button onClick={() => triggerPrint(cust)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-5 h-5" /></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-5 h-5" /></button>
+                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-5 h-5" /></button>
+                                  <button onClick={() => handleDeleteCustomer(cust.id)} className="p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-5 h-5" /></button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* MOBILE/TABLET CARDS VIEW (NO SLIDE BAR) */}
+                      <div className="lg:hidden flex flex-col gap-3 p-2 bg-slate-50 dark:bg-slate-950">
+                        {filteredCustomers.map(cust => (
+                          <div key={cust.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 md:p-5 shadow-sm hover:shadow-md transition-shadow">
+                            
+                            <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-700/50 pb-2 mb-2">
+                               <div className="flex flex-col gap-0.5">
+                                 <span className="font-extrabold text-slate-800 dark:text-slate-100 text-[13px] md:text-lg">{cust.name}</span>
+                                 <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                   <span className="font-bold text-indigo-700 dark:text-indigo-300 text-[9px] bg-indigo-100 dark:bg-indigo-500/20 px-1.5 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-500/30">Blok {cust.block}</span>
+                                   <span className={`text-[9px] border px-1.5 py-0.5 rounded-md font-bold ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' : 'text-rose-700 dark:text-rose-400 border-rose-300 bg-rose-100 dark:bg-rose-900/30'}`}>{cust.status}</span>
+                                 </div>
+                               </div>
+                               <div className="flex flex-col items-end gap-0.5 text-right">
+                                  <span className="text-[9px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded-full">{getPackage(cust.packageId).speed}</span>
+                                  <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100">{formatIDR(getPackage(cust.packageId).price)}</span>
+                                  <span className="text-rose-600 dark:text-rose-400 font-bold text-[9px] bg-rose-50 dark:bg-rose-900/20 px-1.5 py-0.5 rounded-md uppercase mt-0.5">Tempo: Tgl {cust.dueDate}</span>
+                               </div>
+                            </div>
+                            
+                            <div className="mb-1.5 text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Pembayaran {selectedYear}</div>
+                            <div className="grid grid-cols-6 gap-1.5 mb-3">
                               {MONTHS.map((m, i) => {
                                 const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
                                 const isPaid = cust.payments && cust.payments[monthKey];
                                 return (
-                                  <td key={i} className="py-2 px-0 text-center">
-                                    <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-6 h-6 md:w-8 md:h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-100 dark:bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
-                                      {isPaid ? <Check className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={3} /> : <span className="text-[8px] md:text-xs">{i+1}</span>}
-                                    </button>
-                                  </td>
+                                  <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex flex-col items-center justify-center py-1.5 rounded-lg border transition-all ${isPaid ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                                    <span className={`text-[8px] uppercase font-extrabold mb-0.5 tracking-wider ${isPaid ? '' : 'text-slate-400'}`}>{m.substring(0,3)}</span>
+                                    {/* Angka dihilangkan pada tampilan mobile, diganti dengan kotak kosong kecil */}
+                                    {isPaid ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : <span className="w-3.5 h-3.5 block"></span>}
+                                  </button>
                                 );
                               })}
-                              
-                              <td className="py-2 px-3 md:py-4 md:px-6 text-left md:text-right space-x-1 md:space-x-1.5 whitespace-nowrap">
-                                <button onClick={() => toggleIsolirManual(cust)} className={`p-1.5 md:p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                  <Power className="w-4 h-4 md:w-5 md:h-5" />
-                                </button>
-                                <button onClick={() => triggerPrint(cust)} className="p-1.5 md:p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-1.5 md:p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-1.5 md:p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                                <button onClick={() => handleDeleteCustomer(cust.id)} className="p-1.5 md:p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-4 h-4 md:w-5 md:h-5" /></button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                            </div>
+                            
+                            <div className="flex justify-between items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                               <button onClick={() => toggleIsolirManual(cust)} className={`flex-1 flex justify-center py-2.5 rounded-xl transition-colors shadow-sm ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50' : 'bg-rose-500 text-white hover:bg-emerald-500'}`}><Power className="w-4 h-4" /></button>
+                               <button onClick={() => triggerPrint(cust)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors shadow-sm"><Printer className="w-4 h-4" /></button>
+                               <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm"><FileText className="w-4 h-4" /></button>
+                               <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors shadow-sm"><Edit3 className="w-4 h-4" /></button>
+                               <button onClick={() => handleDeleteCustomer(cust.id)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors shadow-sm"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
             )}
 
             {activeTab === 'ledger' && (
-              <div className="space-y-6 md:space-y-8 px-2 sm:px-0 max-w-[1600px] mx-auto">
+              <div className="space-y-4 md:space-y-8 max-w-[1600px] mx-auto">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   <div className="flex items-center gap-4">
                     <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan Bulan Ini</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
+                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan</p>
+                    <h3 className="text-lg md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Total Keluar (Jurnal)</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalJurnal)}</h3>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
+                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Keluar (Jurnal)</p>
+                    <h3 className="text-lg md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalJurnal)}</h3>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Total Keluar (Fam)</p>
-                    <h3 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalFam)}</h3>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
+                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Keluar (Fam)</p>
+                    <h3 className="text-lg md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalFam)}</h3>
                   </div>
-                  <div className={`border p-4 md:p-6 rounded-2xl shadow-sm ${netProfit >= 0 ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}`}>
-                    <p className={`text-[10px] md:text-xs uppercase font-bold flex items-center gap-1.5 ${netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}><Wallet className="w-3 h-3 md:w-4 md:h-4"/> Total Uang (Sisa Kas)</p>
-                    <h3 className={`text-xl md:text-2xl lg:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
+                  <div className={`border p-3 md:p-6 rounded-2xl shadow-sm ${netProfit >= 0 ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}`}>
+                    <p className={`text-[10px] md:text-xs uppercase font-bold flex items-center gap-1.5 ${netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}><Wallet className="w-3 h-3 md:w-4 md:h-4"/> Total Sisa Kas</p>
+                    <h3 className={`text-lg md:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 md:gap-6 bg-white dark:bg-slate-900 p-4 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white dark:bg-slate-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
                   <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 w-full sm:w-auto">
                     <button onClick={() => setLedgerTab('Jurnal')} className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base transition-all ${ledgerTab === 'Jurnal' ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Jurnal Umum</button>
                     <button onClick={() => setLedgerTab('Jurnal Fam')} className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base transition-all ${ledgerTab === 'Jurnal Fam' ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>Jurnal Fam</button>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-                    <button onClick={() => exportCSV('expenses')} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-emerald-600 rounded-xl text-white text-sm md:text-base font-semibold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-2"><Download className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
+                    <button onClick={() => exportCSV('expenses')} className="flex-1 sm:flex-none px-4 py-2 md:py-3 bg-emerald-600 rounded-xl text-white text-xs md:text-base font-bold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-1.5"><Download className="w-3.5 h-3.5 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
                     <button onClick={() => { 
                       setEditingExpense(null);
                       setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', description: '', notes: '', amount: '' }); 
                       setIsExpenseModalOpen(true); 
-                    }} className="flex-1 sm:flex-none px-4 py-2.5 md:py-3 bg-rose-600 rounded-xl text-white text-sm md:text-base font-semibold flex justify-center gap-2 shadow-lg hover:bg-rose-700">
-                      <Plus className="w-4 h-4 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span>
+                    }} className="flex-1 sm:flex-none px-4 py-2 md:py-3 bg-rose-600 rounded-xl text-white text-xs md:text-base font-bold flex justify-center items-center gap-1.5 shadow-lg hover:bg-rose-700">
+                      <Plus className="w-3.5 h-3.5 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span>
                     </button>
                   </div>
                 </div>
                 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto shadow-xl transition-colors">
-                  <table className="w-full text-left text-xs md:text-sm lg:text-base min-w-[700px] md:min-w-full">
-                    <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                      <tr>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Tanggal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Kategori & Uraian</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Catatan</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6">Admin</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-right">Nominal</th>
-                        <th className="py-3 px-4 md:py-4 md:px-6 text-center w-20 md:w-28">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {displayedExpenses.length === 0 ? (
-                        <tr><td colSpan="6" className="text-center py-8 md:py-12 text-slate-400 text-sm md:text-base">Belum ada pengeluaran di {ledgerTab} bulan ini.</td></tr>
-                      ) : (
-                        displayedExpenses.map(exp => (
-                          <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                            <td className="py-3 px-4 md:py-4 md:px-6 whitespace-nowrap">{exp.date}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 font-medium"><span className="text-[10px] md:text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 md:px-2 md:py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span><span className="text-sm md:text-base">{exp.description}</span></td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-[10px] md:text-sm">{exp.admin}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
-                            <td className="py-3 px-4 md:py-4 md:px-6 text-center whitespace-nowrap space-x-1">
-                              <button onClick={() => { 
-                                setEditingExpense(exp);
-                                setExpenseForm({
-                                  date: exp.date,
-                                  category: exp.category,
-                                  description: exp.description,
-                                  notes: exp.notes || '',
-                                  amount: exp.amount
-                                });
-                                setIsExpenseModalOpen(true);
-                              }} className="p-1.5 md:p-2 text-slate-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Edit Pengeluaran">
-                                <Edit3 className="w-4 h-4 md:w-5 md:h-5"/>
-                              </button>
-                              <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 md:p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus Pengeluaran">
-                                <Trash2 className="w-4 h-4 md:w-5 md:h-5"/>
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors overflow-hidden">
+                  
+                  {/* DESKTOP TABLE VIEW */}
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full text-left text-sm lg:text-base">
+                      <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                        <tr>
+                          <th className="py-4 px-6">Tanggal</th>
+                          <th className="py-4 px-6">Kategori & Uraian</th>
+                          <th className="py-4 px-6">Catatan</th>
+                          <th className="py-4 px-6">Admin</th>
+                          <th className="py-4 px-6 text-right">Nominal</th>
+                          <th className="py-4 px-6 text-center w-28">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {displayedExpenses.length === 0 ? (
+                          <tr><td colSpan="6" className="text-center py-12 text-slate-400 text-base">Belum ada pengeluaran di {ledgerTab} bulan ini.</td></tr>
+                        ) : (
+                          displayedExpenses.map(exp => (
+                            <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="py-4 px-6 whitespace-nowrap">{exp.date}</td>
+                              <td className="py-4 px-6 font-medium"><span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded mr-2 border border-slate-200 dark:border-slate-700">{exp.category}</span><span className="text-base">{exp.description}</span></td>
+                              <td className="py-4 px-6 text-slate-500 dark:text-slate-400 italic">{exp.notes || '-'}</td>
+                              <td className="py-4 px-6 text-sm">{exp.admin}</td>
+                              <td className="py-4 px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
+                              <td className="py-4 px-6 text-center whitespace-nowrap space-x-1">
+                                <button onClick={() => { 
+                                  setEditingExpense(exp);
+                                  setExpenseForm({ date: exp.date, category: exp.category, description: exp.description, notes: exp.notes || '', amount: exp.amount });
+                                  setIsExpenseModalOpen(true);
+                                }} className="p-2 text-slate-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Edit"><Edit3 className="w-5 h-5"/></button>
+                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus"><Trash2 className="w-5 h-5"/></button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* MOBILE CARDS VIEW */}
+                  <div className="lg:hidden flex flex-col gap-2 p-2 bg-slate-50 dark:bg-slate-950">
+                    {displayedExpenses.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 text-sm">Belum ada pengeluaran.</div>
+                    ) : (
+                      displayedExpenses.map(exp => (
+                        <div key={exp.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-sm">
+                           <div className="flex justify-between items-start mb-2">
+                             <span className="text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">{exp.date}</span>
+                             <span className="font-extrabold text-rose-600 dark:text-rose-400 text-sm">{formatIDR(exp.amount)}</span>
+                           </div>
+                           <div className="mb-3 mt-1.5">
+                             <div className="font-bold text-slate-800 dark:text-slate-100 text-[13px] mb-1 flex flex-wrap items-center gap-1.5">
+                               <span className="text-[8px] uppercase font-extrabold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-md">{exp.category}</span>
+                             </div>
+                             <div className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">{exp.description}</div>
+                             {exp.notes && <div className="text-[11px] text-slate-500 italic mt-1.5 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">{exp.notes}</div>}
+                           </div>
+                           <div className="flex justify-between items-center pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
+                             <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1 bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-full"><User className="w-3 h-3"/> {exp.admin}</div>
+                             <div className="flex gap-1.5">
+                                <button onClick={() => { 
+                                  setEditingExpense(exp);
+                                  setExpenseForm({ date: exp.date, category: exp.category, description: exp.description, notes: exp.notes || '', amount: exp.amount });
+                                  setIsExpenseModalOpen(true);
+                                }} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-500 hover:text-indigo-500 transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-500 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                             </div>
+                           </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
                 </div>
               </div>
             )}
 
             {activeTab === 'settings' && (
-              <div className="flex flex-col lg:flex-row gap-6 md:gap-8 mx-auto items-start px-2 sm:px-0">
+              <div className="flex flex-col lg:flex-row gap-4 md:gap-8 mx-auto items-start">
                 
-                <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors relative">
+                <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors relative">
                   {!isEditingProfile ? (
                     <>
-                      <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-6 right-6 md:top-8 md:right-8 p-2 md:p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil">
+                      <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-4 right-4 md:top-8 md:right-8 p-2 md:p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil">
                         <Edit3 className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
-                      <h3 className="text-lg md:text-xl font-bold mb-6 md:mb-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User className="w-5 h-5 md:w-6 md:h-6"/> Profil Saya</h3>
+                      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User className="w-5 h-5 md:w-6 md:h-6"/> Profil Saya</h3>
                       
-                      <div className="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
-                        <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-3 md:gap-6 mb-4 md:mb-8">
+                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                           {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />}
                         </div>
                         <div>
-                          <p className="font-bold text-lg md:text-xl text-slate-800 dark:text-slate-100 leading-tight">{currentUser.name}</p>
-                          <p className="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-1 md:mt-2">{currentUser.role}</p>
+                          <p className="font-bold text-base md:text-xl text-slate-800 dark:text-slate-100 leading-tight">{currentUser.name}</p>
+                          <p className="text-[10px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-0.5 md:mt-2">{currentUser.role}</p>
                         </div>
                       </div>
 
-                      <div className="space-y-4 md:space-y-6">
+                      <div className="space-y-3 md:space-y-6">
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                          <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Username Login</span>
+                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Username Login</span>
                           <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.username}</span>
                         </div>
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3 relative">
-                          <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Password</span>
+                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Password</span>
                           <div className="flex justify-between items-center mt-0.5">
                             <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
                             <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5">
@@ -932,28 +1034,28 @@
                           </div>
                         </div>
                         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                          <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">Email</span>
+                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Email</span>
                           <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.email || '-'}</span>
                         </div>
                         {currentUser.id === 'admin1' && (
                           <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                            <span className="text-[10px] md:text-xs uppercase font-bold text-slate-400">No. WhatsApp</span>
+                            <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">No. WhatsApp</span>
                             <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.phone}</span>
                           </div>
                         )}
                         
-                        <div className="mt-4 md:mt-6 flex items-center gap-2 md:gap-3">
+                        <div className="mt-3 md:mt-6 flex items-center gap-2 md:gap-3">
                           <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${currentUser.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-                          <span className="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span>
+                          <span className="text-[11px] md:text-sm font-medium text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span>
                         </div>
                       </div>
                     </>
                   ) : (
                     <>
                       <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Edit3 className="w-5 h-5 md:w-6 md:h-6"/> Edit Profil</h3>
-                      <form onSubmit={handleSaveProfile} className="space-y-4 md:space-y-5">
+                      <form onSubmit={handleSaveProfile} className="space-y-3 md:space-y-5">
                         
-                        <div className="flex items-center gap-4 md:gap-6 mb-6 md:mb-8">
+                        <div className="flex items-center gap-3 md:gap-6 mb-4 md:mb-8">
                           <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 md:border-4 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group shrink-0">
                             {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 md:w-8 md:h-8 text-slate-400" />}
                             <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
@@ -961,46 +1063,46 @@
                               <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, false)} className="hidden" />
                             </label>
                           </div>
-                          <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
+                          <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
                         </div>
                         
-                        <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                        <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                         
                         <div className="relative">
-                          <label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Password Baru</label>
-                          <input type={showPassword ? "text" : "password"} required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-4 pr-12 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" />
+                          <label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Password Baru</label>
+                          <input type={showPassword ? "text" : "password"} required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-3 pr-10 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" />
                           <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 md:bottom-2.5 right-3 md:right-4 text-slate-400 hover:text-indigo-500">
                             {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}
                           </button>
                         </div>
 
-                        <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Email Anda</label><input type="email" placeholder="Contoh: admin@gmail.com" value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Email Anda</label><input type="email" placeholder="Contoh: admin@gmail.com" value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                         
                         {currentUser.id === 'admin1' && (
-                          <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 md:mb-2">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                          <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
                         )}
                         
-                        <div className="pt-4 md:pt-6 mt-4 md:mt-6 border-t border-slate-200 dark:border-slate-800">
-                          <label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 md:mb-3">Keamanan Biometrik (WebAuthn)</label>
+                        <div className="pt-3 md:pt-6 mt-3 md:mt-6 border-t border-slate-200 dark:border-slate-800">
+                          <label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 md:mb-3">Keamanan Biometrik (WebAuthn)</label>
                           {!editProfile.credentialId ? (
-                            <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 md:gap-3 py-2.5 md:py-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                            <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 md:gap-3 py-2 md:py-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
                               <Fingerprint className="w-4 h-4 md:w-5 md:h-5" /> Daftarkan Sidik Jari Asli
                             </button>
                           ) : (
                             <div className="flex items-center justify-between p-3 md:p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl">
-                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs md:text-sm font-bold"><Check className="w-4 h-4 md:w-5 md:h-5"/> Terdaftar</div>
+                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-[11px] md:text-sm font-bold"><Check className="w-3.5 h-3.5 md:w-5 md:h-5"/> Terdaftar</div>
                               <label className="flex items-center gap-2 md:gap-3 cursor-pointer">
-                                <span className="text-[10px] md:text-xs font-medium text-slate-500">Aktifkan:</span>
-                                <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 md:w-5 md:h-5 rounded text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"/>
+                                <span className="text-[9px] md:text-xs font-medium text-slate-500">Aktifkan:</span>
+                                <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-3.5 h-3.5 md:w-5 md:h-5 rounded text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"/>
                               </label>
                             </div>
                           )}
                         </div>
 
-                        <div className="flex gap-3 pt-4 md:pt-6 mt-2 md:mt-4">
-                          <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                          <button type="submit" className="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white rounded-xl text-sm md:text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors">Simpan Profil</button>
+                        <div className="flex gap-2.5 pt-3 md:pt-6 mt-2 md:mt-4">
+                          <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                          <button type="submit" className="flex-1 py-2 md:py-3 bg-indigo-600 text-white rounded-xl text-sm md:text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors">Simpan Profil</button>
                         </div>
                       </form>
                     </>
@@ -1008,33 +1110,33 @@
                 </div>
                 
                 {currentUser.id === 'admin1' && (
-                  <div className="flex-1 w-full space-y-6 md:space-y-8">
+                  <div className="flex-1 w-full space-y-4 md:space-y-8">
                     
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors">
                       <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert className="w-5 h-5 md:w-6 md:h-6"/> Kelola Akses Admin Sistem</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 md:gap-6">
                         {admins.filter(a => a.id !== 'admin1').map(admin => (
-                          <div key={admin.id} className={`flex flex-col p-4 md:p-5 rounded-2xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
-                            <div className="flex items-center justify-between mb-4 md:mb-5">
+                          <div key={admin.id} className={`flex flex-col p-3 md:p-5 rounded-2xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
+                            <div className="flex items-center justify-between mb-3 md:mb-5">
                               <div className="flex items-center gap-3 md:gap-4">
                                 <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
                                   {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />}
                                 </div>
                                 <div>
                                   <p className="font-bold text-sm md:text-base text-slate-800 dark:text-slate-100">{admin.name}</p>
-                                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
+                                  <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-2 md:gap-3 border-t border-slate-200 dark:border-slate-700 pt-3 md:pt-4">
-                              <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 flex items-center justify-center gap-2 py-2 md:py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
-                                <UserCog className="w-4 h-4 md:w-5 md:h-5"/> Edit Profil
+                            <div className="flex items-center gap-2 md:gap-3 border-t border-slate-200 dark:border-slate-700 pt-2.5 md:pt-4">
+                              <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 md:py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
+                                <UserCog className="w-3.5 h-3.5 md:w-5 md:h-5"/> Edit Profil
                               </button>
                               
-                              <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 flex items-center justify-center gap-2 py-2 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
+                              <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
                                 {admin.status === 'Aktif' ? 'Blokir' : 'Aktifkan'}
-                                {admin.status === 'Aktif' ? <ToggleRight className="w-4 h-4 md:w-5 md:h-5"/> : <ToggleLeft className="w-4 h-4 md:w-5 md:h-5"/>}
+                                {admin.status === 'Aktif' ? <ToggleRight className="w-3.5 h-3.5 md:w-5 md:h-5"/> : <ToggleLeft className="w-3.5 h-3.5 md:w-5 md:h-5"/>}
                               </button>
                             </div>
                           </div>
@@ -1042,16 +1144,16 @@
                       </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl transition-colors">
-                      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Activity className="w-5 h-5 md:w-6 md:h-6"/> Riwayat Aktivitas Sistem (Log)</h3>
-                      <div className="h-64 md:h-80 overflow-y-auto pr-2 md:pr-4 custom-scrollbar">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors">
+                      <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Activity className="w-5 h-5 md:w-6 md:h-6"/> Riwayat Aktivitas (Log)</h3>
+                      <div className="h-48 md:h-80 overflow-y-auto pr-1 md:pr-4 custom-scrollbar">
                         {auditLogs.length === 0 ? (
-                          <p className="text-center text-slate-500 py-10 md:py-14 text-sm md:text-base">Belum ada aktivitas tercatat.</p>
+                          <p className="text-center text-slate-500 py-6 md:py-14 text-sm md:text-base">Belum ada aktivitas tercatat.</p>
                         ) : (
-                          <ul className="space-y-3 md:space-y-4">
+                          <ul className="space-y-2 md:space-y-4">
                             {auditLogs.map((log) => (
-                              <li key={log.id} className="flex gap-3 md:gap-4 text-xs md:text-sm p-3 md:p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <div className="text-slate-400 w-24 md:w-28 shrink-0 text-[10px] md:text-xs font-mono">{log.dateStr}</div>
+                              <li key={log.id} className="flex gap-2 md:gap-4 text-[11px] md:text-sm p-2.5 md:p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <div className="text-slate-400 w-20 md:w-28 shrink-0 text-[9px] md:text-xs font-mono">{log.dateStr}</div>
                                 <div><span className="font-bold text-indigo-600 dark:text-indigo-400">{log.admin}</span>: <span className="text-slate-700 dark:text-slate-300 ml-1">{log.action}</span></div>
                               </li>
                             ))}
@@ -1069,10 +1171,10 @@
 
           {cropState.isOpen && (
             <div className="fixed inset-0 z-[70] bg-slate-900/80 dark:bg-slate-950/90 flex flex-col items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Crop className="w-5 h-5 md:w-6 md:h-6"/> Atur Posisi Foto</h3>
                 
-                <div className="flex justify-center mb-6 md:mb-8">
+                <div className="flex justify-center mb-5 md:mb-8">
                   <div 
                     className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-dashed border-indigo-400 bg-slate-100 dark:bg-slate-800 relative cursor-move touch-none"
                     onMouseDown={handleCropDragStart}
@@ -1095,7 +1197,7 @@
                   </div>
                 </div>
 
-                <div className="mb-6 md:mb-8">
+                <div className="mb-5 md:mb-8">
                   <label className="block text-xs md:text-sm font-semibold text-slate-500 mb-2 md:mb-3">Zoom / Perbesar</label>
                   <input 
                     type="range" min="1" max="3" step="0.1" 
@@ -1106,31 +1208,31 @@
                   <p className="text-[10px] md:text-xs text-slate-400 text-center mt-2 md:mt-3">Geser foto (pan) dengan jari atau mouse ke area yang pas.</p>
                 </div>
 
-                <div className="flex gap-3 md:gap-4">
-                  <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2.5 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                  <button onClick={applyCrop} className="flex-1 py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm md:text-base hover:bg-indigo-700 transition-colors">Simpan Crop</button>
+                <div className="flex gap-2.5 md:gap-4">
+                  <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                  <button onClick={applyCrop} className="flex-1 py-2 md:py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm md:text-base hover:bg-indigo-700 transition-colors">Simpan Crop</button>
                 </div>
               </div>
             </div>
           )}
 
           {isCustomerModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
-                <form onSubmit={handleSaveCustomer} className="space-y-4 md:space-y-5">
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Blok</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
+                <form onSubmit={handleSaveCustomer} className="space-y-3 md:space-y-5">
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Blok</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
                   
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">No HP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Username PPPoE MikroTik</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="Contoh: b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">No HP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Username PPPoE MikroTik</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="Contoh: b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
                   
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Paket</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-indigo-700 shadow-lg transition-colors">Simpan</button>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Paket</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
+                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2 md:py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-indigo-700 shadow-lg transition-colors">Simpan</button>
                   </div>
                 </form>
               </div>
@@ -1138,15 +1240,15 @@
           )}
 
           {isExpenseModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingExpense ? 'Edit Kas Keluar' : 'Catat Kas Keluar'}</h3>
-                <form onSubmit={handleSaveExpense} className="space-y-4 md:space-y-5">
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                <form onSubmit={handleSaveExpense} className="space-y-3 md:space-y-5">
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
                   
                   <div>
-                    <label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Kategori</label>
-                    <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors">
+                    <label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Kategori</label>
+                    <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors">
                       <option>Belanja</option>
                       <option>Perbaikan/Pemasangan</option>
                       <option>Operasional</option>
@@ -1154,11 +1256,11 @@
                     </select>
                   </div>
                   
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1.5">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2.5 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2.5 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Simpan</button>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
+                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Simpan</button>
                   </div>
                 </form>
               </div>
@@ -1166,11 +1268,11 @@
           )}
 
           {isTargetAdminModalOpen && targetAdmin && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-6 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog className="w-5 h-5 md:w-6 md:h-6"/> Edit {targetAdmin.role}</h3>
-                <form onSubmit={handleSaveTargetAdmin} className="space-y-4 md:space-y-5">
-                  <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-6">
+                <form onSubmit={handleSaveTargetAdmin} className="space-y-3 md:space-y-5">
+                  <div className="flex items-center gap-3 md:gap-6 mb-3 md:mb-6">
                     <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 md:border-4 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group shrink-0">
                       {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 md:w-8 md:h-8 text-slate-400" />}
                       <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
@@ -1178,18 +1280,18 @@
                         <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
                       </label>
                     </div>
-                    <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
+                    <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
                   </div>
                   
-                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Username Login</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Password</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Password</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
+                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
 
-                  <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2.5 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-lg hover:bg-indigo-700 transition-colors">Simpan Data</button>
+                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
+                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
+                    <button type="submit" className="flex-1 py-2 md:py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-lg hover:bg-indigo-700 transition-colors">Simpan Data</button>
                   </div>
                 </form>
               </div>
