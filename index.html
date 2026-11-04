@@ -149,6 +149,8 @@
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [auditLogs, setAuditLogs] = useState([]); 
+      // State untuk menyimpan konfigurasi (misalnya No. WhatsApp Gateway)
+      const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
       
       const [printData, setPrintData] = useState(null);
@@ -219,7 +221,16 @@
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => b.time - a.time); setAuditLogs(data);
           });
-          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); };
+          
+          // Mengambil pengaturan khusus (misal No. WhatsApp Gateway Bot)
+          const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                setSettingsData(docSnapshot.data());
+            } else {
+                setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); // Nilai Default
+            }
+          });
+          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
@@ -373,6 +384,12 @@
           const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
           if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
+          
+          // Menyimpan Pengaturan Konfigurasi Umum Tambahan
+          if (currentUser.id === 'admin1') {
+             await updateDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: settingsData.waGatewayPhone });
+          }
+          
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
       };
@@ -398,14 +415,18 @@
       };
 
       const triggerPrint = (cust) => { setPrintData(cust); setTimeout(() => { window.print(); setPrintData(null); }, 300); };
+      
       const sendWAInvoice = (cust) => {
+        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '62811122699');
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
+        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/${targetPhone}`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
+      
       const sendWAReceipt = (cust, periodKey) => {
+        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '62811122699');
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(getPackage(cust.packageId).price)}* telah kami terima dan *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
+        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(getPackage(cust.packageId).price)}* telah kami terima dan *LUNAS*.\n\nInfo & CS: wa.me/${targetPhone}`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -692,7 +713,7 @@
                       </div>
 
                       {filteredDueCustomers.length === 0 ? (
-                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Tidak ada pelanggan belum lunas. 👍</div>
+                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
                       ) : (
                         <div className="space-y-3">
                           {filteredDueCustomers.map(cust => {
@@ -908,9 +929,14 @@
                               <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400">{showPassword ? <EyeOff className="w-3.5 h-3.5"/> : <Eye className="w-3.5 h-3.5"/>}</button>
                             </div>
                           </div>
+                          
+                          {/* Pengaturan Nomor WA Khusus Gateway (Tampil Semua) */}
+                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block">Nomor Gateway Bot WA</span>
+                            <span className="text-xs font-bold">{settingsData.waGatewayPhone || 'Belum Disetel'}</span>
+                          </div>
                         </div>
                         
-                        {/* Tombol Logout Khusus Mode Mobile */}
                         <div className="lg:hidden mt-6">
                           <button onClick={handleLogout} className="w-full py-3.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-800 shadow-sm active:scale-95 transition-all">
                             <LogOut className="w-5 h-5"/> Keluar Aplikasi
@@ -936,9 +962,17 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">NAMA</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">USERNAME</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">PASSWORD</label><input type="text" required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
-                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
 
-                          <div className="flex gap-2 pt-2">
+                          {currentUser.id === 'admin1' && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
+                               <label className="block text-[9px] font-bold text-slate-500 mb-1 mt-2 uppercase">Nomor Gateway Bot WA</label>
+                               <input type="text" required value={settingsData.waGatewayPhone} onChange={e => setSettingsData({...settingsData, waGatewayPhone: e.target.value})} placeholder="62811122699" className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" />
+                               <p className="text-[9px] text-slate-400 mt-1">Gunakan format 62 tanpa spasi (+)</p>
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-2 mt-4">
                             <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs">Batal</button>
                             <button type="submit" className="flex-1 py-2.5 bg-kai-blue text-white rounded-xl font-bold text-xs shadow-md">Simpan</button>
                           </div>
@@ -953,7 +987,6 @@
                       </button>
                     )}
 
-                    {/* Menu Kelola Akses Admin (Tampil jika showAdminManagement true) */}
                     {currentUser.id === 'admin1' && showAdminManagement && (
                       <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
                         <button onClick={() => setShowAdminManagement(false)} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-kai-blue dark:hover:text-white transition-colors">
@@ -1059,7 +1092,7 @@
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Pelanggan' : 'Pelanggan Baru'}</h3>
+                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Warga' : 'Warga Baru'}</h3>
                 <form onSubmit={handleSaveCustomer} className="space-y-4">
                   <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
                   <div className="flex gap-3">
@@ -1117,7 +1150,7 @@
 
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
                   <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
