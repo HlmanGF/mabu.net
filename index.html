@@ -235,12 +235,11 @@
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
-      
-      // AUTO LOGOUT PADA HP SAAT KELUAR APLIKASI
+
+      // Auto logout pada mobile devices saat visibility tersembunyi
       useEffect(() => {
         const handleVisibilityChange = () => {
-          // Hanya berlaku untuk HP (lebar layar kurang dari 1024px)
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024) {
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) {
             handleLogout();
           }
         };
@@ -497,7 +496,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -686,7 +685,7 @@
                       </div>
                     </div>
 
-                    {/* Quick Action Grid (KAI Style Menu) */}
+                    {/* Quick Action Grid (KAI Style Menu) Tanpa Cari Cepat */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                       <div className="grid grid-cols-3 gap-2">
                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
@@ -774,26 +773,45 @@
                 {/* --- CUSTOMERS ROUTE --- */}
                 {activeTab === 'customers' && (
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
-                    </div>
+                    
+                    {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
+                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
+                      
+                      <div className="flex justify-between items-center mb-3">
+                        <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
+                      </div>
+                      
+                      {/* Control Bar Atas (Dropdown, Filter, Tombol Aksi) */}
+                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
+                        
+                        <div className="flex flex-col md:flex-row gap-2 w-full">
+                          
+                          {/* Search Input */}
+                          <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                            <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
+                          </div>
 
-                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-2 mb-4 sticky top-0 z-30 shadow-md">
-                      <div className="flex gap-2 w-full">
-                        <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none flex-1 text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                        <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
-                      </div>
-                      <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-64 bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
-                      
-                      <div className="flex gap-2 overflow-x-auto custom-scrollbar mt-1 md:mt-0">
-                        {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
-                          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100'}`}>{cat === 'Gratis' ? '🎁 Pelanggan Gratis' : cat}</button>
-                        ))}
-                      </div>
-                      
-                      <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                         <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
-                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4"><Plus className="w-4 h-4"/> Tambah</button>
+                          {/* Filter Dropdown + Category Chips */}
+                          <div className="flex flex-wrap items-center gap-2">
+                             <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                             
+                             <div className="flex gap-1.5 overflow-x-auto custom-scrollbar flex-1 md:flex-none">
+                               {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
+                                 <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
+                               ))}
+                             </div>
+                          </div>
+                          
+                        </div>
+                        
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 w-full md:w-auto mt-1 md:mt-0">
+                           <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg flex items-center justify-center ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                           <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
+                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4 shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
+                        </div>
+                        
                       </div>
                     </div>
 
@@ -832,7 +850,7 @@
                                <div className="flex justify-end gap-1.5 pt-1">
                                   <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => sendWAReceipt(currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
                                </div>
                             </div>
@@ -928,14 +946,12 @@
                             </div>
                           </div>
                           
-                          {/* Pengaturan Nomor WA Khusus Gateway (Tampil Semua) */}
                           <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
                             <span className="text-[9px] uppercase font-bold text-slate-400 block">Nomor Gateway Bot WA</span>
                             <span className="text-xs font-bold">{settingsData.waGatewayPhone || 'Belum Disetel'}</span>
                           </div>
                         </div>
                         
-                        {/* Tombol Logout Khusus Mode Mobile */}
                         <div className="lg:hidden mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
                           <button onClick={handleLogout} className="w-full py-3.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-800 shadow-sm active:scale-95 transition-all">
                             <LogOut className="w-5 h-5"/> Keluar Aplikasi
@@ -962,6 +978,23 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">USERNAME</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">PASSWORD</label><input type="text" required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+
+                          <div className="pt-3 border-t border-slate-100 dark:border-slate-700 mt-4">
+                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
+                            {!editProfile.credentialId ? (
+                              <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
+                                <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
+                              </button>
+                            ) : (
+                              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
+                                  <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
+                                </label>
+                              </div>
+                            )}
+                          </div>
 
                           {currentUser.id === 'admin1' && (
                             <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
