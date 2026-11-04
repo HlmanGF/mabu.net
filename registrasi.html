@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulir Pendaftaran MabuNet</title>
-    <!-- Firebase SDK (Gunakan versi yang sama dengan admin MabuNet Anda) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
     
     <style>
         :root {
-            --bg-color: #0f172a; /* Warna latar belakang gelap */
+            --bg-color: #0f172a; 
             --card-bg: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --accent: #06b6d4; /* Warna cyan/biru muda */
+            --accent: #06b6d4; 
             --border-color: #334155;
         }
 
@@ -107,7 +107,6 @@
             opacity: 0.9;
         }
 
-        /* Responsive untuk HP */
         @media (max-width: 500px) {
             .grid-2-col {
                 grid-template-columns: 1fr;
@@ -124,18 +123,15 @@
         <form id="regForm">
             <div class="form-group">
                 <label>Pilih Paket Internet</label>
+                <!-- Value di bawah ini sudah disesuaikan dengan ID Paket MabuNet -->
                 <select id="paket" required>
                     <option value="">-- Pilih Paket --</option>
-                    <option value="Standar 10 Mbps - Rp 150.000">Standar 10 Mbps - Rp 150.000</option>
-                    <option value="Standar 15 Mbps - Rp 200.000">Standar 15 Mbps - Rp 200.000</option>
-                    <option value="Standar 20 Mbps - Rp 250.000">Standar 20 Mbps - Rp 250.000</option>
-                    <option value="Standar 25 Mbps - Rp 300.000">Standar 25 Mbps - Rp 300.000</option>
-                    <option value="Standar 30 Mbps - Rp 350.000">Standar 30 Mbps - Rp 350.000</option>
-                    <option value="Netflix 10 Mbps - Rp 200.000">Netflix 10 Mbps - Rp 200.000</option>
-                    <option value="Netflix 15 Mbps - Rp 250.000">Netflix 15 Mbps - Rp 250.000</option>
-                    <option value="Netflix 20 Mbps - Rp 300.000">Netflix 20 Mbps - Rp 300.000</option>
-                    <option value="Netflix 25 Mbps - Rp 350.000">Netflix 25 Mbps - Rp 350.000</option>
-                    <option value="Netflix 30 Mbps - Rp 400.000">Netflix 30 Mbps - Rp 400.000</option>
+                    <option value="5mbps_100">5 Mbps - Rp 100.000</option>
+                    <option value="10mbps_150">10 Mbps - Rp 150.000</option>
+                    <option value="10mbps_180">10 Mbps - Rp 180.000</option>
+                    <option value="15mbps_200">15 Mbps - Rp 200.000</option>
+                    <option value="20mbps_250">20 Mbps - Rp 250.000</option>
+                    <option value="25mbps_300">25 Mbps - Rp 300.000</option>
                 </select>
             </div>
 
@@ -151,8 +147,20 @@
             </div>
 
             <div class="form-group">
-                <label>Alamat Lengkap / Blok Rumah</label>
-                <textarea id="alamat" rows="3" placeholder="Contoh: Perumahan Mabu Park Blok A No. 12" required></textarea>
+                <label>Pilih Blok Rumah</label>
+                <select id="blok_rumah" required>
+                    <option value="">-- Pilih Blok --</option>
+                    <option value="Mabu">Mabu</option>
+                    <option value="Ranau">Ranau</option>
+                    <option value="RG">RG</option>
+                    <option value="Pesona">Pesona</option>
+                    <option value="PLT">PLT</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Detail Alamat (No. Rumah)</label>
+                <textarea id="detail_alamat" rows="2" placeholder="Contoh: No. 12 / Patokan rumah warna biru" required></textarea>
             </div>
 
             <div class="section-title">Pengaturan WiFi (Wajib Diisi)</div>
@@ -161,83 +169,4 @@
             <div class="grid-2-col">
                 <div class="form-group">
                     <label>Request Nama WiFi (SSID)</label>
-                    <input type="text" id="ssid" placeholder="Contoh: RumahKeluarga" required>
-                </div>
-                <div class="form-group">
-                    <label>Request Password WiFi</label>
-                    <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required>
-                </div>
-            </div>
-
-            <button type="submit" class="submit-btn" id="btnSubmit">Kirim Pendaftaran</button>
-        </form>
-    </div>
-
-    <script>
-        // 1. MASUKKAN KONFIGURASI FIREBASE ANDA DI SINI
-        const firebaseConfig = {
-            apiKey: "API_KEY_ANDA",
-            authDomain: "DOMAIN_ANDA.firebaseapp.com",
-            projectId: "PROJECT_ID_ANDA",
-            storageBucket: "BUCKET_ANDA.appspot.com",
-            messagingSenderId: "SENDER_ID_ANDA",
-            appId: "APP_ID_ANDA"
-        };
-
-        // Inisialisasi Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-
-        // 2. LOGIKA PENGIRIMAN FORM
-        document.getElementById('regForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const btn = document.getElementById('btnSubmit');
-            btn.innerText = "Mengirim...";
-            btn.disabled = true;
-
-            // Ambil nilai dari form
-            const nama = document.getElementById('nama').value;
-            const whatsapp = document.getElementById('whatsapp').value;
-            const alamat = document.getElementById('alamat').value;
-            const paket = document.getElementById('paket').value;
-            const ssid = document.getElementById('ssid').value;
-            const password_wifi = document.getElementById('password_wifi').value;
-
-            // GENERATE NAMA PPPoE OTOMATIS
-            // Logika: Kata pertama dari nama (huruf kecil) + 3 angka terakhir No WA
-            // Contoh: "Ade Hilman" dan WA "08123456789" -> "ade789"
-            const namaDepan = nama.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-            const digitWA = whatsapp.slice(-3);
-            const pppoe_secret = `${namaDepan}${digitWA}`;
-
-            try {
-                // Simpan ke collection 'pelanggan' (atau buat collection 'pendaftar_baru' jika ingin dipisah)
-                await db.collection('pelanggan').add({
-                    nama: nama,
-                    whatsapp: whatsapp,
-                    alamat: alamat,
-                    paket: paket,
-                    ssid: ssid,
-                    password_wifi: password_wifi,
-                    pppoe: pppoe_secret, // Hasil generate otomatis
-                    status: 'Calon Pelanggan', // Status pembeda dari pelanggan aktif
-                    tanggal_daftar: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                alert("Pendaftaran berhasil! Tim MabuNet akan segera menghubungi WhatsApp Anda.");
-                document.getElementById('regForm').reset();
-                
-            } catch (error) {
-                console.error("Error menambah dokumen: ", error);
-                alert("Terjadi kesalahan sistem. Silakan coba lagi.");
-            } finally {
-                btn.innerText = "Kirim Pendaftaran";
-                btn.disabled = false;
-            }
-        });
-    </script>
-</body>
-</html>
+                    <input type="
