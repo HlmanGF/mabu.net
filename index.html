@@ -128,7 +128,7 @@
       const [forgotEmail, setForgotEmail] = useState('');
       const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
 
-      const [isDarkMode, setIsDarkMode] = useState(false); 
+      const [isDarkMode, setIsDarkMode] = useState(false); // Default Light Mode
       
       const [activeTab, setActiveTab] = useState('dashboard');
       const [editProfile, setEditProfile] = useState({});
@@ -138,6 +138,7 @@
       const [targetAdmin, setTargetAdmin] = useState(null);
       const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
       
+      // State Toggle Kelola Admin di Mobile/Desktop
       const [showAdminManagement, setShowAdminManagement] = useState(false);
       
       const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -150,6 +151,7 @@
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [auditLogs, setAuditLogs] = useState([]); 
+      // State untuk menyimpan konfigurasi (misalnya No. WhatsApp Gateway)
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
       
@@ -538,7 +540,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-20 h-20 mx-auto mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -686,8 +688,8 @@
             {/* Scrollable Main Content */}
             <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
               
-              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - HANYA TAMPIL DI MOBILE HOME/DASHBOARD */}
-              <div className={`lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all ${activeTab !== 'dashboard' ? 'hidden' : ''}`}>
+              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - TAMPIL DI SEMUA MENU MOBILE */}
+              <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all">
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <p className="text-xs text-slate-300">Selamat datang,</p>
@@ -705,12 +707,12 @@
               </div>
 
               {/* ROUTE CONTENT WRAPPER */}
-              <div className={`relative z-10 ${activeTab === 'dashboard' ? 'mt-24 lg:mt-6' : 'pt-6'} px-4 lg:px-8 max-w-6xl mx-auto space-y-4`}>
+              <div className="relative z-10 mt-24 lg:mt-6 px-4 lg:px-8 max-w-6xl mx-auto space-y-4">
                 
                 {/* --- DASHBOARD ROUTE --- */}
                 {activeTab === 'dashboard' && (
                   <>
-                    {/* Kartu Saldo KAI Style (Tumpuk di atas header biru di mobile) */}
+                    {/* Kartu Saldo KAI Style */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
                       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
                         <div className="flex items-center gap-2">
@@ -731,7 +733,7 @@
                       </div>
                     </div>
 
-                    {/* Quick Action Grid (KAI Style Menu) Tanpa Cari Cepat */}
+                    {/* Quick Action Grid (KAI Style Menu) */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                       <div className="grid grid-cols-3 gap-2">
                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
@@ -761,25 +763,24 @@
                        </div>
                     </div>
 
-                    {/* Daftar Tagihan Belum Lunas (Desain Tiket Kereta) */}
-                    <div className="mt-6">
-                      <div className="flex justify-between items-center mb-3 px-1">
+                    {/* STICKY SEARCH DI DASHBOARD */}
+                    <div className="sticky top-0 lg:top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-colors">
+                      <div className="flex justify-between items-center mb-3">
                         <h3 className="font-black text-base text-kai-blue dark:text-white">Tagihan Tertunda ({dueCustomers.length})</h3>
                         <span className="text-xs font-bold text-kai-orange">Bulan {MONTHS[selectedMonth]}</span>
                       </div>
-                      
-                      {/* STICKY SEARCH DI DASHBOARD */}
-                      <div className="sticky top-0 lg:top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 mb-1 -mx-4 px-4 sm:mx-0 sm:px-0 transition-colors">
-                        <div className="relative w-full shadow-sm">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                          <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
-                        </div>
+                      <div className="relative w-full shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-3 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
                       </div>
+                    </div>
 
+                    {/* Daftar Tagihan Belum Lunas (Desain Tiket Kereta) */}
+                    <div>
                       {filteredDueCustomers.length === 0 ? (
                         <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-3 pb-4">
                           {filteredDueCustomers.map(cust => {
                             const pkg = getPackage(cust.packageId);
                             const isToday = cust.dueDate === todayDay;
@@ -823,46 +824,54 @@
                 {activeTab === 'customers' && (
                   <div className="space-y-4">
                     
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Data Pelanggan</h2>
+                    </div>
+
                     {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
-                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
-                      <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
-                      </div>
+                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
                       
                       {/* Control Bar Atas (Dropdown, Filter, Tombol Aksi) */}
-                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
+                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
                         
-                        <div className="flex flex-col md:flex-row gap-2 w-full">
-                          {/* Search Input & Block Select */}
-                          <div className="flex gap-2 w-full md:flex-1">
-                            <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 w-24 md:w-32">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                            <div className="relative flex-1 min-w-0">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                              <input type="text" placeholder="Cari Nama / Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
-                            </div>
+                        <div className="flex flex-col gap-2 w-full flex-1">
+                          
+                          <div className="flex items-center gap-2">
+                             {/* Filter Status (Satu Baris Sebelah Judul di Desktop, Atau Grid di Mobile) */}
+                             <div className="flex items-center gap-2 flex-1">
+                               <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 min-w-max">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                               <div className="flex gap-1.5 overflow-x-auto custom-scrollbar flex-1">
+                                 {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
+                                   <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-2 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
+                                 ))}
+                               </div>
+                             </div>
+                          </div>
+
+                          {/* Search Input */}
+                          <div className="relative w-full">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                            <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
                           </div>
                           
-                          {/* Action Buttons */}
-                          <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end mt-1 md:mt-0">
-                             <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
-                             <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold whitespace-nowrap px-4 shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
-                          </div>
                         </div>
                         
-                        {/* Filter Baris 2 (Category Chips) */}
-                        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar w-full border-t border-slate-100 dark:border-slate-700/50 pt-2.5">
-                           <span className="text-[9px] font-bold text-slate-400 uppercase mr-1 hidden sm:block">Kategori:</span>
-                           {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
-                             <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
-                           ))}
+                        {/* Action Buttons */}
+                        <div className="flex md:flex-col gap-2 w-full md:w-32 shrink-0 justify-end mt-1 md:mt-0">
+                           <div className="flex gap-2 w-full">
+                             <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 flex-1 rounded-xl flex items-center justify-center ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                             <button onClick={() => exportCSV('customers')} className="p-2 flex-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
+                           </div>
+                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="w-full flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
                         </div>
+                        
                       </div>
                     </div>
 
                     {isDbLoading ? (
                       <div className="text-center py-10 font-bold text-slate-400 text-sm animate-pulse">Memuat...</div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-3 pb-4">
                         {filteredCustomers.length === 0 ? (
                            <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Pelanggan tidak ditemukan.</div>
                         ) : (
@@ -908,11 +917,11 @@
                 {/* --- LEDGER ROUTE --- */}
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h2 className="font-black text-lg text-kai-blue dark:text-white">Keuangan</h2>
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
                       <div className="flex gap-2">
-                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"><Download className="w-4 h-4"/></button>
-                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg"><Plus className="w-4 h-4"/></button>
+                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm"><Download className="w-4 h-4"/></button>
+                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg shadow-sm"><Plus className="w-4 h-4"/></button>
                       </div>
                     </div>
 
@@ -936,8 +945,8 @@
                        </div>
                     </div>
 
-                    <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mt-4 mb-2">Riwayat Kas Keluar</h3>
-                    <div className="space-y-3">
+                    <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mt-4 mb-2 px-1">Riwayat Kas Keluar</h3>
+                    <div className="space-y-3 pb-4">
                       {displayedExpenses.length === 0 ? (
                         <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">Belum ada pengeluaran.</div>
                       ) : (
@@ -964,7 +973,7 @@
 
                 {/* --- SETTINGS ROUTE --- */}
                 {activeTab === 'settings' && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 pb-6">
                     {!isEditingProfile && !showAdminManagement ? (
                       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm relative">
                         <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-700 rounded-full text-kai-blue dark:text-white"><Edit3 className="w-4 h-4" /></button>
@@ -1123,7 +1132,7 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
