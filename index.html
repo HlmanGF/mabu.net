@@ -145,6 +145,7 @@
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
+      const [filterCategory, setFilterCategory] = useState('Semua'); // Kategori Data Pelanggan
       const [dueSearchTerm, setDueSearchTerm] = useState(''); 
 
       const [customers, setCustomers] = useState([]);
@@ -436,8 +437,8 @@
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
       const jurnalExpenses = displayedExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category));
@@ -449,7 +450,13 @@
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
-        return matchSearch && matchBlock;
+        
+        let matchCat = true;
+        if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
+        if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif';
+        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0';
+
+        return matchSearch && matchBlock && matchCat;
       });
 
       useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
@@ -477,7 +484,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-20 h-20 mx-auto mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -710,7 +717,7 @@
                       
                       <div className="relative w-full mb-3">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, b2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors shadow-sm" />
+                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors shadow-sm" />
                       </div>
 
                       {filteredDueCustomers.length === 0 ? (
@@ -761,25 +768,44 @@
                   <div className="space-y-4">
                     <div className="bg-white dark:bg-slate-800 p-2 rounded-full border border-kai-blue/20 shadow-sm flex items-center sticky top-0 z-20">
                       <div className="pl-3 text-kai-blue dark:text-slate-400"><Search className="w-5 h-5" /></div>
-                      <input autoFocus type="text" placeholder="Ketik Nama (Ahmad) atau Blok (b2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-transparent pl-3 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white"/>
+                      <input autoFocus type="text" placeholder="Ketik Nama (Ahmad) atau Blok (B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-transparent pl-3 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white"/>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {filteredCustomers.length === 0 ? (
                         <div className="col-span-full text-center py-10 text-slate-400 font-bold text-sm">Pelanggan tidak ditemukan.</div>
                       ) : (
-                        filteredCustomers.map(cust => (
-                          <div key={cust.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                            <div>
-                              <h4 className="font-black text-sm text-kai-blue dark:text-white">{cust.name}</h4>
-                              <div className="text-[10px] font-bold text-slate-500 mt-1">Blok {cust.block} • Tgl {cust.dueDate}</div>
+                        filteredCustomers.map(cust => {
+                          const isPaid = cust.payments && cust.payments[currentPeriodKey];
+                          return (
+                          <div key={cust.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h4 className="font-black text-sm text-kai-blue dark:text-white">{cust.name}</h4>
+                                <div className="text-[10px] font-bold text-slate-500 mt-1">Blok {cust.block} • {getPackage(cust.packageId).speed}</div>
+                              </div>
+                              <div className="text-right">
+                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
+                              </div>
                             </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => sendWAInvoice(cust)} className="w-8 h-8 flex items-center justify-center bg-slate-50 dark:bg-slate-700 rounded-full text-slate-500 hover:text-kai-blue border border-slate-200 dark:border-slate-600"><FileText className="w-4 h-4"/></button>
-                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-8 h-8 flex items-center justify-center bg-kai-orange text-white rounded-full shadow-sm hover:scale-105 transition-transform"><Check className="w-4 h-4"/></button>
+                            
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 border border-slate-100 dark:border-slate-700/50 mt-1">
+                               <div className="flex justify-between items-center mb-3">
+                                 <span className="text-[10px] font-bold text-slate-500">Tagihan {MONTHS[selectedMonth]} {selectedYear}</span>
+                                 <span className={`text-[10px] font-black ${isPaid ? 'text-emerald-500' : 'text-rose-500'}`}>{isPaid ? 'LUNAS' : 'BELUM LUNAS'}</span>
+                               </div>
+                               
+                               {isPaid ? (
+                                 <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="w-full py-2 bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"><FileText className="w-3.5 h-3.5"/> Kirim Kuitansi</button>
+                               ) : (
+                                 <div className="flex gap-2">
+                                    <button onClick={() => sendWAInvoice(cust)} className="flex-1 py-2 bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"><FileText className="w-3.5 h-3.5"/> Tagih WA</button>
+                                    <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="flex-1 py-2 bg-kai-orange text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-md"><Check className="w-3.5 h-3.5"/> Lunas</button>
+                                 </div>
+                               )}
                             </div>
                           </div>
-                        ))
+                        )})
                       )}
                     </div>
                   </div>
@@ -796,51 +822,68 @@
                       </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-2 mb-4">
-                      <div className="flex gap-2 w-full">
-                        <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none flex-1 text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                        <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                    {/* STICKY SEARCH & FILTER BAR */}
+                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
+                      <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
+                        <div className="flex gap-2 w-full md:w-auto">
+                          <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 w-1/3 md:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                          <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                            <input type="text" placeholder="Cari Nama (Ahmad) atau Blok (B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
+                          </div>
+                          <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-xl shrink-0 ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                        </div>
                       </div>
-                      <input type="text" placeholder="Cari Nama atau Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-64 bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
+                      
+                      {/* FILTER KELOMPOK PELANGGAN */}
+                      <div className="flex gap-2 overflow-x-auto custom-scrollbar mt-3 pb-1">
+                        {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
+                          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-4 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>{cat === 'Gratis' ? '🎁 Pelanggan Gratis' : cat}</button>
+                        ))}
+                      </div>
                     </div>
 
                     {isDbLoading ? (
                       <div className="text-center py-10 font-bold text-slate-400 text-sm animate-pulse">Memuat...</div>
                     ) : (
                       <div className="space-y-3">
-                        {filteredCustomers.map(cust => (
-                          <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
-                             <div className="flex justify-between items-start mb-2">
-                               <div className="flex flex-col">
-                                 <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span>
-                                 <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span>
+                        {filteredCustomers.length === 0 ? (
+                           <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Pelanggan tidak ditemukan.</div>
+                        ) : (
+                          filteredCustomers.map(cust => (
+                            <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
+                               <div className="flex justify-between items-start mb-2">
+                                 <div className="flex flex-col">
+                                   <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span>
+                                   <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span>
+                                 </div>
+                                 <div className="flex flex-col items-end">
+                                   <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
+                                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
+                                 </div>
                                </div>
-                               <div className="flex flex-col items-end">
-                                 <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
-                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
+                               
+                               <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
+                                  {MONTHS.map((m, i) => {
+                                    const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
+                                    const isPaid = cust.payments && cust.payments[monthKey];
+                                    return (
+                                      <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>
+                                        {m.substring(0,3)}
+                                      </button>
+                                    );
+                                  })}
                                </div>
-                             </div>
-                             
-                             <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
-                                {MONTHS.map((m, i) => {
-                                  const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
-                                  const isPaid = cust.payments && cust.payments[monthKey];
-                                  return (
-                                    <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>
-                                      {m.substring(0,3)}
-                                    </button>
-                                  );
-                                })}
-                             </div>
-                             
-                             <div className="flex justify-end gap-1.5 pt-1">
-                                <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
-                                <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
-                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
-                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
-                             </div>
-                          </div>
-                        ))}
+                               
+                               <div className="flex justify-end gap-1.5 pt-1">
+                                  <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                               </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
@@ -1095,7 +1138,7 @@
           {isCustomerModalOpen && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Warga' : 'Warga Baru'}</h3>
+                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Pelanggan' : 'Pelanggan Baru'}</h3>
                 <form onSubmit={handleSaveCustomer} className="space-y-4">
                   <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
                   <div className="flex gap-3">
@@ -1153,7 +1196,7 @@
 
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
                   <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
