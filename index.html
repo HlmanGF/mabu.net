@@ -103,7 +103,6 @@
     ];
 
     const PACKAGES = [
-      { id: 'free_0', speed: 'Gratis', price: 0, label: 'Gratis - Rp 0' },
       { id: '5mbps_100', speed: '5 Mbps', price: 100000, label: '5 Mbps - Rp 100.000' },
       { id: '10mbps_150', speed: '10 Mbps', price: 150000, label: '10 Mbps - Rp 150.000' },
       { id: '10mbps_180', speed: '10 Mbps', price: 180000, label: '10 Mbps - Rp 180.000' },
@@ -145,13 +144,11 @@
       const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
       const [searchTerm, setSearchTerm] = useState('');
       const [filterBlock, setFilterBlock] = useState('Semua Blok');
-      const [filterCategory, setFilterCategory] = useState('Semua'); 
       const [dueSearchTerm, setDueSearchTerm] = useState(''); 
 
       const [customers, setCustomers] = useState([]);
       const [expenses, setExpenses] = useState([]);
       const [auditLogs, setAuditLogs] = useState([]); 
-      const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
       
       const [printData, setPrintData] = useState(null);
@@ -183,40 +180,6 @@
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
-
-      // Mencegah Keluar Aplikasi Saat Swipe Back (History Override)
-      useEffect(() => {
-        if (activeTab !== 'dashboard') {
-          window.history.pushState({ page: activeTab }, '');
-        }
-      }, [activeTab]);
-
-      useEffect(() => {
-        const handleBackButton = (e) => {
-          if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen) {
-            setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
-            setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
-            window.history.pushState({ page: activeTab }, ''); 
-            return;
-          }
-          if (activeTab !== 'dashboard') {
-            setActiveTab('dashboard');
-          }
-        };
-        window.addEventListener('popstate', handleBackButton);
-        return () => window.removeEventListener('popstate', handleBackButton);
-      }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen]);
-
-      // Auto logout pada mobile devices saat visibility tersembunyi
-      useEffect(() => {
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) {
-            handleLogout();
-          }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }, [currentUser]);
 
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
@@ -256,11 +219,7 @@
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => b.time - a.time); setAuditLogs(data);
           });
-          const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
-            if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
-            else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
-          });
-          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); };
+          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
@@ -334,25 +293,6 @@
           setEditProfile({...editProfile, credentialId: credentialId, fingerprintEnabled: true});
           alert("Sidik Jari terkait! Tekan 'Simpan Profil'.");
         } catch (err) { alert("Gagal mengaktifkan sidik jari."); }
-      };
-
-      const registerFingerprintTarget = async () => {
-        try {
-          if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
-          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-          const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-          const pubKey = {
-            challenge, rp: { name: "MABUNET", id: window.location.hostname },
-            user: { id: userId, name: targetAdmin.username, displayName: targetAdmin.name },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-            timeout: 60000, attestation: "none"
-          };
-          const credential = await navigator.credentials.create({ publicKey: pubKey });
-          const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
-          setTargetAdmin({...targetAdmin, credentialId: credentialId, fingerprintEnabled: true});
-          alert("Sidik Jari untuk admin ini tertaut pada perangkat ini! Tekan 'Simpan Data'.");
-        } catch (err) { alert("Gagal mengaktifkan sidik jari: " + err.message); }
       };
 
       const handleFingerprintScan = async () => {
@@ -433,11 +373,6 @@
           const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
           if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
-          
-          if (currentUser.id === 'admin1') {
-             await updateDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: settingsData.waGatewayPhone });
-          }
-          
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
       };
@@ -445,7 +380,7 @@
       const handleSaveTargetAdmin = async (e) => {
         e.preventDefault();
         try {
-          await updateDoc(doc(db, 'admins', targetAdmin.id), { name: targetAdmin.name, username: targetAdmin.username, password: targetAdmin.password, email: targetAdmin.email || '', phone: targetAdmin.phone || '', photo: targetAdmin.photo || '', credentialId: targetAdmin.credentialId || '', fingerprintEnabled: targetAdmin.fingerprintEnabled || false });
+          await updateDoc(doc(db, 'admins', targetAdmin.id), { name: targetAdmin.name, username: targetAdmin.username, password: targetAdmin.password, email: targetAdmin.email || '', phone: targetAdmin.phone || '', photo: targetAdmin.photo || '' });
           alert(`Profil ${targetAdmin.name} diperbarui!`); setIsTargetAdminModalOpen(false); writeLog(`Edit admin: ${targetAdmin.name}`);
         } catch (error) { alert('Gagal menyimpan data admin.'); }
       };
@@ -463,18 +398,14 @@
       };
 
       const triggerPrint = (cust) => { setPrintData(cust); setTimeout(() => { window.print(); setPrintData(null); }, 300); };
-      
       const sendWAInvoice = (cust) => {
-        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '62811122699');
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/${targetPhone}`;
+        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
-      
       const sendWAReceipt = (cust, periodKey) => {
-        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '62811122699');
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(getPackage(cust.packageId).price)}* telah kami terima dan *LUNAS*.\n\nInfo & CS: wa.me/${targetPhone}`;
+        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(getPackage(cust.packageId).price)}* telah kami terima dan *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -483,8 +414,8 @@
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
       const jurnalExpenses = displayedExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category));
@@ -496,13 +427,7 @@
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
-        
-        let matchCat = true;
-        if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
-        if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif';
-        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0';
-
-        return matchSearch && matchBlock && matchCat;
+        return matchSearch && matchBlock;
       });
 
       useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
@@ -530,7 +455,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-20 h-20 mx-auto mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -587,12 +512,8 @@
           {printData && (
             <div id="print-receipt">
               <div style={{textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '5px'}}>
-                <img src="./mabunetlogo.png" style={{width: '40px', height: '40px', margin: '0 auto 5px auto', display: 'block'}} />
-                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABU<span style={{color: '#000'}}>NET</span></h2>
-                <p style={{margin: '2px 0 0 0', fontSize: '9px', fontWeight: 'bold'}}>Master Billing & Network</p>
-                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Perum Mabu Park RT.10/02</p>
-                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Kalanganyar, Lebak - Banten</p>
-                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>WA: {settingsData?.waGatewayPhone || '0811122699'}</p>
+                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABUNET</h2>
+                <p style={{margin: '0', fontSize: '10px'}}>Internet RT & Network</p>
               </div>
               <p style={{margin: '2px 0'}}>Tgl : {new Date().toLocaleDateString('id-ID')}</p>
               <p style={{margin: '2px 0'}}>Opr : {currentUser.name}</p>
@@ -604,8 +525,7 @@
                 <p style={{margin: '0', fontSize: '12px', fontWeight: 'bold', marginTop: '5px'}}>STATUS: LUNAS</p>
               </div>
               <div style={{textAlign: 'center', marginTop: '15px', fontSize: '10px'}}>
-                <p style={{margin: '0'}}>Terima Kasih</p>
-                <p style={{margin: '0'}}>Telah Berlangganan</p>
+                <p style={{margin: '0'}}>Terima Kasih Berlangganan</p>
               </div>
             </div>
           )}
@@ -647,6 +567,7 @@
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Pelanggan" />
+              <SidebarItem id="search" icon={Search} label="Pencarian" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
@@ -724,9 +645,9 @@
                       </div>
                     </div>
 
-                    {/* Quick Action Grid (KAI Style Menu) Tanpa Cari Cepat */}
+                    {/* Quick Action Grid (KAI Style Menu) */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
                           <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-kai-blue dark:text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-kai-blue group-hover:text-white transition-colors shadow-sm"><UserPlus className="w-6 h-6"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Pelanggan<br/>Baru</span>
@@ -738,6 +659,10 @@
                         <button onClick={handleBroadcastWA} disabled={isBroadcasting} className="flex flex-col items-center gap-2 group">
                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm transition-colors ${isBroadcasting ? 'bg-slate-200 text-slate-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}><Send className="w-5 h-5 ml-1"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Blast<br/>WA</span>
+                        </button>
+                        <button onClick={() => setActiveTab('search')} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-colors shadow-sm"><Search className="w-6 h-6"/></div>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Cari<br/>Cepat</span>
                         </button>
                       </div>
                     </div>
@@ -763,11 +688,11 @@
                       
                       <div className="relative w-full mb-3">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors shadow-sm" />
+                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, b2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors shadow-sm" />
                       </div>
 
                       {filteredDueCustomers.length === 0 ? (
-                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
+                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Tidak ada pelanggan belum lunas. 👍</div>
                       ) : (
                         <div className="space-y-3">
                           {filteredDueCustomers.map(cust => {
@@ -809,73 +734,91 @@
                   </>
                 )}
 
+                {/* --- SEARCH ROUTE --- */}
+                {activeTab === 'search' && (
+                  <div className="space-y-4">
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-full border border-kai-blue/20 shadow-sm flex items-center sticky top-0 z-20">
+                      <div className="pl-3 text-kai-blue dark:text-slate-400"><Search className="w-5 h-5" /></div>
+                      <input autoFocus type="text" placeholder="Ketik Nama (Ahmad) atau Blok (b2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-transparent pl-3 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white"/>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="col-span-full text-center py-10 text-slate-400 font-bold text-sm">Pelanggan tidak ditemukan.</div>
+                      ) : (
+                        filteredCustomers.map(cust => (
+                          <div key={cust.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <div>
+                              <h4 className="font-black text-sm text-kai-blue dark:text-white">{cust.name}</h4>
+                              <div className="text-[10px] font-bold text-slate-500 mt-1">Blok {cust.block} • Tgl {cust.dueDate}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => sendWAInvoice(cust)} className="w-8 h-8 flex items-center justify-center bg-slate-50 dark:bg-slate-700 rounded-full text-slate-500 hover:text-kai-blue border border-slate-200 dark:border-slate-600"><FileText className="w-4 h-4"/></button>
+                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-8 h-8 flex items-center justify-center bg-kai-orange text-white rounded-full shadow-sm hover:scale-105 transition-transform"><Check className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* --- CUSTOMERS ROUTE --- */}
                 {activeTab === 'customers' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
+                      <div className="flex gap-2">
+                        <button onClick={() => exportCSV('customers')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"><Download className="w-4 h-4"/></button>
+                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex items-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold"><Plus className="w-4 h-4"/> Pelanggan</button>
+                      </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-2 mb-4 sticky top-0 z-30 shadow-md">
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-2 mb-4">
                       <div className="flex gap-2 w-full">
                         <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none flex-1 text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
                         <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
                       </div>
-                      <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-64 bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
-                      
-                      <div className="flex gap-2 overflow-x-auto custom-scrollbar mt-1 md:mt-0">
-                        {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
-                          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100'}`}>{cat === 'Gratis' ? '🎁 Pelanggan Gratis' : cat}</button>
-                        ))}
-                      </div>
-                      
-                      <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                         <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
-                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4"><Plus className="w-4 h-4"/> Tambah</button>
-                      </div>
+                      <input type="text" placeholder="Cari Nama atau Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-64 bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
                     </div>
 
                     {isDbLoading ? (
                       <div className="text-center py-10 font-bold text-slate-400 text-sm animate-pulse">Memuat...</div>
                     ) : (
                       <div className="space-y-3">
-                        {filteredCustomers.length === 0 ? (
-                           <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Pelanggan tidak ditemukan.</div>
-                        ) : (
-                          filteredCustomers.map(cust => (
-                            <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
-                               <div className="flex justify-between items-start mb-2">
-                                 <div className="flex flex-col">
-                                   <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span>
-                                   <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span>
-                                 </div>
-                                 <div className="flex flex-col items-end">
-                                   <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
-                                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
-                                 </div>
+                        {filteredCustomers.map(cust => (
+                          <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
+                             <div className="flex justify-between items-start mb-2">
+                               <div className="flex flex-col">
+                                 <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span>
+                                 <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span>
                                </div>
-                               
-                               <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
-                                  {MONTHS.map((m, i) => {
-                                    const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
-                                    const isPaid = cust.payments && cust.payments[monthKey];
-                                    return (
-                                      <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>
-                                        {m.substring(0,3)}
-                                      </button>
-                                    );
-                                  })}
+                               <div className="flex flex-col items-end">
+                                 <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
+                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
                                </div>
-                               
-                               <div className="flex justify-end gap-1.5 pt-1">
-                                  <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
-                               </div>
-                            </div>
-                          ))
-                        )}
+                             </div>
+                             
+                             <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
+                                {MONTHS.map((m, i) => {
+                                  const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
+                                  const isPaid = cust.payments && cust.payments[monthKey];
+                                  return (
+                                    <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>
+                                      {m.substring(0,3)}
+                                    </button>
+                                  );
+                                })}
+                             </div>
+                             
+                             <div className="flex justify-end gap-1.5 pt-1">
+                                <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                             </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -965,16 +908,10 @@
                               <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400">{showPassword ? <EyeOff className="w-3.5 h-3.5"/> : <Eye className="w-3.5 h-3.5"/>}</button>
                             </div>
                           </div>
-                          
-                          {/* Pengaturan Nomor WA Khusus Gateway (Tampil Semua) */}
-                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <span className="text-[9px] uppercase font-bold text-slate-400 block">Nomor Gateway Bot WA</span>
-                            <span className="text-xs font-bold">{settingsData.waGatewayPhone || 'Belum Disetel'}</span>
-                          </div>
                         </div>
                         
                         {/* Tombol Logout Khusus Mode Mobile */}
-                        <div className="lg:hidden mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <div className="lg:hidden mt-6">
                           <button onClick={handleLogout} className="w-full py-3.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-800 shadow-sm active:scale-95 transition-all">
                             <LogOut className="w-5 h-5"/> Keluar Aplikasi
                           </button>
@@ -999,34 +936,9 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">NAMA</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">USERNAME</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">PASSWORD</label><input type="text" required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
-                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
 
-                          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
-                            {!editProfile.credentialId ? (
-                              <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
-                                <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
-                              </button>
-                            ) : (
-                              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
-                                <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                  <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
-                                  <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
-                                </label>
-                              </div>
-                            )}
-                          </div>
-
-                          {currentUser.id === 'admin1' && (
-                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                               <label className="block text-[9px] font-bold text-slate-500 mb-1 mt-2 uppercase">Nomor Gateway Bot WA</label>
-                               <input type="text" required value={settingsData.waGatewayPhone} onChange={e => setSettingsData({...settingsData, waGatewayPhone: e.target.value})} placeholder="62811122699" className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" />
-                               <p className="text-[9px] text-slate-400 mt-1">Gunakan format 62 tanpa spasi (+)</p>
-                            </div>
-                          )}
-
-                          <div className="flex gap-2 pt-2 mt-4">
+                          <div className="flex gap-2 pt-2">
                             <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs">Batal</button>
                             <button type="submit" className="flex-1 py-2.5 bg-kai-blue text-white rounded-xl font-bold text-xs shadow-md">Simpan</button>
                           </div>
@@ -1099,7 +1011,7 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
@@ -1107,6 +1019,11 @@
               
               <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'customers' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Users className="w-6 h-6" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+              </button>
+
+              {/* SEARCH TAB ADDED */}
+              <button onClick={() => {setActiveTab('search'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'search' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Search className="w-6 h-6" strokeWidth={activeTab === 'search' ? 2.5 : 1.5} />
               </button>
 
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'ledger' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
@@ -1200,7 +1117,7 @@
 
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
                   <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
@@ -1219,23 +1136,6 @@
                   <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD AKSES</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
                   <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">EMAIL STAFF</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
                   <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                    <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
-                    {!targetAdmin.credentialId ? (
-                      <button type="button" onClick={registerFingerprintTarget} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
-                        <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
-                      </button>
-                    ) : (
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
-                          <input type="checkbox" checked={targetAdmin.fingerprintEnabled} onChange={(e) => setTargetAdmin({...targetAdmin, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
-                        </label>
-                      </div>
-                    )}
-                  </div>
 
                   <div className="flex gap-3 pt-4">
                     <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm">Batal</button>
