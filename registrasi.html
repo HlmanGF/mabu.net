@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulir Pendaftaran MabuNet</title>
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK yang sesuai dengan indexV4.html Anda -->
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
     
@@ -118,23 +118,24 @@
 
     <div class="form-container">
         <h2>Formulir <span>Pendaftaran</span></h2>
-        <p class="subtitle">Isi data diri Anda, dan pesan akan langsung dikirim ke sistem admin kami.</p>
+        <p class="subtitle">Isi data diri Anda, dan pesan akan langsung dikirim ke WhatsApp admin kami.</p>
 
         <form id="regForm">
+            <!-- Pilihan Paket dikembalikan, namun nilai 'value' disamakan dengan database MabuNet Anda -->
             <div class="form-group">
                 <label>Pilih Paket Internet</label>
-                <!-- Value di bawah ini sudah disesuaikan dengan ID Paket MabuNet -->
                 <select id="paket" required>
                     <option value="">-- Pilih Paket --</option>
-                    <option value="5mbps_100">5 Mbps - Rp 100.000</option>
-                    <option value="10mbps_150">10 Mbps - Rp 150.000</option>
-                    <option value="10mbps_180">10 Mbps - Rp 180.000</option>
-                    <option value="15mbps_200">15 Mbps - Rp 200.000</option>
-                    <option value="20mbps_250">20 Mbps - Rp 250.000</option>
-                    <option value="25mbps_300">25 Mbps - Rp 300.000</option>
+                    <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
+                    <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
+                    <option value="10mbps_180">Standar 10 Mbps - Rp 180.000</option>
+                    <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
+                    <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
+                    <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
                 </select>
             </div>
 
+            <!-- Nama & WA dikembalikan seperti gambar -->
             <div class="grid-2-col">
                 <div class="form-group">
                     <label>Nama Lengkap</label>
@@ -146,9 +147,10 @@
                 </div>
             </div>
 
+            <!-- TAMBAHAN: Dropdown Blok untuk kebutuhan database MabuNet dan PPPoE -->
             <div class="form-group">
-                <label>Pilih Blok Rumah</label>
-                <select id="blok_rumah" required>
+                <label>Blok Rumah (Wajib Untuk PPPoE)</label>
+                <select id="blok" required>
                     <option value="">-- Pilih Blok --</option>
                     <option value="Mabu">Mabu</option>
                     <option value="Ranau">Ranau</option>
@@ -158,15 +160,101 @@
                 </select>
             </div>
 
+            <!-- Textarea Alamat dikembalikan seperti gambar -->
             <div class="form-group">
-                <label>Detail Alamat (No. Rumah)</label>
-                <textarea id="detail_alamat" rows="2" placeholder="Contoh: No. 12 / Patokan rumah warna biru" required></textarea>
+                <label>Alamat Lengkap / Blok Rumah</label>
+                <textarea id="alamat" rows="3" placeholder="Contoh: Perumahan Mabu Park Blok A No. 12" required></textarea>
             </div>
 
+            <!-- WiFi dikembalikan seperti gambar -->
             <div class="section-title">Pengaturan WiFi (Wajib Diisi)</div>
             <p class="subtitle" style="margin-bottom: 15px;">Tentukan nama dan password untuk jaringan WiFi di rumah Anda.</p>
 
             <div class="grid-2-col">
                 <div class="form-group">
                     <label>Request Nama WiFi (SSID)</label>
-                    <input type="
+                    <input type="text" id="ssid" placeholder="Contoh: RumahKeluarga" required>
+                </div>
+                <div class="form-group">
+                    <label>Request Password WiFi</label>
+                    <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="btnSubmit">Kirim Pendaftaran</button>
+        </form>
+    </div>
+
+    <script>
+        // Konfigurasi Database Firebase MabuNet Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
+            authDomain: "billing-mabunet.firebaseapp.com",
+            projectId: "billing-mabunet",
+            storageBucket: "billing-mabunet.firebasestorage.app",
+            messagingSenderId: "362703627315",
+            appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
+        };
+
+        // Inisialisasi
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('btnSubmit');
+            btn.innerText = "Mengirim...";
+            btn.disabled = true;
+
+            // Ambil semua data dari formulir
+            const nama = document.getElementById('nama').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const paket = document.getElementById('paket').value; 
+            const blok = document.getElementById('blok').value; 
+            const alamat = document.getElementById('alamat').value;
+            const ssid = document.getElementById('ssid').value;
+            const password_wifi = document.getElementById('password_wifi').value;
+
+            // Generate PPPoE berdasarkan Blok (Contoh: mabu-123)
+            const randomNum = Math.floor(100 + Math.random() * 900);
+            const pppoe_secret = `${blok.toLowerCase()}-${randomNum}`;
+
+            try {
+                // Simpan langsung ke Data Pelanggan MabuNet
+                await db.collection('customers').add({
+                    name: nama,
+                    block: blok,
+                    phone: whatsapp,
+                    packageId: paket,
+                    dueDate: 1, 
+                    status: 'Non-Aktif', // Masuk sebagai Non-Aktif agar divalidasi admin
+                    notes: `Alamat: ${alamat} | SSID: ${ssid} | Pass: ${password_wifi}`, 
+                    pppoe_user: pppoe_secret, 
+                    payments: {} 
+                });
+
+                // Catat di System Logs MabuNet
+                await db.collection('logs').add({
+                    time: new Date().getTime(),
+                    dateStr: new Date().toLocaleString('id-ID'),
+                    admin: 'Web Registrasi',
+                    action: `Pendaftaran baru: ${nama} (${blok})`
+                });
+
+                alert("Pendaftaran berhasil! Data Anda sudah masuk ke sistem MabuNet.");
+                document.getElementById('regForm').reset();
+                
+            } catch (error) {
+                console.error("Error menambah dokumen: ", error);
+                alert("Terjadi kesalahan jaringan. Silakan coba lagi.");
+            } finally {
+                btn.innerText = "Kirim Pendaftaran";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
