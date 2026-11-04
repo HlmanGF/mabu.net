@@ -3,35 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MABUNET - Master Billing & Network</title>
+  <title>MABUNET - KAI Access Style</title>
   
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4f46e5">
+  <meta name="theme-color" content="#1e3a8a">
   <link rel="icon" href="./mabunetlogo.png" type="image/png">
   <link rel="apple-touch-icon" href="./mabunetlogo.png">
-  <link rel="shortcut icon" href="./mabunetlogo.png">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    tailwind.config = { darkMode: 'class', theme: { extend: {} } }
+    tailwind.config = { 
+      darkMode: 'class', 
+      theme: { 
+        extend: {
+          colors: {
+            kai: {
+              blue: '#1A2C5B',      // Biru Navy KAI
+              bluedark: '#111D42',  // Biru Navy Gelap
+              orange: '#F97316',    // Orange Aksen KAI
+              orangedark: '#EA580C',
+              bg: '#F3F4F6'         // Abu-abu terang background
+            }
+          },
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+        } 
+      } 
+    }
   </script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
   <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    .dark ::-webkit-scrollbar-track { background: #0f172a; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; }
+    .dark body { background-color: #0f172a; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    .custom-scrollbar::-webkit-scrollbar { width: 0px; }
     
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    /* Efek Tiket Sobek */
+    .ticket-divider {
+      background-image: linear-gradient(to bottom, #e2e8f0 50%, rgba(255,255,255,0) 0%);
+      background-position: right;
+      background-size: 2px 10px;
+      background-repeat: repeat-y;
+    }
+    .dark .ticket-divider { background-image: linear-gradient(to bottom, #334155 50%, rgba(255,255,255,0) 0%); }
     
-    @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-    .scanner-line { position: absolute; width: 100%; height: 2px; background: #4ade80; box-shadow: 0 0 10px #4ade80, 0 0 20px #4ade80; animation: scan 1.5s linear infinite; }
-    
-    /* STRUK KASIR 58mm PRINT OVERRIDE */
     @media print {
       body * { visibility: hidden; }
       #print-receipt, #print-receipt * { visibility: visible; }
@@ -43,17 +63,18 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 antialiased min-h-screen transition-colors duration-300">
-  <div id="root"></div>
+<body class="text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300">
+  <div id="root" class="h-full w-full"></div>
 
   <script type="text/babel" data-type="module">
     import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
       Users, LayoutDashboard, LogOut, Check, BookOpen, Fingerprint,
-      Lock, User, Settings, Camera, ShieldAlert, ToggleLeft, ToggleRight,
-      Bell, BellRing, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft
+      Lock, User, Settings, Camera, ShieldAlert,
+      Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
+      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Map
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -66,8 +87,7 @@
       projectId: "billing-mabunet",
       storageBucket: "billing-mabunet.firebasestorage.app",
       messagingSenderId: "362703627315",
-      appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46",
-      measurementId: "G-2DBSV96KHP"
+      appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
     };
 
     let app, db;
@@ -75,10 +95,6 @@
       app = initializeApp(firebaseConfig);
       db = getFirestore(app);
     } catch(e) { console.error("Gagal Firebase:", e); }
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch((err) => console.log('SW Error:', err));
-    }
 
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
@@ -111,13 +127,13 @@
       const [forgotEmail, setForgotEmail] = useState('');
       const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
 
-      const [isDarkMode, setIsDarkMode] = useState(true); 
+      const [isDarkMode, setIsDarkMode] = useState(false); // Default Light Mode untuk feel KAI
       
       const [activeTab, setActiveTab] = useState('dashboard');
-      const [ledgerTab, setLedgerTab] = useState('Jurnal'); 
       const [editProfile, setEditProfile] = useState({});
       const [isEditingProfile, setIsEditingProfile] = useState(false); 
       
+      const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
       const [targetAdmin, setTargetAdmin] = useState(null);
       const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
       
@@ -134,21 +150,15 @@
       
       const [printData, setPrintData] = useState(null);
       const [alarmEnabled, setAlarmEnabled] = useState(false);
+      const [isBroadcasting, setIsBroadcasting] = useState(false); 
       const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
       
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
-      
-      // State Form Catat Kas
       const [expenseForm, setExpenseForm] = useState({ 
-        date: new Date().toISOString().split('T')[0], 
-        category: 'Belanja', 
-        applicantSelect: 'Ayah',
-        applicantCustom: '',
-        description: '', 
-        amount: '' 
+        date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' 
       });
       const [editingCustomer, setEditingCustomer] = useState(null);
       const [editingExpense, setEditingExpense] = useState(null);
@@ -170,23 +180,15 @@
 
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
-        try {
-          await addDoc(collection(db, 'logs'), { 
-            time: new Date().getTime(), 
-            dateStr: new Date().toLocaleString('id-ID'),
-            admin: currentUser.name, 
-            action: actionDesc 
-          });
-        } catch(e) {}
+        try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
       };
 
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
           const unsubAdmins = onSnapshot(collection(db, 'admins'), (snapshot) => {
-            if (snapshot.empty) {
-              INITIAL_ADMINS.forEach(async (adm) => { await setDoc(doc(db, 'admins', adm.id), adm); });
-            } else {
+            if (snapshot.empty) { INITIAL_ADMINS.forEach(async (adm) => { await setDoc(doc(db, 'admins', adm.id), adm); }); } 
+            else {
               const cloudAdmins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               setAdmins(cloudAdmins);
               const sessionUid = localStorage.getItem('mabunet_session');
@@ -196,8 +198,7 @@
                   const activeUser = cloudAdmins.find(a => a.id === activeUid);
                   if (activeUser && activeUser.status === 'Aktif') return activeUser;
                   else localStorage.removeItem('mabunet_session'); 
-                }
-                return null;
+                } return null;
               });
             }
           });
@@ -213,8 +214,7 @@
           });
           const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => b.time - a.time); 
-            setAuditLogs(data);
+            data.sort((a,b) => b.time - a.time); setAuditLogs(data);
           });
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
@@ -230,69 +230,43 @@
 
       const handleSaveCustomer = async (e) => {
         e.preventDefault();
-        if (editingCustomer) { 
-          await updateDoc(doc(db, 'customers', editingCustomer.id), formData); 
-          writeLog(`Mengedit data pelanggan: ${formData.name}`);
-        } else { 
-          await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); 
-          writeLog(`Menambah pelanggan baru: ${formData.name}`);
-        }
+        if (editingCustomer) { await updateDoc(doc(db, 'customers', editingCustomer.id), formData); writeLog(`Mengedit pelanggan: ${formData.name}`); } 
+        else { await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); writeLog(`Menambah pelanggan: ${formData.name}`); }
         setIsCustomerModalOpen(false);
       };
 
       const handleSaveExpense = async (e) => {
         e.preventDefault();
         const finalApplicant = expenseForm.applicantSelect === 'Manual' ? expenseForm.applicantCustom : expenseForm.applicantSelect;
-        
-        const dataToSave = {
-          date: expenseForm.date,
-          category: expenseForm.category,
-          applicant: finalApplicant,
-          description: expenseForm.description,
-          amount: expenseForm.amount,
-          admin: currentUser.name
-        };
+        const dataToSave = { date: expenseForm.date, category: expenseForm.category, applicant: finalApplicant, description: expenseForm.description, amount: expenseForm.amount, admin: currentUser.name };
 
-        if (editingExpense) {
-          await updateDoc(doc(db, 'expenses', editingExpense.id), dataToSave);
-          writeLog(`Mengedit kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
-        } else {
-          await addDoc(collection(db, 'expenses'), dataToSave);
-          writeLog(`Mencatat kas keluar (${expenseForm.category}): ${formatIDR(expenseForm.amount)}`);
-        }
-        setIsExpenseModalOpen(false);
-        setEditingExpense(null);
+        if (editingExpense) { await updateDoc(doc(db, 'expenses', editingExpense.id), dataToSave); writeLog(`Mengedit kas: ${formatIDR(expenseForm.amount)}`); } 
+        else { await addDoc(collection(db, 'expenses'), dataToSave); writeLog(`Catat kas: ${formatIDR(expenseForm.amount)}`); }
+        setIsExpenseModalOpen(false); setEditingExpense(null);
       };
 
       const handleDeleteCustomer = async (id) => {
         const cust = customers.find(c => c.id === id);
-        if(confirm("Yakin hapus pelanggan ini?")) {
-          await deleteDoc(doc(db, 'customers', id));
-          writeLog(`Menghapus pelanggan: ${cust.name}`);
-        }
+        if(confirm("Yakin hapus pelanggan ini?")) { await deleteDoc(doc(db, 'customers', id)); writeLog(`Menghapus pelanggan: ${cust.name}`); }
       };
 
       const handleDeleteExpense = async (id) => {
-        if(confirm("Yakin hapus catatan pengeluaran ini?")) {
-          await deleteDoc(doc(db, 'expenses', id));
-          writeLog(`Menghapus data pengeluaran (ID: ${id})`);
-        }
+        if(confirm("Yakin hapus catatan pengeluaran ini?")) { await deleteDoc(doc(db, 'expenses', id)); writeLog(`Hapus pengeluaran ID: ${id}`); }
       };
 
       const toggleIsolirManual = async (cust) => {
-        if(confirm(`Yakin ingin ${cust.status === 'Aktif' ? 'MENGISOLIR' : 'MENGAKTIFKAN'} internet pelanggan ${cust.name}?`)) {
+        if(confirm(`Yakin ${cust.status === 'Aktif' ? 'ISOLIR' : 'AKTIFKAN'} internet ${cust.name}?`)) {
           const newStatus = cust.status === 'Aktif' ? 'Non-Aktif' : 'Aktif';
           await updateDoc(doc(db, 'customers', cust.id), { status: newStatus });
-          writeLog(`${newStatus === 'Aktif' ? 'Mengaktifkan' : 'Mengisolir'} manual: ${cust.name}`);
+          writeLog(`${newStatus} manual: ${cust.name}`);
         }
       };
 
       const handleLogin = (e) => {
-        if(e) e.preventDefault();
-        setLoginError('');
+        if(e) e.preventDefault(); setLoginError('');
         const user = admins.find(a => a.password === loginForm.password);
         if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun Anda dinonaktifkan.');
+          if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
           localStorage.setItem('mabunet_session', user.id); 
           localStorage.setItem('mabunet_device_user', user.id); 
@@ -322,7 +296,7 @@
         setIsScanning(true); setLoginError('');
         try {
           const savedUserId = localStorage.getItem('mabunet_device_user');
-          if (!savedUserId) throw new Error('Perangkat belum dikenali. Login Manual dahulu lalu seting di Profil.');
+          if (!savedUserId) throw new Error('Perangkat belum dikenali. Login Manual dahulu.');
           const savedUser = admins.find(a => a.id === savedUserId);
           if (!savedUser || savedUser.status !== 'Aktif') throw new Error('Akun dinonaktifkan atau hilang.');
           if (!savedUser.fingerprintEnabled || !savedUser.credentialId) throw new Error('Sidik Jari belum diaktifkan.');
@@ -332,83 +306,59 @@
           const assertion = await navigator.credentials.get({
             publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" }
           });
-          if (assertion) { 
-            setCurrentUser(savedUser); 
-            setEditProfile(savedUser);
-            localStorage.setItem('mabunet_session', savedUser.id);
-          }
+          if (assertion) { setCurrentUser(savedUser); setEditProfile(savedUser); localStorage.setItem('mabunet_session', savedUser.id); }
         } catch (err) { setLoginError(err.message || 'Verifikasi Sidik Jari gagal.'); } finally { setIsScanning(false); }
       };
 
       const handleForgotPassword = (e) => {
-        e.preventDefault();
-        setForgotMessage({text: '', type: ''});
+        e.preventDefault(); setForgotMessage({text: '', type: ''});
         const user = admins.find(a => (a.email || '').toLowerCase() === forgotEmail.toLowerCase() && a.email !== '');
-        if (user) {
-            setForgotMessage({text: `Akun ditemukan! Password Anda: ${user.password}`, type: 'success'});
-        } else {
-            setForgotMessage({text: 'Email tidak ditemukan di sistem database.', type: 'error'});
-        }
+        if (user) { setForgotMessage({text: `Akun ditemukan! Password Anda: ${user.password}`, type: 'success'}); } 
+        else { setForgotMessage({text: 'Email tidak ditemukan di sistem database.', type: 'error'}); }
       };
 
-      const handleLogout = () => {
-        setCurrentUser(null);
-        localStorage.removeItem('mabunet_session');
+      const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
+
+      const handleBroadcastWA = async () => {
+        if (filteredDueCustomers.length === 0) return alert("Tidak ada tagihan yang belum lunas dalam daftar ini.");
+        if (!confirm(`Kirim pesan otomatis ke ${filteredDueCustomers.length} pelanggan belum lunas?`)) return;
+        setIsBroadcasting(true); let successCount = 0; let failedCount = 0;
+        
+        for (const cust of filteredDueCustomers) {
+          if (!cust.phone) { failedCount++; continue; }
+          try { await new Promise(resolve => setTimeout(resolve, 2000)); successCount++; } catch (err) { failedCount++; }
+        }
+        setIsBroadcasting(false); alert(`Broadcast Selesai!\n✅ Berhasil: ${successCount}\n❌ Gagal: ${failedCount}`);
       };
 
       const handlePhotoUploadInit = (e, isTargetAdmin = false) => {
         const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setCropState({ isOpen: true, src: reader.result, isTarget: isTargetAdmin, zoom: 1, x: 0, y: 0 });
-          };
-          reader.readAsDataURL(file);
-        }
+        if (file) { const reader = new FileReader(); reader.onloadend = () => { setCropState({ isOpen: true, src: reader.result, isTarget: isTargetAdmin, zoom: 1, x: 0, y: 0 }); }; reader.readAsDataURL(file); }
         e.target.value = null; 
       };
 
       const handleCropDragStart = (e) => {
         setIsDragging(true);
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         setDragStart({ x: clientX - cropState.x, y: clientY - cropState.y });
       };
-      
       const handleCropDragMove = (e) => {
         if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         setCropState(prev => ({ ...prev, x: clientX - dragStart.x, y: clientY - dragStart.y }));
       };
-      
       const handleCropDragEnd = () => setIsDragging(false);
 
       const applyCrop = () => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 400; canvas.height = 400;
-          const ctx = canvas.getContext('2d');
-          
-          const minDim = Math.min(img.width, img.height);
-          const scale = (400 / minDim) * cropState.zoom;
-          const scaledW = img.width * scale;
-          const scaledH = img.height * scale;
-          
-          const dx = (400 - scaledW) / 2 + (cropState.x * 2);
-          const dy = (400 - scaledH) / 2 + (cropState.y * 2);
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, 400, 400);
-          ctx.drawImage(img, dx, dy, scaledW, scaledH);
-
+          const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400; const ctx = canvas.getContext('2d');
+          const scale = (400 / Math.min(img.width, img.height)) * cropState.zoom;
+          const scaledW = img.width * scale; const scaledH = img.height * scale;
+          const dx = (400 - scaledW) / 2 + (cropState.x * 2); const dy = (400 - scaledH) / 2 + (cropState.y * 2);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 400, 400); ctx.drawImage(img, dx, dy, scaledW, scaledH);
           const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          if (cropState.isTarget) {
-            setTargetAdmin({ ...targetAdmin, photo: finalDataUrl });
-          } else {
-            setEditProfile({ ...editProfile, photo: finalDataUrl });
-          }
+          if (cropState.isTarget) { setTargetAdmin({ ...targetAdmin, photo: finalDataUrl }); } else { setEditProfile({ ...editProfile, photo: finalDataUrl }); }
           setCropState({ ...cropState, isOpen: false });
         };
         img.src = cropState.src;
@@ -417,11 +367,7 @@
       const handleSaveProfile = async (e) => {
         e.preventDefault();
         try {
-          const updateData = {
-            name: editProfile.name, username: editProfile.username, password: editProfile.password,
-            email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false,
-            credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' 
-          };
+          const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
           if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
@@ -431,13 +377,8 @@
       const handleSaveTargetAdmin = async (e) => {
         e.preventDefault();
         try {
-          await updateDoc(doc(db, 'admins', targetAdmin.id), {
-            name: targetAdmin.name, username: targetAdmin.username, password: targetAdmin.password,
-            email: targetAdmin.email || '', phone: targetAdmin.phone || '', photo: targetAdmin.photo || ''
-          });
-          alert(`Profil ${targetAdmin.name} berhasil diperbarui!`);
-          setIsTargetAdminModalOpen(false);
-          writeLog(`Mengedit profil admin: ${targetAdmin.name}`);
+          await updateDoc(doc(db, 'admins', targetAdmin.id), { name: targetAdmin.name, username: targetAdmin.username, password: targetAdmin.password, email: targetAdmin.email || '', phone: targetAdmin.phone || '', photo: targetAdmin.photo || '' });
+          alert(`Profil ${targetAdmin.name} diperbarui!`); setIsTargetAdminModalOpen(false); writeLog(`Edit admin: ${targetAdmin.name}`);
         } catch (error) { alert('Gagal menyimpan data admin.'); }
       };
 
@@ -448,36 +389,20 @@
 
       const exportCSV = (type) => {
         let csv = '';
-        if (type === 'customers') {
-          csv = 'Nama,Blok,Paket,Harga,Status\n';
-          customers.forEach(c => csv += `${c.name},${c.block},${getPackage(c.packageId).speed},${getPackage(c.packageId).price},${c.status}\n`);
-        } else {
-          csv = 'Tanggal,Kategori,Pengajuan,Uraian,Nominal,Admin\n';
-          expenses.forEach(e => csv += `${e.date},${e.category},${e.applicant || '-'},${e.description},${e.amount},${e.admin}\n`);
-        }
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `MABUNET_${type}_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
+        if (type === 'customers') { csv = 'Nama,Blok,Paket,Harga,Status\n'; customers.forEach(c => csv += `${c.name},${c.block},${getPackage(c.packageId).speed},${getPackage(c.packageId).price},${c.status}\n`); } 
+        else { csv = 'Tanggal,Kategori,Pengajuan,Uraian,Nominal,Admin\n'; expenses.forEach(e => csv += `${e.date},${e.category},${e.applicant || '-'},${e.description},${e.amount},${e.admin}\n`); }
+        const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MABUNET_${type}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
       };
 
-      const triggerPrint = (cust) => {
-        setPrintData(cust);
-        setTimeout(() => { window.print(); setPrintData(null); }, 300);
-      };
-
+      const triggerPrint = (cust) => { setPrintData(cust); setTimeout(() => { window.print(); setPrintData(null); }, 300); };
       const sendWAInvoice = (cust) => {
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const pkg = getPackage(cust.packageId);
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
+        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/62811122699`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
-
       const sendWAReceipt = (cust, periodKey) => {
         if (!cust.phone) return alert("Nomor HP pelanggan belum diisi!");
-        const pkg = getPackage(cust.packageId);
-        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet untuk bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(pkg.price)}* telah kami terima dan berstatus *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
+        const text = `*KUITANSI MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\n\nTerima kasih, pembayaran internet bulan *${MONTHS[selectedMonth]} ${selectedYear}* sebesar *${formatIDR(getPackage(cust.packageId).price)}* telah kami terima dan *LUNAS*.\n\nInfo & CS: wa.me/62811122699`;
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -485,24 +410,16 @@
       const inactiveCustomersList = customers.filter(c => c.status === 'Non-Aktif');
       const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
-      
-      const filteredDueCustomers = dueCustomers.filter(c => 
-        (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || 
-        (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase())
-      );
-      
+      const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
       const totalPotentialRevenue = activeCustomersList.reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey]).reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
       const jurnalExpenses = displayedExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category));
       const famExpenses = displayedExpenses.filter(e => e.category === 'Fam');
-      
       const totalJurnal = jurnalExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
       const totalFam = famExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const totalExpenseAmount = totalJurnal + totalFam; 
-      
-      const netProfit = actualPaidRevenue - totalExpenseAmount; 
+      const netProfit = actualPaidRevenue - (totalJurnal + totalFam); 
       
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -512,83 +429,82 @@
 
       useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
 
+      const SidebarItem = ({ id, icon: Icon, label }) => (
+        <button 
+          onClick={() => { setActiveTab(id); setIsEditingProfile(false); }} 
+          className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
+        >
+          <Icon className="w-5 h-5 shrink-0" /> 
+          {!isSidebarCollapsed && (
+            <>
+              <span className="text-sm truncate">{label}</span>
+              {id === 'customers' && isDbLoading && <span className="w-2 h-2 ml-auto bg-kai-orange rounded-full animate-pulse"></span>}
+            </>
+          )}
+        </button>
+      );
+
+      // ========== LAYAR LOGIN (KAI STYLE) ==========
       if (!currentUser) {
         return (
-          <div className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-100 via-slate-200 to-slate-200 dark:from-slate-800 dark:via-slate-950 dark:to-slate-950 transition-colors duration-300">
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-300 dark:border-slate-800 p-8 md:p-10 rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden my-8">
-              <div className="absolute -top-20 -right-20 w-40 h-40 md:w-56 md:h-56 bg-indigo-600/20 blur-3xl rounded-full"></div>
-              {!db && ( <div className="mb-4 p-2 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs md:text-sm rounded-lg text-center font-bold">⚠️ KONEKSI FIREBASE TERGANGGU. COBA REFRESH.</div> )}
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="absolute top-4 right-4 md:top-6 md:right-6 text-slate-500 hover:text-indigo-500 transition-colors">
-                {isDarkMode ? <Sun className="w-5 h-5 md:w-6 md:h-6"/> : <Moon className="w-5 h-5 md:w-6 md:h-6"/>}
-              </button>
-
-              <div className="text-center mb-6 md:mb-8 relative z-10 flex flex-col items-center">
-                <img src="./mabunetlogo.png" alt="MABUNET Logo" className="w-28 h-28 md:w-36 md:h-36 object-contain mb-4 drop-shadow-[0_0_15px_rgba(79,70,229,0.4)]" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800 dark:text-white">MABU<span className="text-indigo-600 dark:text-indigo-400">NET</span></h1>
-                <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1 uppercase font-semibold">Real-time Cloud Gateway</p>
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-kai-blue rounded-b-[40px]"></div>
+            
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
+              <div className="text-center mb-8">
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-20 h-20 mx-auto mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
+                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Akses Admin</p>
               </div>
 
-              {loginError && <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs md:text-sm rounded-xl flex items-center gap-2"><ShieldAlert className="w-4 h-4 md:w-5 md:h-5"/> {loginError}</div>}
-              
-              {forgotMessage.text && (
-                <div className={`mb-4 p-3 border text-xs md:text-sm rounded-xl flex items-center gap-2 ${forgotMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold' : 'bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400'}`}>
-                  {forgotMessage.text}
-                </div>
-              )}
+              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg flex items-center gap-2 font-bold"><ShieldAlert className="w-4 h-4"/> {loginError}</div>}
+              {forgotMessage.text && <div className={`mb-4 p-3 text-xs rounded-lg font-bold ${forgotMessage.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{forgotMessage.text}</div>}
 
               {!forgotMode ? (
-                <form onSubmit={handleLogin} className="space-y-4 md:space-y-5 relative z-10 mt-6">
-                  {/* Hanya Login Menggunakan Password */}
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500"><Lock className="w-4 h-4 md:w-5 md:h-5" /></div>
-                    <input type={showPassword ? "text" : "password"} placeholder="Masukkan Password Anda..." required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 md:pl-12 pr-10 md:pr-12 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 md:pr-4 flex items-center text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400">
-                      {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}
-                    </button>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                      <Lock className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                      <input type={showPassword ? "text" : "password"} placeholder="Masukkan Password..." required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-transparent pl-8 pr-8 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-0 text-slate-400 hover:text-kai-blue">
+                        {showPassword ? <EyeOff className="w-5 h-5"/> : <Eye className="w-5 h-5"/>}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-end">
-                    <button type="button" onClick={() => {setForgotMode(true); setForgotMessage({text: '', type: ''});}} className="text-[11px] md:text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium">Lupa Password?</button>
-                  </div>
-                  <button type="submit" className="w-full py-2.5 md:py-3 rounded-xl bg-indigo-600 text-white text-sm md:text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors">Masuk Aplikasi</button>
+                  <div className="flex justify-end"><button type="button" onClick={() => {setForgotMode(true); setForgotMessage({text: '', type: ''});}} className="text-[10px] text-kai-blue font-bold">Lupa Password?</button></div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg hover:bg-kai-orangedark transition-colors">Masuk</button>
                 </form>
               ) : (
-                <form onSubmit={handleForgotPassword} className="space-y-4 md:space-y-5 relative z-10 mt-6">
-                  <div className="text-sm font-semibold text-slate-600 dark:text-slate-300 text-center mb-2">Panggil Password Menggunakan Email</div>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none text-slate-400 dark:text-slate-500"><Mail className="w-4 h-4 md:w-5 md:h-5" /></div>
-                    <input type="email" placeholder="Masukkan Email Terdaftar..." required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-300 dark:border-slate-700 rounded-xl pl-10 md:pl-12 pr-3 py-2.5 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="text-xs font-bold text-center text-slate-500 mb-2">Pemulihan Akun</div>
+                  <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                    <Mail className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                    <input type="email" placeholder="Email Terdaftar..." required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className="w-full bg-transparent pl-8 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
                   </div>
-                  <button type="submit" className="w-full py-2.5 md:py-3 rounded-xl bg-emerald-600 text-white text-sm md:text-base font-bold shadow-lg hover:bg-emerald-700 transition-colors">Tampilkan Password</button>
-                  <button type="button" onClick={() => setForgotMode(false)} className="w-full py-2 flex justify-center items-center gap-2 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-sm font-bold mt-2 transition-colors">
-                    <ArrowLeft className="w-4 h-4"/> Kembali ke Login
-                  </button>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-blue text-white text-sm font-bold shadow-lg mt-2">Cek Password</button>
+                  <button type="button" onClick={() => setForgotMode(false)} className="w-full text-center text-slate-500 text-xs font-bold">Kembali</button>
                 </form>
               )}
 
               {!forgotMode && (
-                <>
-                  <div className="w-full border-t border-slate-300 dark:border-slate-800 my-6 md:my-8 relative z-10"><span className="absolute left-1/2 -translate-x-1/2 -top-2.5 md:-top-3 bg-white dark:bg-slate-900 px-2 text-xs md:text-sm text-slate-500 font-semibold transition-colors">ATAU</span></div>
-
-                  <div className="mt-2 md:mt-4 flex flex-col items-center relative z-10">
-                    <button onClick={() => handleFingerprintScan()} disabled={isScanning} className="relative group flex flex-col items-center gap-2 md:gap-3">
-                      <div className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border transition-all overflow-hidden relative ${isScanning ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
-                        <Fingerprint className={`w-7 h-7 md:w-8 md:h-8 ${isScanning ? 'opacity-50' : ''}`} strokeWidth={isScanning ? 2 : 1.5} />
-                        {isScanning && <div className="scanner-line"></div>}
-                      </div>
-                      <span className={`text-[10px] md:text-xs font-semibold text-center ${isScanning ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
-                        {isScanning ? 'Memindai...' : 'Login Sidik Jari Asli'} <br/> <span className="font-normal text-[8px] md:text-[10px] opacity-70">(Ingat Perangkat Saya)</span>
-                      </span>
-                    </button>
-                  </div>
-                </>
+                <div className="mt-8 flex justify-center">
+                  <button onClick={() => handleFingerprintScan()} className="flex flex-col items-center gap-2 group">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600 group-hover:border-kai-blue transition-colors">
+                      <Fingerprint className="w-6 h-6 text-kai-blue dark:text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400">Sidik Jari</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>
         );
       }
 
+      // ========== MABUNET V3 LAYOUT (KAI ACCESS STYLE) ==========
+      
       return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col relative transition-colors duration-300 text-sm md:text-base">
+        <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
           
           {printData && (
             <div id="print-receipt">
@@ -606,730 +522,486 @@
                 <p style={{margin: '0', fontSize: '12px', fontWeight: 'bold', marginTop: '5px'}}>STATUS: LUNAS</p>
               </div>
               <div style={{textAlign: 'center', marginTop: '15px', fontSize: '10px'}}>
-                <p style={{margin: '0'}}>Terima Kasih</p>
-                <p style={{margin: '0'}}>Telah Berlangganan</p>
-                <p style={{margin: '0'}}>MABUNET</p>
+                <p style={{margin: '0'}}>Terima Kasih Berlangganan</p>
               </div>
             </div>
           )}
 
-          {/* TOP NAVIGATION BAR */}
-          <header className="fixed top-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-4 md:px-6 shadow-sm transition-colors">
-            <div className="flex items-center gap-3 w-1/4">
-              <img src="./mabunetlogo.png" alt="Mabunet" className="w-10 h-10 object-contain drop-shadow-md" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} />
-              <div>
-                <h2 className="font-bold text-sm md:text-base leading-tight text-slate-800 dark:text-slate-200">MABUNET</h2>
-                <p className="text-[10px] md:text-xs text-indigo-600 dark:text-indigo-400 uppercase font-bold hidden sm:block">{currentUser.role}</p>
-              </div>
+          {/* === SIDEBAR (DESKTOP) - NAVY BLUE === */}
+          <aside className={`hidden lg:flex flex-col h-full bg-kai-blue text-white shadow-xl z-40 relative transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+            <div className={`p-5 flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}>
+              <img src="./mabunetlogo.png" className="w-8 h-8 object-contain shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+              {!isSidebarCollapsed && (
+                <div className="overflow-hidden">
+                  <h2 className="font-black text-lg tracking-tight text-white">MABUNET</h2>
+                  <p className="text-[9px] font-bold text-kai-orange uppercase tracking-widest">Admin Panel</p>
+                </div>
+              )}
             </div>
 
-            <nav className="hidden lg:flex flex-1 justify-center items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
-                <LayoutDashboard className="w-4 h-4" /> Dashboard
-              </button>
-              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'customers' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
-                <div className="relative flex items-center gap-2"><Users className="w-4 h-4" /> Pelanggan {isDbLoading && <span className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></span>}</div>
-              </button>
-              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
-                <BookOpen className="w-4 h-4" /> Buku Kas
-              </button>
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>
-                <Settings className="w-4 h-4" /> Pengaturan & Profil
-              </button>
-            </nav>
-
-            <div className="flex items-center justify-end gap-3 w-1/4">
-              <div className="hidden md:flex items-center gap-2 mr-1">
-                <div className="flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-none">{currentUser.name}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{currentUser.username}</span>
-                </div>
-                {currentUser.photo ? (
-                  <img src={currentUser.photo} className="w-9 h-9 rounded-full object-cover border border-slate-300 dark:border-slate-600" />
-                ) : (
-                  <User className="w-9 h-9 p-1.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500" />
-                )}
-              </div>
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 text-slate-500 hover:text-indigo-500 transition-colors">
-                {isDarkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}
-              </button>
-              <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 text-xs md:text-sm font-bold transition-colors">
-                <LogOut className="w-4 h-4"/>
-              </button>
-            </div>
-          </header>
-
-          <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
-            <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">Home</span>
-            </button>
-            <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'customers' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
-              <Users className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">Pelanggan</span>
-            </button>
-            <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'ledger' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
-              <BookOpen className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">Buku Kas</span>
-            </button>
-            <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 rounded-xl ${activeTab === 'settings' ? 'text-indigo-600 dark:text-indigo-400 font-bold' : 'text-slate-400'}`}>
-              <Settings className="w-5 h-5" />
-              <span className="text-[10px] mt-0.5">Profil</span>
-            </button>
-          </nav>
-
-          <main className="flex-1 w-full max-w-[1600px] mx-auto pt-20 pb-24 lg:pb-10 px-2 sm:px-6 space-y-4 md:space-y-8">
-            
-            {activeTab === 'dashboard' && (
-              <div className="max-w-5xl mx-auto space-y-4 md:space-y-8">
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  <div className="flex items-center justify-between sm:justify-start gap-4 w-full sm:w-auto">
-                    <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
-                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-2 px-3 py-1.5 md:py-2 rounded-lg text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
-                      {alarmEnabled ? <Volume2 className="w-4 h-4"/> : <VolumeX className="w-4 h-4"/>} Alarm {alarmEnabled ? 'ON' : 'OFF'}
-                    </button>
+            {!isSidebarCollapsed && (
+              <div className="px-5 mb-6 mt-2">
+                <div className="bg-kai-bluedark rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-700 shrink-0 border border-slate-600">
+                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-1.5 text-slate-300" />}
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{currentUser.name}</p>
+                    <p className="text-[9px] font-black text-slate-400 truncate uppercase mt-0.5">{currentUser.role}</p>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
-                  {/* CARD TOTAL PELANGGAN - REVISI 2 BAR & INFO TIDAK AKTIF */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-5 rounded-2xl shadow-sm transition-colors flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-[11px] md:text-sm font-bold text-slate-500 dark:text-slate-400">Total Pelanggan</p>
-                      <h3 className="text-xl md:text-3xl font-extrabold">{customers.length}</h3>
-                    </div>
-                    <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-lg px-2 py-1.5 mt-0.5">
-                      <span className="text-[10px] md:text-xs font-bold text-emerald-600 dark:text-emerald-400">{activeCustomersList.length} Aktif</span>
-                      <span className="text-slate-300 dark:text-slate-700">|</span>
-                      <span className="text-[10px] md:text-xs font-bold text-rose-600 dark:text-rose-400">{inactiveCustomersList.length} Non-Aktif</span>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Potensi Omset</p><h3 className="text-lg md:text-2xl font-extrabold mt-1 md:mt-2">{formatIDR(totalPotentialRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Telah Terbayar</p><h3 className="text-lg md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3></div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm transition-colors"><p className="text-[10px] md:text-sm text-slate-500 dark:text-slate-400">Kas Bersih (Net)</p><h3 className={`text-lg md:text-2xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3></div>
-                </div>
-
-                {customersDueToday.length > 0 && (
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/50 p-4 md:p-6 rounded-2xl shadow-[0_4px_20px_rgba(244,63,94,0.1)] transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-rose-200 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-full animate-ring shrink-0"><BellRing className="w-5 h-5 md:w-6 md:h-6"/></div>
-                      <div><h3 className="text-sm md:text-lg font-bold text-rose-700 dark:text-rose-400">Peringatan Jatuh Tempo! (Tgl {todayDay})</h3><p className="text-[11px] md:text-sm text-slate-600 dark:text-slate-300 mt-1">Ada {customersDueToday.length} pelanggan yang harus ditagih hari ini.</p></div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden flex flex-col">
-                  <div className="bg-white dark:bg-slate-900 p-3 md:p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                    <h3 className="font-bold flex items-center gap-2 text-sm md:text-base"><Bell className="w-4 h-4 md:w-5 md:h-5 text-rose-500 dark:text-rose-400"/> Tagihan Belum Lunas ({dueCustomers.length})</h3>
-                    <div className="relative w-full sm:w-64">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-3.5 h-3.5" /></div>
-                      <input type="text" placeholder="Cari Pelanggan/Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 md:py-2 text-xs md:text-sm outline-none focus:border-indigo-500 text-slate-800 dark:text-slate-100 transition-colors" />
-                    </div>
-                  </div>
-
-                  {/* DESKTOP TABLE VIEW */}
-                  <div className="hidden md:block overflow-x-auto max-h-[60vh] overflow-y-auto custom-scrollbar relative">
-                    <table className="w-full text-left text-sm lg:text-base whitespace-nowrap md:whitespace-normal">
-                      <thead className="sticky top-0 z-20 shadow-sm">
-                        <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
-                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Pelanggan</th>
-                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Tagihan</th>
-                          <th className="py-3 px-6 bg-slate-50 dark:bg-slate-950">Jatuh Tempo</th>
-                          <th className="py-3 px-6 text-right bg-slate-50 dark:bg-slate-950">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {filteredDueCustomers.length === 0 ? (
-                          <tr><td colSpan="4" className="text-center py-6 text-slate-500 text-sm">Tidak ada tagihan yang cocok dengan pencarian.</td></tr>
-                        ) : (
-                          filteredDueCustomers.map(cust => (
-                            <tr key={cust.id} className={cust.dueDate === todayDay ? 'bg-rose-50 dark:bg-rose-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}>
-                              <td className="py-3 px-6">
-                                <div className="font-semibold text-slate-800 dark:text-slate-100">{cust.name}</div>
-                                <div className="text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded inline-block mt-0.5">Blok {cust.block}</div>
-                              </td>
-                              <td className="py-3 px-6 font-semibold">{formatIDR(getPackage(cust.packageId).price)}</td>
-                              <td className={`py-3 px-6 font-bold ${cust.dueDate === todayDay ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-300'}`}>Tgl {cust.dueDate}</td>
-                              <td className="py-3 px-6 text-right space-x-3 flex justify-end">
-                                <button onClick={() => sendWAInvoice(cust)} className="px-3 py-1.5 bg-rose-600 rounded-lg text-white text-sm font-semibold hover:bg-rose-700 shadow-sm transition-colors">WA Tagih</button>
-                                <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-3 py-1.5 bg-indigo-600 rounded-lg text-white text-sm font-semibold hover:bg-indigo-700 shadow-sm transition-colors">Set Lunas</button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* MOBILE CARDS VIEW (Tagihan Belum Lunas) */}
-                  <div className="md:hidden flex flex-col gap-2 p-2 max-h-[500px] overflow-y-auto custom-scrollbar">
-                    {filteredDueCustomers.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500 text-sm">Tidak ada tagihan.</div>
-                    ) : (
-                      filteredDueCustomers.map(cust => (
-                        <div key={cust.id} className={`p-3 rounded-2xl border shadow-sm ${cust.dueDate === todayDay ? 'bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800' : 'bg-slate-50 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700'}`}>
-                          
-                          <div className="flex flex-col gap-1.5 mb-2 border-b border-slate-100 dark:border-slate-700/50 pb-2">
-                             <div className="flex justify-between items-center">
-                               <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{cust.name}</span>
-                               <span className="font-extrabold text-sm text-slate-800 dark:text-slate-100">{formatIDR(getPackage(cust.packageId).price)}</span>
-                             </div>
-                             <div className="flex justify-between items-center">
-                               <span className="text-[11px] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md font-bold">Blok {cust.block}</span>
-                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${cust.dueDate === todayDay ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400' : 'text-slate-500'}`}>Jatuh Tempo TGL {cust.dueDate}</span>
-                             </div>
-                          </div>
-
-                          <div className="flex gap-2 mt-1">
-                            <button onClick={() => sendWAInvoice(cust)} className="flex-1 py-1.5 bg-rose-600 rounded-xl text-white text-[11px] font-bold hover:bg-rose-700 shadow-sm transition-colors flex justify-center items-center gap-1.5"><FileText className="w-3.5 h-3.5"/> WA Tagih</button>
-                            <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="flex-1 py-1.5 bg-indigo-600 rounded-xl text-white text-[11px] font-bold hover:bg-indigo-700 shadow-sm transition-colors flex justify-center items-center gap-1.5"><Check className="w-3.5 h-3.5"/> Set Lunas</button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
                 </div>
               </div>
             )}
+            
+            {isSidebarCollapsed && (
+               <div className="w-full flex justify-center mb-6 mt-2">
+                 <div className="w-10 h-10 rounded-full overflow-hidden bg-kai-bluedark border border-slate-600">
+                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-1.5 text-slate-400" />}
+                 </div>
+               </div>
+            )}
 
-            {activeTab === 'customers' && (
-              <div className="space-y-4 md:space-y-8">
-                
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  
-                  <div className="flex flex-wrap items-center gap-2 lg:pr-4 lg:border-r border-slate-200 dark:border-slate-700 shrink-0">
-                    <h2 className="text-sm font-bold mr-1 hidden xl:block">Periode:</h2>
-                    <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl text-xs font-bold border transition-colors ${alarmEnabled ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}>
-                      {alarmEnabled ? <Volume2 className="w-3.5 h-3.5"/> : <VolumeX className="w-3.5 h-3.5"/>} Alarm
+            <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
+              <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
+              <SidebarItem id="customers" icon={Users} label="Warga" />
+              <SidebarItem id="search" icon={Search} label="Pencarian" />
+              <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
+              <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
+              <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
+            </nav>
+
+            <div className="p-3 border-t border-kai-bluedark">
+              <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-bold hover:bg-kai-bluedark transition-colors text-slate-400 mb-1">
+                {isSidebarCollapsed ? <ChevronRight className="w-4 h-4"/> : <><ChevronLeft className="w-4 h-4"/> Sembunyikan</>}
+              </button>
+              <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-2 text-rose-400 rounded-lg text-xs font-bold hover:bg-kai-bluedark transition-colors">
+                <LogOut className="w-4 h-4"/> {!isSidebarCollapsed && 'Keluar'}
+              </button>
+            </div>
+          </aside>
+
+          {/* === MAIN CONTENT AREA === */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+            
+            {/* Desktop Header Top Control */}
+            <div className="hidden lg:flex items-center justify-end p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 gap-3">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-1.5 gap-2">
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+              </div>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-kai-orange">
+                {isDarkMode ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}
+              </button>
+            </div>
+
+            {/* Scrollable Main Content */}
+            <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
+              
+              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - HANYA TAMPIL DI MOBILE HOME/DASHBOARD */}
+              <div className={`lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all ${activeTab !== 'dashboard' ? 'hidden' : ''}`}>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <p className="text-xs text-slate-300">Selamat datang,</p>
+                    <h2 className="font-bold text-lg">{currentUser.name}</h2>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-kai-bluedark text-slate-300">
+                      {isDarkMode ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}
                     </button>
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full lg:w-auto">
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                      <input type="text" placeholder="Cari Nama atau Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-9 pr-4 py-1.5 md:py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors"/>
+                    <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-kai-orange">
+                      {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover"/> : <User className="w-full h-full p-2 text-slate-800"/>}
                     </div>
-                    <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-1.5 md:py-2 text-sm md:text-base text-slate-800 dark:text-slate-100 outline-none focus:border-indigo-500 transition-colors w-full sm:w-auto">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                  </div>
-
-                  <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end">
-                    <button onClick={() => exportCSV('customers')} className="flex-1 sm:flex-none px-4 py-2 md:py-2 bg-emerald-600 rounded-xl text-white text-xs md:text-sm font-bold shadow-md hover:bg-emerald-700 flex items-center justify-center gap-1.5"><Download className="w-4 h-4"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 sm:flex-none px-4 py-2 md:py-2 bg-indigo-600 rounded-xl text-white text-xs md:text-sm font-bold shadow-md hover:bg-indigo-700 flex items-center justify-center gap-1.5"><Plus className="w-4 h-4"/> <span className="inline">Tambah</span></button>
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors relative overflow-hidden">
-                  {isDbLoading ? (
-                    <div className="p-12 md:p-16 text-center text-slate-500 dark:text-slate-400 animate-pulse text-sm md:text-base">Memuat Data dari Cloud...</div>
-                  ) : customers.length === 0 ? (
-                    <div className="p-12 md:p-16 text-center text-rose-500 font-bold text-sm md:text-base">Data Pelanggan Kosong!</div>
-                  ) : (
-                    <>
-                      {/* DESKTOP TABLE VIEW */}
-                      <div className="hidden lg:block overflow-x-auto overflow-y-auto max-h-[75vh] custom-scrollbar">
-                        <table className="w-full text-left text-sm lg:text-base min-w-[1300px]">
-                          <thead className="sticky top-0 z-30 shadow-sm border-b border-slate-200 dark:border-slate-800">
-                            <tr>
-                              <th className="py-4 px-6 w-56 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Pelanggan</th>
-                              <th className="py-4 px-4 w-40 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Paket</th>
-                              {MONTHS.map((m, i) => <th key={i} className="py-4 px-2 text-center w-10 text-xs uppercase tracking-wider bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">{m.substring(0,3)}</th>)}
-                              <th className="py-4 px-6 text-right w-64 bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">Opsi & Print</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {filteredCustomers.map(cust => (
-                              <tr key={cust.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                                <td className="py-4 px-6">
-                                  <div className="font-semibold text-slate-800 dark:text-slate-100 text-base">{cust.name}</div>
-                                  <div className="font-bold text-indigo-600 dark:text-indigo-300 text-sm mt-1">Blok {cust.block}</div>
-                                  <div className={`text-[10px] border px-2 py-1 rounded inline-block mt-1 font-bold ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-500/30 bg-emerald-100 dark:bg-emerald-500/10' : 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-500/30 bg-rose-100 dark:bg-rose-500/10'}`}>{cust.status}</div>
-                                </td>
-                                <td className="py-4 px-4 text-sm">
-                                  <span className="font-medium text-slate-800 dark:text-slate-100">{getPackage(cust.packageId).speed}</span><br/>
-                                  <span className="text-slate-500 dark:text-slate-400">{formatIDR(getPackage(cust.packageId).price)}</span><br/>
-                                  <span className="text-amber-600 dark:text-amber-400 font-bold mt-1 inline-block">Jatuh Tempo Tgl {cust.dueDate}</span>
-                                </td>
+              {/* ROUTE CONTENT WRAPPER */}
+              <div className={`relative z-10 ${activeTab === 'dashboard' ? 'mt-24 lg:mt-6' : 'pt-6'} px-4 lg:px-8 max-w-6xl mx-auto space-y-4`}>
+                
+                {/* --- DASHBOARD ROUTE --- */}
+                {activeTab === 'dashboard' && (
+                  <>
+                    {/* Kartu Saldo KAI Style (Tumpuk di atas header biru di mobile) */}
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="w-5 h-5 text-kai-blue dark:text-white" />
+                          <span className="font-bold text-sm text-kai-blue dark:text-white">Saldo Kas Bersih</span>
+                        </div>
+                        <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
+                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
+                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3>
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold text-slate-400">Total Warga</p>
+                          <p className="font-black text-sm text-kai-orange">{customers.length} ({activeCustomersList.length} Aktif)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Action Grid (KAI Style Menu) */}
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                      <div className="grid grid-cols-4 gap-2">
+                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-kai-blue dark:text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-kai-blue group-hover:text-white transition-colors shadow-sm"><UserPlus className="w-6 h-6"/></div>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Warga<br/>Baru</span>
+                        </button>
+                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-orange-50 dark:bg-orange-900/30 text-kai-orange rounded-2xl flex items-center justify-center group-hover:bg-kai-orange group-hover:text-white transition-colors shadow-sm"><CreditCard className="w-6 h-6"/></div>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Catat<br/>Kas</span>
+                        </button>
+                        <button onClick={handleBroadcastWA} disabled={isBroadcasting} className="flex flex-col items-center gap-2 group">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm transition-colors ${isBroadcasting ? 'bg-slate-200 text-slate-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}><Send className="w-5 h-5 ml-1"/></div>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Blast<br/>WA</span>
+                        </button>
+                        <button onClick={() => setActiveTab('search')} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl flex items-center justify-center group-hover:bg-slate-600 group-hover:text-white transition-colors shadow-sm"><Search className="w-6 h-6"/></div>
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Cari<br/>Cepat</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Statistik Tambahan */}
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+                          <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg"><TrendingUp className="w-4 h-4 text-kai-blue dark:text-white"/></div>
+                          <div><p className="text-[9px] font-bold text-slate-400 uppercase">Total Omset</p><p className="text-sm font-black text-slate-800 dark:text-white">{formatIDR(totalPotentialRevenue)}</p></div>
+                       </div>
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+                          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg"><Check className="w-4 h-4 text-emerald-600"/></div>
+                          <div><p className="text-[9px] font-bold text-slate-400 uppercase">Telah Bayar</p><p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatIDR(actualPaidRevenue)}</p></div>
+                       </div>
+                    </div>
+
+                    {/* Daftar Tagihan Belum Lunas (Desain Tiket Kereta) */}
+                    <div className="mt-6">
+                      <div className="flex justify-between items-center mb-3 px-1">
+                        <h3 className="font-black text-base text-kai-blue dark:text-white">Tagihan Tertunda ({dueCustomers.length})</h3>
+                        <span className="text-xs font-bold text-kai-orange">Bulan {MONTHS[selectedMonth]}</span>
+                      </div>
+
+                      {dueCustomers.length === 0 ? (
+                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas! 👍</div>
+                      ) : (
+                        <div className="space-y-3">
+                          {dueCustomers.map(cust => {
+                            const pkg = getPackage(cust.packageId);
+                            const isToday = cust.dueDate === todayDay;
+                            return (
+                              <div key={cust.id} className={`flex bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${isToday ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-700'} relative overflow-hidden`}>
+                                {/* Bagian Kiri Tiket */}
+                                <div className="flex-1 p-3 md:p-4">
+                                  <div className="flex justify-between items-start">
+                                    <h4 className="font-extrabold text-sm md:text-base text-kai-blue dark:text-white truncate pr-2">{cust.name}</h4>
+                                    <div className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-slate-500 whitespace-nowrap">BLOK {cust.block}</div>
+                                  </div>
+                                  <div className="text-[10px] font-semibold text-slate-400 mt-1">{pkg.speed} • HP: {cust.phone || '-'}</div>
+                                  <div className={`text-[10px] font-bold mt-3 inline-block px-2 py-1 rounded-md ${isToday ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30' : 'bg-slate-50 dark:bg-slate-700 text-slate-500'}`}>Jatuh Tempo TGL {cust.dueDate}</div>
+                                </div>
                                 
+                                {/* Pemisah Tiket (Garis Putus-putus) */}
+                                <div className="w-1.5 ticket-divider relative flex flex-col justify-between">
+                                  <div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -top-1.5 -left-1"></div>
+                                  <div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -bottom-1.5 -left-1"></div>
+                                </div>
+
+                                {/* Bagian Kanan Tiket */}
+                                <div className="w-28 md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-center p-3 gap-2">
+                                  <div className="text-right">
+                                    <p className="text-[8px] font-bold text-slate-400 uppercase">Total Tagihan</p>
+                                    <p className="font-black text-[13px] md:text-sm text-kai-blue dark:text-white">{formatIDR(pkg.price)}</p>
+                                  </div>
+                                  <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar</button>
+                                  <button onClick={() => sendWAInvoice(cust)} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA</button>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* --- SEARCH ROUTE --- */}
+                {activeTab === 'search' && (
+                  <div className="space-y-4">
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-full border border-kai-blue/20 shadow-sm flex items-center sticky top-0 z-20">
+                      <div className="pl-3 text-kai-blue dark:text-slate-400"><Search className="w-5 h-5" /></div>
+                      <input autoFocus type="text" placeholder="Ketik Nama / Blok Warga..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-transparent pl-3 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white"/>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="col-span-full text-center py-10 text-slate-400 font-bold text-sm">Tidak ditemukan.</div>
+                      ) : (
+                        filteredCustomers.map(cust => (
+                          <div key={cust.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <div>
+                              <h4 className="font-black text-sm text-kai-blue dark:text-white">{cust.name}</h4>
+                              <div className="text-[10px] font-bold text-slate-500 mt-1">Blok {cust.block} • Tgl {cust.dueDate}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => sendWAInvoice(cust)} className="w-8 h-8 flex items-center justify-center bg-slate-50 dark:bg-slate-700 rounded-full text-slate-500 hover:text-kai-blue border border-slate-200 dark:border-slate-600"><FileText className="w-4 h-4"/></button>
+                              <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-8 h-8 flex items-center justify-center bg-kai-orange text-white rounded-full shadow-sm hover:scale-105 transition-transform"><Check className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* --- CUSTOMERS ROUTE --- */}
+                {activeTab === 'customers' && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Warga</h2>
+                      <div className="flex gap-2">
+                        <button onClick={() => exportCSV('customers')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"><Download className="w-4 h-4"/></button>
+                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="p-2 bg-kai-blue text-white rounded-lg"><Plus className="w-4 h-4"/></button>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-2 mb-4">
+                      <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none flex-1 text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                      <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                    </div>
+
+                    {isDbLoading ? (
+                      <div className="text-center py-10 font-bold text-slate-400 text-sm animate-pulse">Memuat...</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredCustomers.map(cust => (
+                          <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
+                             <div className="flex justify-between items-start mb-2">
+                               <div className="flex flex-col">
+                                 <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span>
+                                 <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span>
+                               </div>
+                               <div className="flex flex-col items-end">
+                                 <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
+                                 <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
+                               </div>
+                             </div>
+                             
+                             <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
                                 {MONTHS.map((m, i) => {
                                   const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
                                   const isPaid = cust.payments && cust.payments[monthKey];
                                   return (
-                                    <td key={i} className="py-2 px-0 text-center">
-                                      <button onClick={() => togglePayment(cust.id, monthKey)} className={`mx-auto w-8 h-8 rounded-md flex items-center justify-center border transition-all ${isPaid ? 'bg-emerald-500 border-emerald-600 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
-                                        {isPaid ? <span className="w-5 h-5 block"></span> : <span className="text-xs font-bold text-slate-400">{i+1}</span>}
-                                      </button>
-                                    </td>
+                                    <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>
+                                      {m.substring(0,3)}
+                                    </button>
                                   );
                                 })}
-                                
-                                <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
-                                  <button onClick={() => toggleIsolirManual(cust)} className={`p-2 shadow-sm rounded-lg transition-colors ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30' : 'bg-rose-500 text-white hover:bg-emerald-500'}`} title={cust.status === 'Aktif' ? "Klik untuk Isolir Manual" : "Internet Terisolir (Klik untuk Aktifkan)"}>
-                                    <Power className="w-5 h-5" />
-                                  </button>
-                                  <button onClick={() => triggerPrint(cust)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg hover:text-indigo-500 text-slate-500 shadow-sm transition-colors" title="Print Struk"><Printer className="w-5 h-5" /></button>
-                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="p-2 hover:text-emerald-500 text-slate-500 transition-colors" title="Kirim WA"><FileText className="w-5 h-5" /></button>
-                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="p-2 hover:text-indigo-500 text-slate-500 transition-colors" title="Edit"><Edit3 className="w-5 h-5" /></button>
-                                  <button onClick={() => handleDeleteCustomer(cust.id)} className="p-2 hover:text-rose-500 text-slate-500 transition-colors" title="Hapus"><Trash2 className="w-5 h-5" /></button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* MOBILE/TABLET CARDS VIEW (NO SLIDE BAR) */}
-                      <div className="lg:hidden flex flex-col gap-3 p-2 bg-slate-50 dark:bg-slate-950">
-                        {filteredCustomers.map(cust => (
-                          <div key={cust.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                            
-                            <div className="flex flex-col gap-2 border-b border-slate-100 dark:border-slate-700/50 pb-3 mb-3">
-                               <div className="flex justify-between items-center">
-                                 <span className="font-extrabold text-slate-800 dark:text-slate-100 text-[15px]">{cust.name}</span>
-                                 <span className="text-[14px] font-extrabold text-slate-800 dark:text-slate-100">{formatIDR(getPackage(cust.packageId).price)}</span>
-                               </div>
-                               
-                               <div className="flex justify-between items-center">
-                                 <div className="flex gap-1.5 items-center">
-                                   <span className="font-bold text-indigo-700 dark:text-indigo-300 text-[11px] bg-indigo-100 dark:bg-indigo-500/20 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-500/30">Blok {cust.block}</span>
-                                   <span className={`text-[10px] border px-1.5 py-0.5 rounded-md font-bold ${cust.status === 'Aktif' ? 'text-emerald-700 dark:text-emerald-400 border-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' : 'text-rose-700 dark:text-rose-400 border-rose-300 bg-rose-100 dark:bg-rose-900/30'}`}>{cust.status}</span>
-                                 </div>
-                                 <div className="flex gap-1.5 text-right items-center">
-                                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-1.5 py-0.5 rounded-md">{getPackage(cust.packageId).speed}</span>
-                                    <span className="text-rose-600 dark:text-rose-400 font-bold text-[11px] bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md">Jatuh Tempo TGL {cust.dueDate}</span>
-                                 </div>
-                               </div>
-                            </div>
-                            
-                            <div className="mb-2 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Pembayaran {selectedYear}</div>
-                            <div className="grid grid-cols-6 gap-1.5 mb-3">
-                              {MONTHS.map((m, i) => {
-                                const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
-                                const isPaid = cust.payments && cust.payments[monthKey];
-                                return (
-                                  <button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex flex-col items-center justify-center py-2.5 rounded-lg border transition-all ${isPaid ? 'bg-emerald-500 border-emerald-600 shadow-sm' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
-                                    {isPaid ? (
-                                      <span className="text-[12px] md:text-[13px] uppercase font-extrabold text-white tracking-wider flex items-center justify-center w-full h-full">{m.substring(0,3)}</span>
-                                    ) : (
-                                      <span className="text-[12px] md:text-[13px] uppercase font-extrabold text-slate-400 tracking-wider flex items-center justify-center w-full h-full">{m.substring(0,3)}</span>
-                                    )}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            
-                            <div className="flex justify-between items-center gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/50">
-                               <button onClick={() => toggleIsolirManual(cust)} className={`flex-1 flex justify-center py-2.5 rounded-xl transition-colors shadow-sm ${cust.status === 'Aktif' ? 'bg-slate-100 dark:bg-slate-800 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/50' : 'bg-rose-500 text-white hover:bg-emerald-500'}`}><Power className="w-4 h-4" /></button>
-                               <button onClick={() => triggerPrint(cust)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors shadow-sm"><Printer className="w-4 h-4" /></button>
-                               <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 transition-colors shadow-sm"><FileText className="w-4 h-4" /></button>
-                               <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors shadow-sm"><Edit3 className="w-4 h-4" /></button>
-                               <button onClick={() => handleDeleteCustomer(cust.id)} className="flex-1 flex justify-center py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors shadow-sm"><Trash2 className="w-4 h-4" /></button>
-                            </div>
+                             </div>
+                             
+                             <div className="flex justify-end gap-1.5 pt-1">
+                                <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                             </div>
                           </div>
                         ))}
                       </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'ledger' && (
-              <div className="space-y-4 md:space-y-8 max-w-[1600px] mx-auto">
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 md:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <h2 className="text-lg md:text-xl font-bold">Periode Aktif</h2>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                    <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 sm:flex-none bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-1.5 md:py-2 text-sm outline-none transition-colors">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Pemasukan</p>
-                    <h3 className="text-lg md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1 md:mt-2">{formatIDR(actualPaidRevenue)}</h3>
-                  </div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Keluar (Jurnal)</p>
-                    <h3 className="text-lg md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalJurnal)}</h3>
-                  </div>
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 md:p-6 rounded-2xl shadow-sm">
-                    <p className="text-[10px] md:text-xs uppercase font-bold text-slate-500">Keluar (Fam)</p>
-                    <h3 className="text-lg md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-1 md:mt-2">{formatIDR(totalFam)}</h3>
-                  </div>
-                  <div className={`border p-3 md:p-6 rounded-2xl shadow-sm ${netProfit >= 0 ? 'bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800' : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800'}`}>
-                    <p className={`text-[10px] md:text-xs uppercase font-bold flex items-center gap-1.5 ${netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}><Wallet className="w-3 h-3 md:w-4 md:h-4"/> Total Sisa Kas</p>
-                    <h3 className={`text-lg md:text-3xl font-extrabold mt-1 md:mt-2 ${netProfit >= 0 ? 'text-indigo-700 dark:text-indigo-400' : 'text-rose-700 dark:text-rose-400'}`}>{formatIDR(netProfit)}</h3>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white dark:bg-slate-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 transition-colors shadow-sm">
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <BookOpen className="w-5 h-5 text-indigo-500" />
-                    <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm md:text-base">Semua Catatan Kas</h3>
-                  </div>
-                  
-                  <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-                    <button onClick={() => exportCSV('expenses')} className="flex-1 sm:flex-none px-4 py-2 md:py-3 bg-emerald-600 rounded-xl text-white text-xs md:text-base font-bold shadow-lg hover:bg-emerald-700 flex items-center justify-center gap-1.5"><Download className="w-3.5 h-3.5 md:w-5 md:h-5"/> <span className="inline">Export</span></button>
-                    <button onClick={() => { 
-                      setEditingExpense(null);
-                      setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); 
-                      setIsExpenseModalOpen(true); 
-                    }} className="flex-1 sm:flex-none px-4 py-2 md:py-3 bg-rose-600 rounded-xl text-white text-xs md:text-base font-bold flex justify-center items-center gap-1.5 shadow-lg hover:bg-rose-700">
-                      <Plus className="w-3.5 h-3.5 md:w-5 md:h-5"/> <span className="inline">Catat Kas</span>
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl transition-colors overflow-hidden">
-                  
-                  {/* DESKTOP TABLE VIEW */}
-                  <div className="hidden lg:block overflow-x-auto">
-                    <table className="w-full text-left text-sm lg:text-base">
-                      <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                        <tr>
-                          <th className="py-4 px-6">Tanggal</th>
-                          <th className="py-4 px-6">Kategori, Pengajuan & Uraian</th>
-                          <th className="py-4 px-6">Catatan Admin</th>
-                          <th className="py-4 px-6 text-right">Nominal</th>
-                          <th className="py-4 px-6 text-center w-28">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {displayedExpenses.length === 0 ? (
-                          <tr><td colSpan="5" className="text-center py-12 text-slate-400 text-base">Belum ada pengeluaran kas di bulan ini.</td></tr>
-                        ) : (
-                          displayedExpenses.map(exp => (
-                            <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
-                              <td className="py-4 px-6 whitespace-nowrap">{exp.date}</td>
-                              <td className="py-4 px-6 font-medium">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                  <span className="text-[10px] uppercase font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">{exp.category}</span>
-                                  {exp.applicant && <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">👤 By: {exp.applicant}</span>}
-                                </div>
-                                <span className="text-sm">{exp.description}</span>
-                              </td>
-                              <td className="py-4 px-6 text-sm">
-                                <div className="text-slate-800 dark:text-slate-200 font-semibold">{exp.admin}</div>
-                                {exp.notes && <div className="text-slate-500 dark:text-slate-400 text-xs italic mt-1">{exp.notes}</div>}
-                              </td>
-                              <td className="py-4 px-6 font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">{formatIDR(exp.amount)}</td>
-                              <td className="py-4 px-6 text-center whitespace-nowrap space-x-1">
-                                <button onClick={() => { 
-                                  const isPreset = APPLICANTS.includes(exp.applicant);
-                                  setEditingExpense(exp);
-                                  setExpenseForm({ 
-                                    date: exp.date, 
-                                    category: exp.category, 
-                                    applicantSelect: isPreset ? exp.applicant : 'Manual',
-                                    applicantCustom: isPreset ? '' : (exp.applicant || ''),
-                                    description: exp.description, 
-                                    amount: exp.amount 
-                                  });
-                                  setIsExpenseModalOpen(true);
-                                }} className="p-2 text-slate-400 hover:text-indigo-500 transition-colors rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30" title="Edit"><Edit3 className="w-5 h-5"/></button>
-                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/30" title="Hapus"><Trash2 className="w-5 h-5"/></button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* MOBILE CARDS VIEW */}
-                  <div className="lg:hidden flex flex-col gap-2 p-2 bg-slate-50 dark:bg-slate-950">
-                    {displayedExpenses.length === 0 ? (
-                      <div className="text-center py-10 text-slate-400 text-sm">Belum ada pengeluaran kas di bulan ini.</div>
-                    ) : (
-                      displayedExpenses.map(exp => (
-                        <div key={exp.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 shadow-sm">
-                           <div className="flex justify-between items-start mb-2">
-                             <span className="text-[9px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-md font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">{exp.date}</span>
-                             <span className="font-extrabold text-rose-600 dark:text-rose-400 text-sm">{formatIDR(exp.amount)}</span>
-                           </div>
-                           <div className="mb-3 mt-1.5">
-                             <div className="font-bold text-slate-800 dark:text-slate-100 text-[13px] mb-1.5 flex flex-wrap items-center gap-1.5">
-                               <span className="text-[8px] uppercase font-extrabold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded-md">{exp.category}</span>
-                               {exp.applicant && <span className="text-[8px] uppercase font-extrabold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1"><User className="w-2.5 h-2.5"/> By: {exp.applicant}</span>}
-                             </div>
-                             <div className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">{exp.description}</div>
-                             {exp.notes && <div className="text-[11px] text-slate-500 italic mt-1.5 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-700">{exp.notes}</div>}
-                           </div>
-                           <div className="flex justify-between items-center pt-2.5 border-t border-slate-100 dark:border-slate-700/50">
-                             <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1 bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-full"><User className="w-3 h-3"/> Admin: {exp.admin}</div>
-                             <div className="flex gap-1.5">
-                                <button onClick={() => { 
-                                  const isPreset = APPLICANTS.includes(exp.applicant);
-                                  setEditingExpense(exp);
-                                  setExpenseForm({ 
-                                    date: exp.date, 
-                                    category: exp.category, 
-                                    applicantSelect: isPreset ? exp.applicant : 'Manual',
-                                    applicantCustom: isPreset ? '' : (exp.applicant || ''),
-                                    description: exp.description, 
-                                    amount: exp.amount 
-                                  });
-                                  setIsExpenseModalOpen(true);
-                                }} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-500 hover:text-indigo-500 transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
-                                <button onClick={() => handleDeleteExpense(exp.id)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded-xl text-slate-500 hover:text-rose-500 transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
-                             </div>
-                           </div>
-                        </div>
-                      ))
                     )}
                   </div>
+                )}
 
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'settings' && (
-              <div className="flex flex-col lg:flex-row gap-4 md:gap-8 mx-auto items-start">
-                
-                <div className="w-full lg:w-[400px] shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors relative">
-                  {!isEditingProfile ? (
-                    <>
-                      <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-4 right-4 md:top-8 md:right-8 p-2 md:p-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors" title="Edit Profil">
-                        <Edit3 className="w-4 h-4 md:w-5 md:h-5" />
-                      </button>
-                      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-8 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><User className="w-5 h-5 md:w-6 md:h-6"/> Profil Saya</h3>
-                      
-                      <div className="flex items-center gap-3 md:gap-6 mb-4 md:mb-8">
-                        <div className="w-16 h-16 md:w-24 md:h-24 rounded-full border-2 md:border-4 border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                          {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-8 h-8 md:w-10 md:h-10 text-slate-400" />}
-                        </div>
-                        <div>
-                          <p className="font-bold text-base md:text-xl text-slate-800 dark:text-slate-100 leading-tight">{currentUser.name}</p>
-                          <p className="text-[10px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 uppercase mt-0.5 md:mt-2">{currentUser.role}</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 md:space-y-6">
-                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Username Login</span>
-                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.username}</span>
-                        </div>
-                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3 relative">
-                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Password</span>
-                          <div className="flex justify-between items-center mt-0.5">
-                            <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
-                            <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400 hover:text-indigo-500 p-1 md:p-1.5">
-                              {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                          <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">Email (Untuk Lupa Password)</span>
-                          <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.email || '-'}</span>
-                        </div>
-                        {currentUser.id === 'admin1' && (
-                          <div className="flex flex-col border-b border-slate-100 dark:border-slate-800 pb-2 md:pb-3">
-                            <span className="text-[9px] md:text-xs uppercase font-bold text-slate-400">No. WhatsApp</span>
-                            <span className="text-sm md:text-base font-medium text-slate-800 dark:text-slate-200 mt-0.5">{currentUser.phone}</span>
-                          </div>
-                        )}
-                        
-                        <div className="mt-3 md:mt-6 flex items-center gap-2 md:gap-3">
-                          <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${currentUser.fingerprintEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-                          <span className="text-[11px] md:text-sm font-medium text-slate-500 dark:text-slate-400">Login Sidik Jari: {currentUser.fingerprintEnabled ? 'Aktif' : 'Non-Aktif'}</span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Edit3 className="w-5 h-5 md:w-6 md:h-6"/> Edit Profil</h3>
-                      <form onSubmit={handleSaveProfile} className="space-y-3 md:space-y-5">
-                        
-                        <div className="flex items-center gap-3 md:gap-6 mb-4 md:mb-8">
-                          <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 md:border-4 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group shrink-0">
-                            {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 md:w-8 md:h-8 text-slate-400" />}
-                            <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                              <Camera className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                              <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, false)} className="hidden" />
-                            </label>
-                          </div>
-                          <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
-                        </div>
-                        
-                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Nama Lengkap</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Username Login</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                        
-                        <div className="relative">
-                          <label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Password Baru</label>
-                          <input type={showPassword ? "text" : "password"} required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl pl-3 pr-10 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" />
-                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 md:bottom-2.5 right-3 md:right-4 text-slate-400 hover:text-indigo-500">
-                            {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5"/> : <Eye className="w-4 h-4 md:w-5 md:h-5"/>}
-                          </button>
-                        </div>
-
-                        <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Email (Dibutuhkan untuk Lupa Password)</label><input type="email" placeholder="Contoh: admin@gmail.com" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                        
-                        {currentUser.id === 'admin1' && (
-                          <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 md:mb-2">Nomor WhatsApp</label><input type="text" required value={editProfile.phone} onChange={e => setEditProfile({...editProfile, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-2.5 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                        )}
-                        
-                        <div className="pt-3 md:pt-6 mt-3 md:mt-6 border-t border-slate-200 dark:border-slate-800">
-                          <label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 md:mb-3">Keamanan Biometrik (WebAuthn)</label>
-                          {!editProfile.credentialId ? (
-                            <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 md:gap-3 py-2 md:py-3 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-xl text-xs md:text-sm font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
-                              <Fingerprint className="w-4 h-4 md:w-5 md:h-5" /> Daftarkan Sidik Jari Asli
-                            </button>
-                          ) : (
-                            <div className="flex items-center justify-between p-3 md:p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-xl">
-                              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-[11px] md:text-sm font-bold"><Check className="w-3.5 h-3.5 md:w-5 md:h-5"/> Terdaftar</div>
-                              <label className="flex items-center gap-2 md:gap-3 cursor-pointer">
-                                <span className="text-[9px] md:text-xs font-medium text-slate-500">Aktifkan:</span>
-                                <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-3.5 h-3.5 md:w-5 md:h-5 rounded text-indigo-600 bg-slate-100 border-slate-300 focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"/>
-                              </label>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2.5 pt-3 md:pt-6 mt-2 md:mt-4">
-                          <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                          <button type="submit" className="flex-1 py-2 md:py-3 bg-indigo-600 text-white rounded-xl text-sm md:text-base font-bold shadow-lg hover:bg-indigo-700 transition-colors">Simpan Profil</button>
-                        </div>
-                      </form>
-                    </>
-                  )}
-                </div>
-                
-                {currentUser.id === 'admin1' && (
-                  <div className="flex-1 w-full space-y-4 md:space-y-8">
-                    
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors">
-                      <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-rose-600 dark:text-rose-400"><ShieldAlert className="w-5 h-5 md:w-6 md:h-6"/> Kelola Akses Admin Sistem</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 md:gap-6">
-                        {admins.filter(a => a.id !== 'admin1').map(admin => (
-                          <div key={admin.id} className={`flex flex-col p-3 md:p-5 rounded-2xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'}`}>
-                            <div className="flex items-center justify-between mb-3 md:mb-5">
-                              <div className="flex items-center gap-3 md:gap-4">
-                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">
-                                  {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-sm md:text-base text-slate-800 dark:text-slate-100">{admin.name}</p>
-                                  <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">ID: <span className="text-slate-600 dark:text-slate-300 font-mono">{admin.username}</span></p>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 md:gap-3 border-t border-slate-200 dark:border-slate-700 pt-2.5 md:pt-4">
-                              <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 md:py-2.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs md:text-sm font-bold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
-                                <UserCog className="w-3.5 h-3.5 md:w-5 md:h-5"/> Edit Profil
-                              </button>
-                              
-                              <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 md:py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all ${admin.status === 'Aktif' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
-                                {admin.status === 'Aktif' ? 'Blokir' : 'Aktifkan'}
-                                {admin.status === 'Aktif' ? <ToggleRight className="w-3.5 h-3.5 md:w-5 md:h-5"/> : <ToggleLeft className="w-3.5 h-3.5 md:w-5 md:h-5"/>}
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                {/* --- LEDGER ROUTE --- */}
+                {activeTab === 'ledger' && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="font-black text-lg text-kai-blue dark:text-white">Keuangan</h2>
+                      <div className="flex gap-2">
+                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"><Download className="w-4 h-4"/></button>
+                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg"><Plus className="w-4 h-4"/></button>
                       </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 md:p-8 shadow-xl transition-colors">
-                      <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Activity className="w-5 h-5 md:w-6 md:h-6"/> Riwayat Aktivitas (Log)</h3>
-                      <div className="h-48 md:h-80 overflow-y-auto pr-1 md:pr-4 custom-scrollbar">
-                        {auditLogs.length === 0 ? (
-                          <p className="text-center text-slate-500 py-6 md:py-14 text-sm md:text-base">Belum ada aktivitas tercatat.</p>
-                        ) : (
-                          <ul className="space-y-2 md:space-y-4">
-                            {auditLogs.map((log) => (
-                              <li key={log.id} className="flex gap-2 md:gap-4 text-[11px] md:text-sm p-2.5 md:p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
-                                <div className="text-slate-400 w-20 md:w-28 shrink-0 text-[9px] md:text-xs font-mono">{log.dateStr}</div>
-                                <div><span className="font-bold text-indigo-600 dark:text-indigo-400">{log.admin}</span>: <span className="text-slate-700 dark:text-slate-300 ml-1">{log.action}</span></div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                         <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pemasukan</p>
+                         <p className="text-[13px] font-black text-kai-blue dark:text-white">{formatIDR(actualPaidRevenue)}</p>
+                       </div>
+                       <div className="bg-kai-blue p-3 rounded-2xl shadow-sm text-white relative overflow-hidden">
+                         <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-bl-full"></div>
+                         <p className="text-[9px] font-bold text-blue-200 uppercase mb-1 relative z-10">Sisa Kas Net</p>
+                         <p className="text-[13px] font-black relative z-10">{formatIDR(netProfit)}</p>
+                       </div>
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-sm">
+                         <p className="text-[9px] font-bold text-rose-400 uppercase mb-1">Keluar Jurnal</p>
+                         <p className="text-[13px] font-black text-rose-600 dark:text-rose-400">{formatIDR(totalJurnal)}</p>
+                       </div>
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/30 shadow-sm">
+                         <p className="text-[9px] font-bold text-orange-400 uppercase mb-1">Keluar Fam</p>
+                         <p className="text-[13px] font-black text-orange-600 dark:text-orange-400">{formatIDR(totalFam)}</p>
+                       </div>
                     </div>
 
+                    <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mt-4 mb-2">Riwayat Kas Keluar</h3>
+                    <div className="space-y-3">
+                      {displayedExpenses.length === 0 ? (
+                        <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">Belum ada pengeluaran.</div>
+                      ) : (
+                        displayedExpenses.map(exp => (
+                          <div key={exp.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
+                             <div className="flex justify-between items-start">
+                               <div className="flex flex-col">
+                                 <span className="font-extrabold text-[14px] text-kai-blue dark:text-white">{exp.description}</span>
+                                 <span className="text-[10px] font-bold text-slate-400">{exp.date} • {exp.category}</span>
+                               </div>
+                               <span className="font-black text-rose-600 dark:text-rose-400 text-[14px]">{formatIDR(exp.amount)}</span>
+                             </div>
+                             {exp.applicant && <div className="text-[10px] font-bold text-kai-blue bg-blue-50 dark:bg-slate-700 dark:text-slate-300 px-2 py-1 rounded inline-block w-max">👤 Pengajuan: {exp.applicant}</div>}
+                             <div className="flex justify-end gap-1.5 pt-2 border-t border-slate-50 dark:border-slate-700/50 mt-1">
+                                <button onClick={() => { const isPreset = APPLICANTS.includes(exp.applicant); setEditingExpense(exp); setExpenseForm({ date: exp.date, category: exp.category, applicantSelect: isPreset ? exp.applicant : 'Manual', applicantCustom: isPreset ? '' : (exp.applicant || ''), description: exp.description, amount: exp.amount }); setIsExpenseModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                                <button onClick={() => handleDeleteExpense(exp.id)} className="px-3 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-lg"><Trash2 className="w-3.5 h-3.5"/></button>
+                             </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
-                
-              </div>
-            )}
-          </main>
 
+                {/* --- SETTINGS ROUTE --- */}
+                {activeTab === 'settings' && (
+                  <div className="space-y-4">
+                    {!isEditingProfile ? (
+                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm relative">
+                        <button onClick={() => { setEditProfile(currentUser); setShowPassword(false); setIsEditingProfile(true); }} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-700 rounded-full text-kai-blue dark:text-white"><Edit3 className="w-4 h-4" /></button>
+                        
+                        <div className="flex flex-col items-center text-center mb-6 mt-2">
+                          <div className="w-20 h-20 rounded-full border-4 border-slate-100 dark:border-slate-700 overflow-hidden bg-slate-200 mb-3">
+                            {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-4 text-slate-400" />}
+                          </div>
+                          <p className="font-black text-lg text-kai-blue dark:text-white">{currentUser.name}</p>
+                          <p className="text-[10px] font-bold text-kai-orange uppercase mt-0.5">{currentUser.role}</p>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block">ID Login</span>
+                            <span className="text-xs font-bold">{currentUser.username}</span>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block">Kata Sandi</span>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold tracking-widest">{showPassword ? currentUser.password : '••••••••'}</span>
+                              <button onClick={() => setShowPassword(!showPassword)} className="text-slate-400">{showPassword ? <EyeOff className="w-3.5 h-3.5"/> : <Eye className="w-3.5 h-3.5"/>}</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm">
+                        <h3 className="text-lg font-black mb-4 text-kai-blue dark:text-white">Edit Profil</h3>
+                        <form onSubmit={handleSaveProfile} className="space-y-4">
+                          
+                          <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-200">
+                              {editProfile.photo ? <img src={editProfile.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5 m-3.5 text-slate-400" />}
+                              <label className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-pointer">
+                                <Camera className="w-4 h-4 text-white" />
+                                <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, false)} className="hidden" />
+                              </label>
+                            </div>
+                            <p className="text-xs font-bold">Ubah Foto Profil</p>
+                          </div>
+                          
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">NAMA</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">USERNAME</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">PASSWORD</label><input type="text" required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+
+                          <div className="flex gap-2 pt-2">
+                            <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs">Batal</button>
+                            <button type="submit" className="flex-1 py-2.5 bg-kai-blue text-white rounded-xl font-bold text-xs shadow-md">Simpan</button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+                    
+                    {currentUser.id === 'admin1' && !isEditingProfile && (
+                      <button onClick={() => alert("Menu Manajemen Admin & Log\n(Tersedia di Mode Desktop/Buka dari PC/Laptop)")} className="w-full bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center text-kai-blue dark:text-white font-bold text-sm">
+                        <div className="flex items-center gap-2"><ShieldAlert className="w-5 h-5"/> Kelola Akses Admin</div>
+                        <ChevronRight className="w-4 h-4 text-slate-400"/>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </main>
+
+            {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
+            <nav className="lg:hidden absolute bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+              
+              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
+              </button>
+              
+              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false);}} className={`p-3 transition-transform ${activeTab === 'customers' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Users className="w-6 h-6" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+              </button>
+
+              {/* SEARCH TAB ADDED */}
+              <button onClick={() => {setActiveTab('search'); setIsEditingProfile(false);}} className={`p-3 transition-transform ${activeTab === 'search' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Search className="w-6 h-6" strokeWidth={activeTab === 'search' ? 2.5 : 1.5} />
+              </button>
+
+              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false);}} className={`p-3 transition-transform ${activeTab === 'ledger' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <BookOpen className="w-6 h-6" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
+              </button>
+              
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`p-3 transition-transform ${activeTab === 'settings' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+                <User className="w-6 h-6" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
+              </button>
+            </nav>
+          </div>
+
+          {/* === MODALS (Global Overlays) === */}
+          
           {cropState.isOpen && (
-            <div className="fixed inset-0 z-[70] bg-slate-900/80 dark:bg-slate-950/90 flex flex-col items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 md:p-8 max-w-sm md:max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><Crop className="w-5 h-5 md:w-6 md:h-6"/> Atur Posisi Foto</h3>
-                
-                <div className="flex justify-center mb-5 md:mb-8">
-                  <div 
-                    className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-2 border-dashed border-indigo-400 bg-slate-100 dark:bg-slate-800 relative cursor-move touch-none"
-                    onMouseDown={handleCropDragStart}
-                    onMouseMove={handleCropDragMove}
-                    onMouseUp={handleCropDragEnd}
-                    onMouseLeave={handleCropDragEnd}
-                    onTouchStart={handleCropDragStart}
-                    onTouchMove={handleCropDragMove}
-                    onTouchEnd={handleCropDragEnd}
-                  >
-                    <img 
-                      src={cropState.src} 
-                      draggable="false" 
-                      style={{ 
-                        transform: `translate(calc(-50% + ${cropState.x}px), calc(-50% + ${cropState.y}px)) scale(${cropState.zoom})`, 
-                        minWidth: '100%', minHeight: '100%', objectFit: 'cover', pointerEvents: 'none'
-                      }}
-                      className="absolute top-1/2 left-1/2 origin-center"
-                    />
+            <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-in zoom-in-95 duration-200">
+                <h3 className="text-base font-extrabold mb-4 text-center">Atur Foto</h3>
+                <div className="flex justify-center mb-4">
+                  <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-dashed border-kai-blue bg-slate-100 relative cursor-move touch-none" onMouseDown={handleCropDragStart} onMouseMove={handleCropDragMove} onMouseUp={handleCropDragEnd} onMouseLeave={handleCropDragEnd} onTouchStart={handleCropDragStart} onTouchMove={handleCropDragMove} onTouchEnd={handleCropDragEnd}>
+                    <img src={cropState.src} draggable="false" style={{ transform: `translate(calc(-50% + ${cropState.x}px), calc(-50% + ${cropState.y}px)) scale(${cropState.zoom})`, minWidth: '100%', minHeight: '100%', objectFit: 'cover', pointerEvents: 'none' }} className="absolute top-1/2 left-1/2 origin-center" />
                   </div>
                 </div>
-
-                <div className="mb-5 md:mb-8">
-                  <label className="block text-xs md:text-sm font-semibold text-slate-500 mb-2 md:mb-3">Zoom / Perbesar</label>
-                  <input 
-                    type="range" min="1" max="3" step="0.1" 
-                    value={cropState.zoom} 
-                    onChange={(e) => setCropState({...cropState, zoom: parseFloat(e.target.value)})} 
-                    className="w-full accent-indigo-600"
-                  />
-                  <p className="text-[10px] md:text-xs text-slate-400 text-center mt-2 md:mt-3">Geser foto (pan) dengan jari atau mouse ke area yang pas.</p>
-                </div>
-
-                <div className="flex gap-2.5 md:gap-4">
-                  <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 font-semibold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                  <button onClick={applyCrop} className="flex-1 py-2 md:py-3 rounded-xl bg-indigo-600 text-white font-semibold text-sm md:text-base hover:bg-indigo-700 transition-colors">Simpan Crop</button>
+                <input type="range" min="1" max="3" step="0.1" value={cropState.zoom} onChange={(e) => setCropState({...cropState, zoom: parseFloat(e.target.value)})} className="w-full accent-kai-blue mb-4" />
+                <div className="flex gap-2">
+                  <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs">Batal</button>
+                  <button onClick={applyCrop} className="flex-1 py-2.5 rounded-xl bg-kai-blue text-white font-bold text-xs">Simpan</button>
                 </div>
               </div>
             </div>
           )}
 
           {isCustomerModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md md:max-w-lg p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan'}</h3>
-                <form onSubmit={handleSaveCustomer} className="space-y-3 md:space-y-5">
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Nama</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Blok</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
-                  
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">No HP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Username PPPoE MikroTik</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="Contoh: b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Paket</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Tgl Jatuh Tempo</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
-                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-2 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2 md:py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-indigo-700 shadow-lg transition-colors">Simpan</button>
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Warga' : '+ Pelanggan'}</h3>
+                <form onSubmit={handleSaveCustomer} className="space-y-4">
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div className="flex gap-3">
+                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">AREA</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
+                     <div className="w-24"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TEMPO TGL</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-center outline-none focus:border-kai-blue" /></div>
+                  </div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USER PPPOE (MIKROTIK)</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PAKET INTERNET</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">STATUS</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Simpan Data</button>
                   </div>
                 </form>
               </div>
@@ -1337,74 +1009,35 @@
           )}
 
           {isExpenseModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2">{editingExpense ? 'Edit Kas Keluar' : 'Catat Kas Keluar'}</h3>
-                <form onSubmit={handleSaveExpense} className="space-y-3 md:space-y-5">
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Tanggal</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  
-                  <div>
-                    <label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Kategori</label>
-                    <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors">
-                      <option>Belanja</option>
-                      <option>Perbaikan/Pemasangan</option>
-                      <option>Operasional</option>
-                      <option>Fam</option>
-                    </select>
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 text-kai-orange">{editingExpense ? 'Edit Jurnal Kas' : 'Catat Kas Keluar'}</h3>
+                <form onSubmit={handleSaveExpense} className="space-y-4">
+                  <div className="flex gap-3">
+                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TGL</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange" /></div>
+                     <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KATEGORI</label>
+                        <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange">
+                          <option>Belanja</option><option>Perbaikan/Pemasangan</option><option>Operasional</option><option>Fam</option>
+                        </select>
+                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Pengajuan</label>
-                    <select value={expenseForm.applicantSelect} onChange={e => setExpenseForm({...expenseForm, applicantSelect: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors">
-                      <option value="Ayah">1. Ayah</option>
-                      <option value="Mamah">2. Mamah</option>
-                      <option value="Fathir">3. Fathir</option>
-                      <option value="Dede">4. Dede</option>
-                      <option value="Zahra">5. Zahra</option>
-                      <option value="Manual">6. Tulis Keterangan</option>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">DIPROSES / DIAJUKAN OLEH</label>
+                    <select value={expenseForm.applicantSelect} onChange={e => setExpenseForm({...expenseForm, applicantSelect: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange">
+                      <option value="Ayah">Ayah</option><option value="Mamah">Mamah</option><option value="Fathir">Fathir</option><option value="Dede">Dede</option><option value="Zahra">Zahra</option><option value="Manual">Tulis Keterangan Manual</option>
                     </select>
                     {expenseForm.applicantSelect === 'Manual' && (
-                      <input type="text" placeholder="Tulis nama pengaju manual..." required value={expenseForm.applicantCustom} onChange={e => setExpenseForm({...expenseForm, applicantCustom: e.target.value})} className="mt-3 w-full bg-slate-50 dark:bg-slate-950 border border-indigo-300 dark:border-indigo-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none focus:border-indigo-500 transition-colors" />
+                      <input type="text" placeholder="Tulis nama pengaju manual..." required value={expenseForm.applicantCustom} onChange={e => setExpenseForm({...expenseForm, applicantCustom: e.target.value})} className="mt-3 w-full bg-orange-50 dark:bg-slate-800 border border-orange-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" />
                     )}
                   </div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">URAIAN / CATATAN</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} placeholder="Misal: Beli kabel FO 1 Roll" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NOMINAL (RP)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} placeholder="500000" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-lg font-black text-rose-600 outline-none focus:border-rose-500" /></div>
                   
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Uraian / Deskripsi</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  <div><label className="block text-[11px] md:text-sm font-bold text-slate-600 dark:text-slate-400 mb-1">Nominal (Rp)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base outline-none transition-colors" /></div>
-                  
-                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-2 md:py-3 border border-slate-300 dark:border-slate-700 rounded-xl font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2 md:py-3 bg-rose-600 text-white rounded-xl font-bold text-sm md:text-base hover:bg-rose-700 shadow-lg transition-colors">Simpan</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {isTargetAdminModalOpen && targetAdmin && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/50 dark:bg-slate-950/80 flex items-center justify-center p-3 sm:p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm md:max-w-md p-5 md:p-8 shadow-2xl transition-colors relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-lg md:text-xl font-bold mb-4 md:mb-6 flex items-center gap-2 text-indigo-600 dark:text-indigo-400"><UserCog className="w-5 h-5 md:w-6 md:h-6"/> Edit {targetAdmin.role}</h3>
-                <form onSubmit={handleSaveTargetAdmin} className="space-y-3 md:space-y-5">
-                  <div className="flex items-center gap-3 md:gap-6 mb-3 md:mb-6">
-                    <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full border-2 md:border-4 border-indigo-500 overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center group shrink-0">
-                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 md:w-8 md:h-8 text-slate-400" />}
-                      <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                        <Camera className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
-                      </label>
-                    </div>
-                    <div><p className="text-sm md:text-base font-semibold">Foto Profil</p><p className="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 mt-0.5">Pilih foto & atur posisi.</p></div>
-                  </div>
-                  
-                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Nama Lengkap</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Username Login</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Password</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Email</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-                  <div><label className="block text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">No WhatsApp</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 md:py-3 text-sm md:text-base text-slate-800 dark:text-slate-100 focus:border-indigo-500 outline-none transition-colors" /></div>
-
-                  <div className="flex gap-2.5 md:gap-4 pt-3 md:pt-6 pb-2">
-                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-2 md:py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm md:text-base hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Batal</button>
-                    <button type="submit" className="flex-1 py-2 md:py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm md:text-base shadow-lg hover:bg-indigo-700 transition-colors">Simpan Data</button>
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-orange text-white rounded-xl font-bold text-sm shadow-lg">Simpan Kas</button>
                   </div>
                 </form>
               </div>
