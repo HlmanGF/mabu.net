@@ -104,13 +104,18 @@
 
     const PACKAGES = [
       { id: 'free_0', speed: 'Gratis', price: 0, label: 'Gratis - Rp 0' },
-      { id: '5mbps_100', speed: '5 Mbps', price: 100000, label: '5 Mbps - Rp 100.000' },
-      { id: '10mbps_150', speed: '10 Mbps', price: 150000, label: '10 Mbps - Rp 150.000' },
-      { id: '10mbps_180', speed: '10 Mbps', price: 180000, label: '10 Mbps - Rp 180.000' },
-      { id: '15mbps_200', speed: '15 Mbps', price: 200000, label: '15 Mbps - Rp 200.000' },
-      { id: '20mbps_250', speed: '20 Mbps', price: 250000, label: '20 Mbps - Rp 250.000' },
-      { id: '25mbps_300', speed: '25 Mbps', price: 300000, label: '25 Mbps - Rp 300.000' }
+      { id: 'std_10', speed: 'Standar 10 Mbps', price: 150000, label: 'Standar 10 Mbps - Rp 150.000' },
+      { id: 'std_15', speed: 'Standar 15 Mbps', price: 200000, label: 'Standar 15 Mbps - Rp 200.000' },
+      { id: 'std_20', speed: 'Standar 20 Mbps', price: 250000, label: 'Standar 20 Mbps - Rp 250.000' },
+      { id: 'std_25', speed: 'Standar 25 Mbps', price: 300000, label: 'Standar 25 Mbps - Rp 300.000' },
+      { id: 'std_30', speed: 'Standar 30 Mbps', price: 350000, label: 'Standar 30 Mbps - Rp 350.000' },
+      { id: 'ntf_10', speed: 'Netflix 10 Mbps', price: 200000, label: 'Netflix 10 Mbps - Rp 200.000' },
+      { id: 'ntf_15', speed: 'Netflix 15 Mbps', price: 250000, label: 'Netflix 15 Mbps - Rp 250.000' },
+      { id: 'ntf_20', speed: 'Netflix 20 Mbps', price: 300000, label: 'Netflix 20 Mbps - Rp 300.000' },
+      { id: 'ntf_25', speed: 'Netflix 25 Mbps', price: 350000, label: 'Netflix 25 Mbps - Rp 350.000' },
+      { id: 'ntf_30', speed: 'Netflix 30 Mbps', price: 400000, label: 'Netflix 30 Mbps - Rp 400.000' }
     ];
+    
     const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
@@ -163,7 +168,7 @@
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
       
-      const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
+      const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ 
         date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' 
       });
@@ -655,7 +660,7 @@
 
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
+              <SidebarItem id="customers" icon={Users} label="Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
@@ -688,8 +693,8 @@
             {/* Scrollable Main Content */}
             <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
               
-              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - TAMPIL DI SEMUA MENU MOBILE */}
-              <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all">
+              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - HANYA TAMPIL DI MOBILE HOME/DASHBOARD */}
+              <div className={`lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all ${activeTab !== 'dashboard' ? 'hidden' : ''}`}>
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <p className="text-xs text-slate-300">Selamat datang,</p>
@@ -707,12 +712,12 @@
               </div>
 
               {/* ROUTE CONTENT WRAPPER */}
-              <div className="relative z-10 mt-24 lg:mt-6 px-4 lg:px-8 max-w-6xl mx-auto space-y-4">
+              <div className={`relative z-10 ${activeTab === 'dashboard' ? 'mt-24 lg:mt-6' : 'pt-6'} px-4 lg:px-8 max-w-6xl mx-auto space-y-4`}>
                 
                 {/* --- DASHBOARD ROUTE --- */}
                 {activeTab === 'dashboard' && (
                   <>
-                    {/* Kartu Saldo KAI Style */}
+                    {/* Kartu Saldo KAI Style (Tumpuk di atas header biru di mobile) */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
                       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
                         <div className="flex items-center gap-2">
@@ -733,10 +738,10 @@
                       </div>
                     </div>
 
-                    {/* Quick Action Grid (KAI Style Menu) */}
+                    {/* Quick Action Grid (KAI Style Menu) Tanpa Cari Cepat */}
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
                       <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
+                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
                           <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-kai-blue dark:text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-kai-blue group-hover:text-white transition-colors shadow-sm"><UserPlus className="w-6 h-6"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Pelanggan<br/>Baru</span>
                         </button>
@@ -824,17 +829,17 @@
                 {activeTab === 'customers' && (
                   <div className="space-y-4">
                     
-                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
-                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Data Pelanggan</h2>
-                    </div>
-
                     {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
-                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
+                      
+                      <div className="flex justify-between items-center mb-3">
+                        <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
+                      </div>
                       
                       {/* Control Bar Atas (Dropdown, Filter, Tombol Aksi) */}
-                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
+                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
                         
-                        <div className="flex flex-col gap-2 w-full flex-1">
+                        <div className="flex flex-col md:flex-row gap-2 w-full flex-1">
                           
                           <div className="flex items-center gap-2">
                              {/* Filter Status (Satu Baris Sebelah Judul di Desktop, Atau Grid di Mobile) */}
@@ -862,7 +867,7 @@
                              <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 flex-1 rounded-xl flex items-center justify-center ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
                              <button onClick={() => exportCSV('customers')} className="p-2 flex-1 bg-slate-200 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
                            </div>
-                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="w-full flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
+                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="w-full flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
                         </div>
                         
                       </div>
@@ -918,7 +923,7 @@
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
-                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
+                      <h2 className="font-black text-xl text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
                       <div className="flex gap-2">
                         <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm"><Download className="w-4 h-4"/></button>
                         <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg shadow-sm"><Plus className="w-4 h-4"/></button>
@@ -1132,7 +1137,7 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
@@ -1233,7 +1238,7 @@
 
           {isTargetAdminModalOpen && targetAdmin && (
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
                 <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
                   <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
