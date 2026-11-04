@@ -103,6 +103,7 @@
     ];
 
     const PACKAGES = [
+      { id: 'free_0', speed: 'Gratis', price: 0, label: 'Gratis - Rp 0' },
       { id: '5mbps_100', speed: '5 Mbps', price: 100000, label: '5 Mbps - Rp 100.000' },
       { id: '10mbps_150', speed: '10 Mbps', price: 150000, label: '10 Mbps - Rp 150.000' },
       { id: '10mbps_180', speed: '10 Mbps', price: 180000, label: '10 Mbps - Rp 180.000' },
@@ -937,6 +938,7 @@
                           </div>
                         </div>
                         
+                        {/* Tombol Logout Khusus Mode Mobile */}
                         <div className="lg:hidden mt-6">
                           <button onClick={handleLogout} className="w-full py-3.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl font-bold flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-800 shadow-sm active:scale-95 transition-all">
                             <LogOut className="w-5 h-5"/> Keluar Aplikasi
@@ -987,6 +989,7 @@
                       </button>
                     )}
 
+                    {/* Menu Kelola Akses Admin (Tampil jika showAdminManagement true) */}
                     {currentUser.id === 'admin1' && showAdminManagement && (
                       <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
                         <button onClick={() => setShowAdminManagement(false)} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-kai-blue dark:hover:text-white transition-colors">
