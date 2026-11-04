@@ -179,7 +179,6 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      // Menerapkan Dark Mode
       useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -194,19 +193,16 @@
 
       useEffect(() => {
         const handleBackButton = (e) => {
-          // Tutup pop-up modal jika sedang terbuka
           if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen) {
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
             setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
             window.history.pushState({ page: activeTab }, ''); 
             return;
           }
-          // Kembali ke dashboard jika tidak sedang di dashboard
           if (activeTab !== 'dashboard') {
             setActiveTab('dashboard');
           }
         };
-
         window.addEventListener('popstate', handleBackButton);
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen]);
@@ -219,9 +215,7 @@
           }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => {
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
       }, [currentUser]);
 
       const writeLog = async (actionDesc) => {
@@ -262,13 +256,9 @@
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => b.time - a.time); setAuditLogs(data);
           });
-          
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                setSettingsData(docSnapshot.data());
-            } else {
-                setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); 
-            }
+            if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
+            else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
           });
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
@@ -597,8 +587,12 @@
           {printData && (
             <div id="print-receipt">
               <div style={{textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '5px'}}>
-                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABUNET</h2>
-                <p style={{margin: '0', fontSize: '10px'}}>Internet RT & Network</p>
+                <img src="./mabunetlogo.png" style={{width: '40px', height: '40px', margin: '0 auto 5px auto', display: 'block'}} />
+                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABU<span style={{color: '#000'}}>NET</span></h2>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px', fontWeight: 'bold'}}>Master Billing & Network</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Perum Mabu Park RT.10/02</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Kalanganyar, Lebak - Banten</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>WA: {settingsData?.waGatewayPhone || '0811122699'}</p>
               </div>
               <p style={{margin: '2px 0'}}>Tgl : {new Date().toLocaleDateString('id-ID')}</p>
               <p style={{margin: '2px 0'}}>Opr : {currentUser.name}</p>
@@ -610,7 +604,8 @@
                 <p style={{margin: '0', fontSize: '12px', fontWeight: 'bold', marginTop: '5px'}}>STATUS: LUNAS</p>
               </div>
               <div style={{textAlign: 'center', marginTop: '15px', fontSize: '10px'}}>
-                <p style={{margin: '0'}}>Terima Kasih Berlangganan</p>
+                <p style={{margin: '0'}}>Terima Kasih</p>
+                <p style={{margin: '0'}}>Telah Berlangganan</p>
               </div>
             </div>
           )}
@@ -817,45 +812,26 @@
                 {/* --- CUSTOMERS ROUTE --- */}
                 {activeTab === 'customers' && (
                   <div className="space-y-4">
-                    
-                    {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
-                    <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-2 mb-4 sticky top-0 z-30 shadow-md">
+                      <div className="flex gap-2 w-full">
+                        <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none flex-1 text-slate-700 dark:text-slate-300">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                        <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
+                      </div>
+                      <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full md:w-64 bg-slate-100 dark:bg-slate-900 border-none rounded-lg px-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
                       
-                      <div className="flex justify-between items-center mb-3">
-                        <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
+                      <div className="flex gap-2 overflow-x-auto custom-scrollbar mt-1 md:mt-0">
+                        {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
+                          <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100'}`}>{cat === 'Gratis' ? '🎁 Pelanggan Gratis' : cat}</button>
+                        ))}
                       </div>
                       
-                      {/* Control Bar Atas (Dropdown, Filter, Tombol Aksi) */}
-                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
-                        
-                        <div className="flex flex-col md:flex-row gap-2 w-full">
-                          
-                          {/* Search Input */}
-                          <div className="relative flex-1">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                            <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
-                          </div>
-
-                          {/* Filter Baris 2 (Grid Terstruktur agar tidak mepet) */}
-                          <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
-                             <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 w-28 md:w-32">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                             
-                             <div className="flex gap-1.5 overflow-x-auto custom-scrollbar">
-                               {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
-                                 <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
-                               ))}
-                             </div>
-                          </div>
-                          
-                        </div>
-                        
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 w-full md:w-auto mt-1 md:mt-0">
-                           <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg flex items-center justify-center ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
-                           <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
-                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4 shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
-                        </div>
-                        
+                      <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                         <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
+                         <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4"><Plus className="w-4 h-4"/> Tambah</button>
                       </div>
                     </div>
 
@@ -1123,7 +1099,7 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
