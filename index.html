@@ -128,7 +128,7 @@
       const [forgotEmail, setForgotEmail] = useState('');
       const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
 
-      const [isDarkMode, setIsDarkMode] = useState(false); // Default Light Mode
+      const [isDarkMode, setIsDarkMode] = useState(false); 
       
       const [activeTab, setActiveTab] = useState('dashboard');
       const [editProfile, setEditProfile] = useState({});
@@ -138,7 +138,6 @@
       const [targetAdmin, setTargetAdmin] = useState(null);
       const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
       
-      // State Toggle Kelola Admin di Mobile/Desktop
       const [showAdminManagement, setShowAdminManagement] = useState(false);
       
       const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -179,7 +178,6 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      // Menerapkan Dark Mode
       useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -194,19 +192,16 @@
 
       useEffect(() => {
         const handleBackButton = (e) => {
-          // Tutup pop-up modal jika sedang terbuka
           if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen) {
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
             setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
             window.history.pushState({ page: activeTab }, ''); 
             return;
           }
-          // Kembali ke dashboard jika tidak sedang di dashboard
           if (activeTab !== 'dashboard') {
             setActiveTab('dashboard');
           }
         };
-
         window.addEventListener('popstate', handleBackButton);
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen]);
@@ -219,9 +214,7 @@
           }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => {
-          document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
       }, [currentUser]);
 
       const writeLog = async (actionDesc) => {
@@ -490,9 +483,12 @@
       
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const inactiveCustomersList = customers.filter(c => c.status === 'Non-Aktif');
-      const dueCustomers = activeCustomersList.filter(c => !c.payments || !c.payments[currentPeriodKey]).sort((a, b) => a.dueDate - b.dueDate);
+      
+      // Filter Tagihan Tertunda: HANYA yang TIDAK GRATIS
+      const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
+      
       const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
@@ -503,14 +499,16 @@
       const totalFam = famExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
       const netProfit = actualPaidRevenue - (totalJurnal + totalFam); 
       
+      // Filter Data Pelanggan Utama
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
         
         let matchCat = true;
+        if (filterCategory === 'Semua') matchCat = c.packageId !== 'free_0'; // Hilangkan Gratis di 'Semua'
         if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
-        if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif';
-        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0';
+        if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif' && c.packageId !== 'free_0';
+        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0'; // Muncul HANYA ketika diklik Gratis
 
         return matchSearch && matchBlock && matchCat;
       });
@@ -540,7 +538,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-20 h-20 mx-auto mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -597,8 +595,12 @@
           {printData && (
             <div id="print-receipt">
               <div style={{textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '5px'}}>
-                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABUNET</h2>
-                <p style={{margin: '0', fontSize: '10px'}}>Internet RT & Network</p>
+                <img src="./mabunetlogo.png" style={{width: '40px', height: '40px', margin: '0 auto 5px auto', display: 'block'}} />
+                <h2 style={{margin: '0', fontSize: '16px', fontWeight: 'bold'}}>MABU<span style={{color: '#000'}}>NET</span></h2>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px', fontWeight: 'bold'}}>Master Billing & Network</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Perum Mabu Park RT.10/02</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>Kalanganyar, Lebak - Banten</p>
+                <p style={{margin: '2px 0 0 0', fontSize: '9px'}}>WA: {settingsData?.waGatewayPhone || '0811122699'}</p>
               </div>
               <p style={{margin: '2px 0'}}>Tgl : {new Date().toLocaleDateString('id-ID')}</p>
               <p style={{margin: '2px 0'}}>Opr : {currentUser.name}</p>
@@ -651,7 +653,7 @@
 
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Pelanggan" />
+              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
@@ -724,7 +726,7 @@
                         <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3>
                         <div className="text-right">
                           <p className="text-[10px] font-bold text-slate-400">Total Pelanggan</p>
-                          <p className="font-black text-sm text-kai-orange">{customers.length} ({activeCustomersList.length} Aktif)</p>
+                          <p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p>
                         </div>
                       </div>
                     </div>
@@ -766,9 +768,12 @@
                         <span className="text-xs font-bold text-kai-orange">Bulan {MONTHS[selectedMonth]}</span>
                       </div>
                       
-                      <div className="relative w-full mb-3">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors shadow-sm" />
+                      {/* STICKY SEARCH DI DASHBOARD */}
+                      <div className="sticky top-0 lg:top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 mb-1 -mx-4 px-4 sm:mx-0 sm:px-0 transition-colors">
+                        <div className="relative w-full shadow-sm">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                          <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
+                        </div>
                       </div>
 
                       {filteredDueCustomers.length === 0 ? (
@@ -820,42 +825,37 @@
                     
                     {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
                     <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-1 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
-                      
                       <div className="flex justify-between items-center mb-3">
                         <h2 className="font-black text-lg text-kai-blue dark:text-white">Data Pelanggan</h2>
                       </div>
                       
                       {/* Control Bar Atas (Dropdown, Filter, Tombol Aksi) */}
-                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
+                      <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
                         
                         <div className="flex flex-col md:flex-row gap-2 w-full">
-                          
-                          {/* Search Input */}
-                          <div className="relative flex-1">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                            <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
-                          </div>
-
-                          {/* Filter Baris 2 (Grid Terstruktur agar tidak mepet) */}
-                          <div className="grid grid-cols-[auto_1fr] gap-2 items-center">
-                             <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 w-28 md:w-32">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
-                             
-                             <div className="flex gap-1.5 overflow-x-auto custom-scrollbar">
-                               {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
-                                 <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
-                               ))}
-                             </div>
+                          {/* Search Input & Block Select */}
+                          <div className="flex gap-2 w-full md:flex-1">
+                            <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 w-24 md:w-32">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
+                            <div className="relative flex-1 min-w-0">
+                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                              <input type="text" placeholder="Cari Nama / Blok..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
+                            </div>
                           </div>
                           
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end mt-1 md:mt-0">
+                             <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
+                             <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold whitespace-nowrap px-4 shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
+                          </div>
                         </div>
                         
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 w-full md:w-auto mt-1 md:mt-0">
-                           <button onClick={() => setAlarmEnabled(!alarmEnabled)} className={`p-2 rounded-lg flex items-center justify-center ${alarmEnabled ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}`}><Bell className="w-4 h-4"/></button>
-                           <button onClick={() => exportCSV('customers')} className="flex-1 md:flex-none p-2 bg-slate-200 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 flex justify-center items-center"><Download className="w-4 h-4"/></button>
-                           <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: '10mbps_150', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-lg text-xs font-bold whitespace-nowrap px-4 shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
+                        {/* Filter Baris 2 (Category Chips) */}
+                        <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar w-full border-t border-slate-100 dark:border-slate-700/50 pt-2.5">
+                           <span className="text-[9px] font-bold text-slate-400 uppercase mr-1 hidden sm:block">Kategori:</span>
+                           {['Semua', 'Aktif', 'Non-Aktif', 'Gratis'].map(cat => (
+                             <button key={cat} onClick={() => setFilterCategory(cat)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-colors border ${filterCategory === cat ? 'bg-kai-blue border-kai-blue text-white shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>{cat === 'Gratis' ? '🎁 Gratis' : cat}</button>
+                           ))}
                         </div>
-                        
                       </div>
                     </div>
 
@@ -1123,7 +1123,7 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
               <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
