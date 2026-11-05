@@ -495,7 +495,7 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Halo! Pendaftaran WiFi MABUNET sekarang bisa dilakukan secara mandiri lewat portal resmi kami di sini:\n\n${PORTAL_URL}\n\nSilakan isi data Anda pada formulir tersebut.`;
+        const text = `Untuk pendaftaran baru MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -556,7 +556,7 @@
             
             <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
               <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                 <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
                 <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
@@ -671,7 +671,7 @@
 
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Pelanggan" />
+              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               <SidebarItem id="portal" icon={Map} label="Portal Web" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
@@ -1176,24 +1176,24 @@
             </main>
 
             {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-2 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
-              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
               </button>
               
-              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'customers' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'customers' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Users className="w-6 h-6" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
               </button>
 
-              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'ledger' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'ledger' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <BookOpen className="w-6 h-6" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
               </button>
               
-              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'portal' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'portal' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
               </button>
 
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`p-3 transition-transform ${activeTab === 'settings' ? 'text-kai-blue dark:text-white scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`p-3 transition-transform ${activeTab === 'settings' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
                 <User className="w-6 h-6" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
               </button>
             </nav>
