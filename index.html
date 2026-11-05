@@ -76,7 +76,7 @@
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Terminal, Wifi, Radio, Link, Key
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -167,7 +167,7 @@
       // State Status MikroTik
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       
-      // State MikroTik Submenus & Data
+      // State MikroTik Submenus & Data Asli
       const [mikrotikTab, setMikrotikTab] = useState('secret');
       const [mikrotikUsers, setMikrotikUsers] = useState([]);
       const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = useState([]);
@@ -295,77 +295,67 @@
             }
           });
           
-          // Listener Status Resource MikroTik
+          // --- LISTENERS MIKROTIK (REAL-TIME DARI NODE.JS) ---
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnapshot) => {
              if (docSnapshot.exists()) {
                  const data = docSnapshot.data();
-                 if (new Date().getTime() - data.lastUpdate > 30000) {
-                     setMikrotikStatus(null);
-                 } else {
-                     setMikrotikStatus(data);
-                 }
-             } else {
-                 setMikrotikStatus(null);
-             }
+                 if (new Date().getTime() - data.lastUpdate > 30000) { setMikrotikStatus(null); } 
+                 else { setMikrotikStatus(data); }
+             } else { setMikrotikStatus(null); }
           });
           
-          // Listener Data PPPoE Secret dari MikroTik
-          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (docSnapshot) => {
-             if (docSnapshot.exists()) {
-                 setMikrotikUsers(docSnapshot.data().users || []);
-             }
+          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (doc) => {
+             if (doc.exists()) setMikrotikUsers(doc.data().users || []);
+          });
+          const unsubHSUsers = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_users'), (doc) => {
+             if (doc.exists()) setMikrotikHotspotUsers(doc.data().users || []);
+          });
+          const unsubHSActive = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_active'), (doc) => {
+             if (doc.exists()) setMikrotikHotspotActive(doc.data().users || []);
+          });
+          const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (doc) => {
+             if (doc.exists()) setMikrotikHotspotHosts(doc.data().hosts || []);
+          });
+          const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (doc) => {
+             if (doc.exists()) setMikrotikIpBindings(doc.data().bindings || []);
           });
           
           return () => { 
               unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
               unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
+              unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
-      
-      // Fungsi fetch data dummy untuk tab Hotspot (karena backend belum support)
-      const fetchMikrotikData = () => {
-          setIsMikrotikLoading(true);
-          setTimeout(() => {
-              if (mikrotikTab === 'hotspot-users') {
-                  setMikrotikHotspotUsers([
-                      { id: '*1', name: 'voucher_001', profile: '1Jam_2K', uptimeLimit: '1h', bytesIn: '15 MB', bytesOut: '120 MB', disabled: 'false' },
-                      { id: '*2', name: 'voucher_002', profile: '1Hari_5K', uptimeLimit: '24h', bytesIn: '50 MB', bytesOut: '500 MB', disabled: 'false' }
-                  ]);
-              } else if (mikrotikTab === 'hotspot-active') {
-                  setMikrotikHotspotActive([
-                      { id: '*1', user: 'voucher_001', address: '10.5.50.22', macAddress: '00:11:22:AA:BB:CC', uptime: '00:45:20', server: 'hotspot1' }
-                  ]);
-              } else if (mikrotikTab === 'hotspot-hosts') {
-                  setMikrotikHotspotHosts([
-                      { id: '*1', macAddress: '00:11:22:AA:BB:CC', address: '10.5.50.22', toAddress: '10.5.50.22', server: 'hotspot1', authorized: true }
-                  ]);
-              } else if (mikrotikTab === 'hotspot-bindings') {
-                  setMikrotikIpBindings([
-                      { id: '*1', macAddress: 'AA:BB:CC:DD:EE:FF', address: '10.5.50.10', type: 'bypassed', comment: 'HP Admin Utama' },
-                      { id: '*2', macAddress: '11:22:33:44:55:66', address: '10.5.50.15', type: 'blocked', comment: 'User Bandel' }
-                  ]);
-              }
-              setIsMikrotikLoading(false);
-          }, 800);
-      };
-      
-      // Muat data dummy setiap tab Hotspot berpindah
-      useEffect(() => {
-          if (activeTab === 'mikrotik' && mikrotikTab !== 'secret') {
-              fetchMikrotikData();
-          }
-      }, [activeTab, mikrotikTab]);
 
+      // Kirim Perintah Simpan/Edit (Push Command ke Node.js)
       const handleSaveMikrotikUser = async (e) => {
           e.preventDefault();
-          alert("Fungsi ini membutuhkan integrasi backend Node.js untuk mengeksekusi perintah ke MikroTik API.");
-          setIsMikrotikUserModalOpen(false);
+          try {
+              if (editingMikrotikUser) {
+                  await addDoc(collection(db, 'mikrotik_commands'), { 
+                      action: 'EDIT_SECRET', targetId: editingMikrotikUser.id, 
+                      name: mikrotikUserForm.name, password: mikrotikUserForm.password, 
+                      profile: mikrotikUserForm.profile, comment: mikrotikUserForm.comment 
+                  });
+              } else {
+                  await addDoc(collection(db, 'mikrotik_commands'), { 
+                      action: 'ADD_SECRET', 
+                      name: mikrotikUserForm.name, password: mikrotikUserForm.password, 
+                      profile: mikrotikUserForm.profile, comment: mikrotikUserForm.comment 
+                  });
+              }
+              setIsMikrotikUserModalOpen(false);
+              alert("Perintah dikirim ke server! Data akan ter-update otomatis dalam 5-15 detik.");
+          } catch(err) { alert("Gagal mengirim perintah: " + err.message); }
       }
       
-      const handleDeleteMikrotikUser = (id, name) => {
-          if(confirm(`Hapus akun ${name} dari MikroTik?`)){
-              alert("Fungsi ini membutuhkan integrasi backend.");
+      // Kumpulan Perintah Hapus/Kick MikroTik 
+      const runMikrotikCommand = async (action, id, itemName, alertMessage) => {
+          if(confirm(alertMessage || `Jalankan aksi pada ${itemName}?`)){
+              try {
+                  await addDoc(collection(db, 'mikrotik_commands'), { action: action, targetId: id });
+              } catch(err) { alert("Gagal: " + err.message); }
           }
       }
 
@@ -595,7 +585,7 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\n\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -773,7 +763,12 @@
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
-              <SidebarItem id="mikrotik" icon={Terminal} label="MikroTik Console" />
+              
+              {/* Menu MikroTik - HANYA UNTUK SUPER ADMIN */}
+              {currentUser.id === 'admin1' && (
+                <SidebarItem id="mikrotik" icon={Server} label="MikroTik" />
+              )}
+              
               <SidebarItem id="portal" icon={Globe} label="Portal Web" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
@@ -1127,13 +1122,10 @@
                 )}
                 
                 {/* --- MIKROTIK CONSOLE ROUTE --- */}
-                {activeTab === 'mikrotik' && (
+                {activeTab === 'mikrotik' && currentUser?.id === 'admin1' && (
                   <div className="space-y-4 pb-6">
                     <div className="flex justify-between items-center mb-2 px-1 lg:px-0">
                       <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">MikroTik Console</h2>
-                      <button onClick={fetchMikrotikData} className="text-[10px] font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
-                         Refresh Data
-                      </button>
                     </div>
                     
                     {/* Inner Tabs / Submenu Navigasi */}
@@ -1160,7 +1152,7 @@
                         {/* TAB: PPPoE SECRET */}
                         {mikrotikTab === 'secret' && (
                             <>
-                                <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg border border-slate-200">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
                                 {isMikrotikLoading && mikrotikUsers.length === 0 ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
@@ -1194,8 +1186,8 @@
                                                                     setEditingMikrotikUser(mUser); 
                                                                     setMikrotikUserForm({ name: mUser.name, password: '', profile: mUser.profile, comment: mUser.comment || '' });
                                                                     setIsMikrotikUserModalOpen(true);
-                                                                }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
-                                                                <button onClick={() => handleDeleteMikrotikUser(mUser.id, mUser.name)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                                }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors" title="Edit"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                                <button onClick={() => runMikrotikCommand('DELETE_SECRET', mUser.id, mUser.name, `Hapus Secret ${mUser.name}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -1219,7 +1211,7 @@
                         {/* TAB: HOTSPOT USERS */}
                         {mikrotikTab === 'hotspot-users' && (
                             <>
-                                <p className="text-[10px] text-slate-500 mb-4 bg-orange-50 p-2 rounded-lg border border-orange-100">Menampilkan daftar user/voucher Hotspot. (Catatan: Data ini masih dalam mode simulasi antarmuka).</p>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg border border-orange-100 dark:border-orange-800/30">Menampilkan daftar user/voucher Hotspot.</p>
                                 {isMikrotikLoading ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
@@ -1245,7 +1237,7 @@
                                                             <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptimeLimit || 'unlimited'}</td>
                                                             <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.bytesIn} / {mUser.bytesOut}</td>
                                                             <td className="p-3 flex justify-end gap-2">
-                                                                <button className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                                <button onClick={() => runMikrotikCommand('DELETE_HOTSPOT_USER', mUser.id, mUser.name, `Hapus Hotspot User ${mUser.name}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -1260,7 +1252,7 @@
                         {/* TAB: HOTSPOT ACTIVE */}
                         {mikrotikTab === 'hotspot-active' && (
                             <>
-                                <p className="text-[10px] text-slate-500 mb-4 bg-emerald-50 p-2 rounded-lg border border-emerald-100">Menampilkan daftar pengguna Hotspot yang sedang terhubung dan menggunakan internet saat ini.</p>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg border border-emerald-100 dark:border-emerald-800/30">Menampilkan daftar pengguna Hotspot yang sedang terhubung dan menggunakan internet saat ini.</p>
                                 {isMikrotikLoading ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
@@ -1286,7 +1278,7 @@
                                                             <td className="p-3 text-[10px] font-bold text-slate-500 font-mono">{mUser.macAddress}</td>
                                                             <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptime}</td>
                                                             <td className="p-3 flex justify-end gap-2">
-                                                                <button className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors text-[9px] font-bold">KICK</button>
+                                                                <button onClick={() => runMikrotikCommand('KICK_HOTSPOT_ACTIVE', mUser.id, mUser.user, `Tendang (Kick) ${mUser.user} dari jaringan?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors text-[9px] font-bold">KICK</button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -1301,7 +1293,7 @@
                         {/* TAB: HOTSPOT HOSTS */}
                         {mikrotikTab === 'hotspot-hosts' && (
                             <>
-                                <p className="text-[10px] text-slate-500 mb-4 bg-purple-50 p-2 rounded-lg border border-purple-100">Menampilkan daftar seluruh perangkat (Hosts) yang terdeteksi di jaringan Hotspot (baik sudah login maupun belum).</p>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg border border-purple-100 dark:border-purple-800/30">Menampilkan daftar seluruh perangkat (Hosts) yang terdeteksi di jaringan Hotspot (baik sudah login maupun belum).</p>
                                 {isMikrotikLoading ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
@@ -1344,7 +1336,7 @@
                         {/* TAB: IP BINDINGS */}
                         {mikrotikTab === 'hotspot-bindings' && (
                             <>
-                                <p className="text-[10px] text-slate-500 mb-4 bg-rose-50 p-2 rounded-lg border border-rose-100">Menampilkan daftar Bypass atau Blokir akses tanpa perlu login Hotspot.</p>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-800/30">Menampilkan daftar Bypass atau Blokir akses tanpa perlu login Hotspot.</p>
                                 {isMikrotikLoading ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
@@ -1374,7 +1366,7 @@
                                                             </td>
                                                             <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
                                                             <td className="p-3 flex justify-end gap-2">
-                                                                <button className="p-1.5 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                                <button onClick={() => runMikrotikCommand('DELETE_IP_BINDING', mUser.id, mUser.macAddress, `Hapus Binding MAC ${mUser.macAddress}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                                                             </td>
                                                         </tr>
                                                     ))
@@ -1591,19 +1583,22 @@
                 <span className="text-[9px] font-bold tracking-wide">Pelanggan</span>
               </button>
               
-              <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Terminal className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
-                <span className="text-[9px] font-bold tracking-wide">Console</span>
-              </button>
+              {/* Menu MikroTik Mobile - HANYA UNTUK SUPER ADMIN */}
+              {currentUser?.id === 'admin1' && (
+                <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                  <Server className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
+                  <span className="text-[9px] font-bold tracking-wide">MikroTik</span>
+                </button>
+              )}
 
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Keuangan</span>
               </button>
-
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
-                <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
-                <span className="text-[9px] font-bold tracking-wide">Profil</span>
+              
+              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Portal</span>
               </button>
             </nav>
           </div>
@@ -1633,136 +1628,29 @@
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-kai-blue dark:text-white">
-                    <Terminal className="w-5 h-5"/> {editingMikrotikUser ? 'Edit Akun PPPoE' : 'Buat Secret Baru'}
+                    <Terminal className="w-5 h-5"/> {editingMikrotikUser ? 'Edit Data MikroTik' : 'Buat Baru MikroTik'}
                 </h3>
                 <form onSubmit={handleSaveMikrotikUser} className="space-y-4">
                   <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME (NAME)</label>
-                      <input type="text" required value={mikrotikUserForm.name} onChange={e => setMikrotikUserForm({...mikrotikUserForm, name: e.target.value})} disabled={!!editingMikrotikUser} placeholder="b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue disabled:opacity-60" />
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME (NAME/MAC)</label>
+                      <input type="text" required value={mikrotikUserForm.name} onChange={e => setMikrotikUserForm({...mikrotikUserForm, name: e.target.value})} disabled={!!editingMikrotikUser} placeholder="User/MAC Address" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue disabled:opacity-60" />
                   </div>
                   <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD BARU {editingMikrotikUser && '(Opsional)'}</label>
-                      <input type="text" value={mikrotikUserForm.password} onChange={e => setMikrotikUserForm({...mikrotikUserForm, password: e.target.value})} required={!editingMikrotikUser} placeholder={editingMikrotikUser ? 'Kosongkan jika tidak diubah' : 'Password PPPoE'} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD {editingMikrotikUser && '(Opsional)'}</label>
+                      <input type="text" value={mikrotikUserForm.password} onChange={e => setMikrotikUserForm({...mikrotikUserForm, password: e.target.value})} required={!editingMikrotikUser} placeholder={editingMikrotikUser ? 'Kosongkan jika tidak diubah' : 'Password Login'} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
                   </div>
                   <div>
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PROFILE BANDWIDTH</label>
-                      <input type="text" required value={mikrotikUserForm.profile} onChange={e => setMikrotikUserForm({...mikrotikUserForm, profile: e.target.value})} placeholder="Paket 10 Mbps" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
-                      <p className="text-[8px] text-slate-400 mt-1 ml-1">Harus sama persis dengan nama profile di MikroTik.</p>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PROFILE / LIMIT / TIPE</label>
+                      <input type="text" required value={mikrotikUserForm.profile} onChange={e => setMikrotikUserForm({...mikrotikUserForm, profile: e.target.value})} placeholder="Profile / Limit / Type" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                      <p className="text-[8px] text-slate-400 mt-1 ml-1">Isi sesuai kebutuhan tab (Profile Name / Uptime / Binding Type).</p>
                   </div>
                   <div>
                       <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KOMENTAR (OPSIONAL)</label>
-                      <input type="text" value={mikrotikUserForm.comment} onChange={e => setMikrotikUserForm({...mikrotikUserForm, comment: e.target.value})} placeholder="Nama Pelanggan" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                      <input type="text" value={mikrotikUserForm.comment} onChange={e => setMikrotikUserForm({...mikrotikUserForm, comment: e.target.value})} placeholder="Keterangan / Nama" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
                   </div>
                   <div className="flex gap-3 pt-4">
                     <button type="button" onClick={() => setIsMikrotikUserModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
-                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Execute</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {isCustomerModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Pelanggan' : 'Pelanggan Baru'}</h3>
-                <form onSubmit={handleSaveCustomer} className="space-y-4">
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div className="flex gap-3">
-                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">BLOK RUMAH</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
-                     <div className="w-24"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TEMPO TGL</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-center outline-none focus:border-kai-blue" /></div>
-                  </div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USER PPPOE (MIKROTIK)</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PAKET INTERNET</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">STATUS</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
-                  <div className="flex gap-3 pt-4">
-                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
-                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Simpan Data</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {isExpenseModalOpen && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-xl font-extrabold mb-6 text-kai-orange">{editingExpense ? 'Edit Jurnal Kas' : 'Catat Kas Keluar'}</h3>
-                <form onSubmit={handleSaveExpense} className="space-y-4">
-                  <div className="flex gap-3">
-                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TGL</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange" /></div>
-                     <div className="flex-1">
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KATEGORI</label>
-                        <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange">
-                          <option>Belanja</option><option>Perbaikan/Pemasangan</option><option>Operasional</option><option>Fam</option>
-                        </select>
-                     </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">DIPROSES / DIAJUKAN OLEH</label>
-                    <select value={expenseForm.applicantSelect} onChange={e => setExpenseForm({...expenseForm, applicantSelect: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange">
-                      <option value="Ayah">1. Ayah</option><option value="Mamah">2. Mamah</option><option value="Fathir">3. Fathir</option><option value="Dede">4. Dede</option><option value="Zahra">5. Zahra</option><option value="Manual">6. Manual Tulis Keterangan</option>
-                    </select>
-                    {expenseForm.applicantSelect === 'Manual' && (
-                      <input type="text" placeholder="Tulis nama pengaju manual..." required value={expenseForm.applicantCustom} onChange={e => setExpenseForm({...expenseForm, applicantCustom: e.target.value})} className="mt-3 w-full bg-orange-50 dark:bg-slate-800 border border-orange-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" />
-                    )}
-                  </div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">URAIAN / CATATAN</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} placeholder="Misal: Beli kabel FO 1 Roll" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NOMINAL (RP)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} placeholder="500000" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-lg font-black text-rose-600 outline-none focus:border-rose-500" /></div>
-                  
-                  <div className="flex gap-3 pt-4">
-                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
-                    <button type="submit" className="flex-1 py-3 bg-kai-orange text-white rounded-xl font-bold text-sm shadow-lg">Simpan Kas</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-
-          {isTargetAdminModalOpen && targetAdmin && (
-            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
-                <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
-                  <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                    <div className="relative w-16 h-16 rounded-full border-2 border-kai-blue overflow-hidden bg-slate-100 flex items-center justify-center group shrink-0">
-                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400" />}
-                      <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                        <Camera className="w-5 h-5 text-white" />
-                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
-                      </label>
-                    </div>
-                    <div><p className="text-sm font-bold">Foto Staff</p><p className="text-[10px] text-slate-500 mt-1">Tap untuk ganti.</p></div>
-                  </div>
-                  
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME LOGIN</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD AKSES</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">EMAIL STAFF</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
-
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                    <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
-                    {!targetAdmin.credentialId ? (
-                      <button type="button" onClick={registerFingerprintTarget} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
-                        <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
-                      </button>
-                    ) : (
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
-                          <input type="checkbox" checked={targetAdmin.fingerprintEnabled} onChange={(e) => setTargetAdmin({...targetAdmin, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm">Batal</button>
-                    <button type="submit" className="flex-1 py-3 rounded-xl bg-kai-blue text-white font-bold text-sm shadow-lg">Simpan Data</button>
+                    <button type="submit" className="flex-1 py-3 rounded-xl bg-kai-blue text-white font-bold text-sm shadow-lg">Execute</button>
                   </div>
                 </form>
               </div>
