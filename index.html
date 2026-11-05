@@ -1126,6 +1126,9 @@
                   <div className="space-y-4 pb-6">
                     <div className="flex justify-between items-center mb-2 px-1 lg:px-0">
                       <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">MikroTik Console</h2>
+                      <button onClick={() => { setIsMikrotikLoading(true); setTimeout(() => setIsMikrotikLoading(false), 500); }} className="text-[10px] font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                         Refresh Data
+                      </button>
                     </div>
                     
                     {/* Inner Tabs / Submenu Navigasi */}
@@ -1153,7 +1156,7 @@
                         {mikrotikTab === 'secret' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
-                                {isMikrotikLoading && mikrotikUsers.length === 0 ? (
+                                {isMikrotikLoading ? (
                                     <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
                                 ) : (
                                     <div className="overflow-x-auto custom-scrollbar">
@@ -1628,7 +1631,7 @@
             <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
                 <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-kai-blue dark:text-white">
-                    <Terminal className="w-5 h-5"/> {editingMikrotikUser ? 'Edit Data MikroTik' : 'Buat Baru MikroTik'}
+                    <Server className="w-5 h-5"/> {editingMikrotikUser ? 'Edit Data MikroTik' : 'Buat Baru MikroTik'}
                 </h3>
                 <form onSubmit={handleSaveMikrotikUser} className="space-y-4">
                   <div>
@@ -1650,7 +1653,7 @@
                   </div>
                   <div className="flex gap-3 pt-4">
                     <button type="button" onClick={() => setIsMikrotikUserModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
-                    <button type="submit" className="flex-1 py-3 rounded-xl bg-kai-blue text-white font-bold text-sm shadow-lg">Execute</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Execute</button>
                   </div>
                 </form>
               </div>
