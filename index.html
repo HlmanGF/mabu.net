@@ -120,11 +120,9 @@
       { id: 'ntf_30', speed: 'Netflix 30 Mbps', price: 400000, label: 'Netflix 30 Mbps - Rp 400.000' }
     ];
 
-    // Daftar Profil PPPoE (dari Gambar 10)
     const PPPOE_PROFILES = [
         'default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'
     ];
-    // Daftar Profil Hotspot (dari Gambar 6)
     const HOTSPOT_PROFILES = ['default', 'CLIENT', 'FREE', 'MABU ALL', 'VIP'];
     
     const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
@@ -133,6 +131,15 @@
     const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
     
     const PORTAL_URL = "https://mabunet-billing.vercel.app/registrasi.html"; 
+
+    function formatBytes(bytes, decimals = 2) {
+        if (!+bytes) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    }
 
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
@@ -173,14 +180,15 @@
       
       // State Status MikroTik
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
-      
-      // State MikroTik Submenus & Data Asli
       const [mikrotikTab, setMikrotikTab] = useState('secret');
+      
+      // State MikroTik Data Asli
       const [mikrotikUsers, setMikrotikUsers] = useState([]);
       const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = useState([]);
       const [mikrotikHotspotActive, setMikrotikHotspotActive] = useState([]);
       const [mikrotikHotspotHosts, setMikrotikHotspotHosts] = useState([]);
       const [mikrotikIpBindings, setMikrotikIpBindings] = useState([]);
+      const [isMikrotikLoading, setIsMikrotikLoading] = useState(false);
       
       const [printData, setPrintData] = useState(null);
       const [alarmEnabled, setAlarmEnabled] = useState(false);
@@ -189,10 +197,9 @@
 
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-      
-      // Modal State untuk MikroTik (Multi-purpose)
       const [isMikrotikModalOpen, setIsMikrotikModalOpen] = useState(false);
-      const [mikrotikFormType, setMikrotikFormType] = useState('secret'); // 'secret', 'hotspot_user', 'ip_binding'
+      
+      const [mikrotikFormType, setMikrotikFormType] = useState('secret'); 
       const [editingMikrotikData, setEditingMikrotikData] = useState(null);
       const [mikrotikForm, setMikrotikForm] = useState({ 
           name: '', password: '', profile: 'default', comment: '', server: 'all', 
@@ -221,11 +228,8 @@
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
 
-      // Mencegah Keluar Aplikasi Saat Swipe Back (History Override)
       useEffect(() => {
-        if (activeTab !== 'dashboard') {
-          window.history.pushState({ page: activeTab }, '');
-        }
+        if (activeTab !== 'dashboard') { window.history.pushState({ page: activeTab }, ''); }
       }, [activeTab]);
 
       useEffect(() => {
@@ -248,12 +252,9 @@
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen]);
 
-      // Auto logout pada mobile devices saat visibility tersembunyi
       useEffect(() => {
         const handleVisibilityChange = () => {
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) {
-            handleLogout();
-          }
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -299,11 +300,8 @@
           });
           
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                setSettingsData(docSnapshot.data());
-            } else {
-                setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); 
-            }
+            if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
+            else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
           });
           
           // --- LISTENERS MIKROTIK (REAL-TIME DARI NODE.JS) ---
@@ -339,7 +337,6 @@
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
-      // Kirim Perintah Simpan/Edit (Push Command ke Node.js)
       const handleSaveMikrotikData = async (e) => {
           e.preventDefault();
           try {
@@ -375,7 +372,6 @@
           } catch(err) { alert("Gagal mengirim perintah: " + err.message); }
       }
       
-      // Kumpulan Perintah Hapus/Kick MikroTik 
       const runMikrotikCommand = async (action, id, itemName, alertMessage) => {
           if(confirm(alertMessage || `Jalankan aksi pada ${itemName}?`)){
               try {
@@ -1243,7 +1239,7 @@
                                                 <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">User / Voucher</th>
                                                 <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
                                                 <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Limit Uptime</th>
-                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Server</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Pemakaian (In/Out)</th>
                                                 <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
                                             </tr>
                                         </thead>
@@ -1256,7 +1252,7 @@
                                                         <td className="p-3 text-xs font-bold text-kai-orange dark:text-orange-400">{mUser.name}</td>
                                                         <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
                                                         <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptimeLimit || 'unlimited'}</td>
-                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.server || 'all'}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{formatBytes(mUser.bytesIn)} / {formatBytes(mUser.bytesOut)}</td>
                                                         <td className="p-3 flex justify-end gap-2">
                                                             <button onClick={() => { 
                                                                 setEditingMikrotikData(mUser); 
@@ -1356,7 +1352,7 @@
                                                                 setMikrotikFormType('ip_binding');
                                                                 setMikrotikForm({ macAddress: mUser.macAddress, address: mUser.address, type: 'bypassed', server: 'all', comment: '' });
                                                                 setIsMikrotikModalOpen(true);
-                                                            }} className="p-1.5 bg-slate-100 hover:bg-purple-500 hover:text-white text-slate-500 rounded transition-colors text-[9px] font-bold">MAKE BINDING</button>
+                                                            }} className="p-1.5 bg-slate-100 hover:bg-purple-500 hover:text-white text-slate-500 rounded transition-colors text-[9px] font-bold shadow-sm border border-slate-200">MAKE BINDING</button>
                                                         </td>
                                                     </tr>
                                                 ))
