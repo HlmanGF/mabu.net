@@ -76,7 +76,7 @@
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Terminal
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -167,6 +167,10 @@
       // State Status MikroTik
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       
+      // State MikroTik Console Data (Dummy untuk UI Frontend)
+      const [mikrotikUsers, setMikrotikUsers] = useState([]);
+      const [isMikrotikLoading, setIsMikrotikLoading] = useState(false);
+      
       const [printData, setPrintData] = useState(null);
       const [alarmEnabled, setAlarmEnabled] = useState(false);
       const [isBroadcasting, setIsBroadcasting] = useState(false); 
@@ -174,11 +178,15 @@
 
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+      const [isMikrotikUserModalOpen, setIsMikrotikUserModalOpen] = useState(false);
       
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ 
         date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' 
       });
+      // Form State untuk MikroTik User
+      const [mikrotikUserForm, setMikrotikUserForm] = useState({ name: '', password: '', profile: 'default', comment: '' });
+      const [editingMikrotikUser, setEditingMikrotikUser] = useState(null);
       const [editingCustomer, setEditingCustomer] = useState(null);
       const [editingExpense, setEditingExpense] = useState(null);
 
@@ -197,6 +205,7 @@
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
 
+      // Mencegah Keluar Aplikasi Saat Swipe Back (History Override)
       useEffect(() => {
         if (activeTab !== 'dashboard') {
           window.history.pushState({ page: activeTab }, '');
@@ -205,10 +214,11 @@
 
       useEffect(() => {
         const handleBackButton = (e) => {
-          if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen) {
+          if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen || isMikrotikUserModalOpen) {
             e.preventDefault();
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
             setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
+            setIsMikrotikUserModalOpen(false);
             window.history.pushState({ page: activeTab }, ''); 
             return;
           }
@@ -220,8 +230,9 @@
         };
         window.addEventListener('popstate', handleBackButton);
         return () => window.removeEventListener('popstate', handleBackButton);
-      }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen]);
+      }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikUserModalOpen]);
 
+      // Auto logout pada mobile devices saat visibility tersembunyi
       useEffect(() => {
         const handleVisibilityChange = () => {
           if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) {
@@ -279,9 +290,11 @@
             }
           });
           
+          // Listener Status MikroTik
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnapshot) => {
              if (docSnapshot.exists()) {
                  const data = docSnapshot.data();
+                 // Jika update terakhir lebih dari 30 detik yang lalu, anggap offline
                  if (new Date().getTime() - data.lastUpdate > 30000) {
                      setMikrotikStatus(null);
                  } else {
@@ -295,6 +308,43 @@
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); unsubMikrotik(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
+      
+      // Fungsi Dummy untuk UI MikroTik Console
+      const fetchMikrotikUsers = () => {
+          setIsMikrotikLoading(true);
+          // Simulasi Fetch API ke backend
+          setTimeout(() => {
+              // Simulasi response dari backend
+              const dummyUsers = [
+                  { id: '*1', name: 'a2@mabu.net', profile: 'Paket 10 Mbps', comment: 'Oom', disabled: 'false' },
+                  { id: '*2', name: 'b1.3@mabu.net', profile: 'Paket 20 Mbps', comment: 'Daerobi', disabled: 'false' },
+                  { id: '*3', name: 's11@mabu.net', profile: 'Paket 10 Mbps', comment: 'Ani Off', disabled: 'true' }
+              ];
+              setMikrotikUsers(dummyUsers);
+              setIsMikrotikLoading(false);
+          }, 1500);
+      };
+      
+      // Efek untuk memuat data dummy saat tab MikroTik aktif
+      useEffect(() => {
+          if(activeTab === 'mikrotik' && mikrotikUsers.length === 0) {
+              fetchMikrotikUsers();
+          }
+      }, [activeTab]);
+
+      const handleSaveMikrotikUser = async (e) => {
+          e.preventDefault();
+          // Di sini nanti diintegrasikan ke backend Node.js
+          alert("Fungsi ini membutuhkan integrasi backend untuk mengeksekusi perintah ke MikroTik API.");
+          setIsMikrotikUserModalOpen(false);
+      }
+      
+      const handleDeleteMikrotikUser = (id, name) => {
+          if(confirm(`Hapus akun PPPoE ${name} dari MikroTik?`)){
+              // Integrasi backend
+              alert("Fungsi ini membutuhkan integrasi backend.");
+          }
+      }
 
       const togglePayment = async (custId, monthKey) => {
         if (!db) return;
@@ -522,7 +572,7 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\n\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -700,6 +750,7 @@
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
+              <SidebarItem id="mikrotik" icon={Terminal} label="MikroTik Console" />
               <SidebarItem id="portal" icon={Globe} label="Portal Web" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
@@ -1052,6 +1103,85 @@
                   </div>
                 )}
                 
+                {/* --- MIKROTIK CONSOLE ROUTE --- */}
+                {activeTab === 'mikrotik' && (
+                  <div className="space-y-4 pb-6">
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">MikroTik Console</h2>
+                      <button onClick={fetchMikrotikUsers} className="text-xs font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                         Refresh Data
+                      </button>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 md:p-6 shadow-sm">
+                        <div className="flex items-center gap-2 mb-4">
+                           <Terminal className="w-5 h-5 text-kai-blue dark:text-white"/>
+                           <h3 className="text-base font-black text-kai-blue dark:text-white">Daftar Akun PPPoE (Secret)</h3>
+                        </div>
+                        
+                        <p className="text-[10px] text-rose-500 bg-rose-50 p-2 rounded-xl border border-rose-100 mb-4 font-bold">
+                            ⚠️ Peringatan: Halaman ini berinteraksi langsung dengan API Router MikroTik. Perubahan di sini akan langsung berdampak pada koneksi pelanggan.
+                        </p>
+                        
+                        {isMikrotikLoading ? (
+                            <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API MikroTik...</div>
+                        ) : (
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse min-w-[500px]">
+                                    <thead>
+                                        <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Username (Name)</th>
+                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
+                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
+                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {mikrotikUsers.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada data ditemukan di MikroTik.</td>
+                                            </tr>
+                                        ) : (
+                                            mikrotikUsers.map((mUser, idx) => (
+                                                <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                    <td className="p-3 text-xs font-bold text-kai-blue dark:text-white">{mUser.name}</td>
+                                                    <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
+                                                    <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
+                                                    <td className="p-3">
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${mUser.disabled === 'false' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                            {mUser.disabled === 'false' ? 'AKTIF' : 'DISABLED'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 flex justify-end gap-2">
+                                                        <button onClick={() => { 
+                                                            setEditingMikrotikUser(mUser); 
+                                                            setMikrotikUserForm({ name: mUser.name, password: '', profile: mUser.profile, comment: mUser.comment || '' });
+                                                            setIsMikrotikUserModalOpen(true);
+                                                        }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                        <button onClick={() => handleDeleteMikrotikUser(mUser.id, mUser.name)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        
+                        <div className="mt-4 flex justify-end">
+                            <button onClick={() => {
+                                setEditingMikrotikUser(null);
+                                setMikrotikUserForm({ name: '', password: '', profile: 'default', comment: '' });
+                                setIsMikrotikUserModalOpen(true);
+                            }} className="bg-kai-blue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+                                <Plus className="w-4 h-4"/> Buat Secret Baru
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+                )}
+                
                 {/* --- PORTAL ROUTE --- */}
                 {activeTab === 'portal' && (
                   <div className="space-y-4 pb-6">
@@ -1262,10 +1392,10 @@
                 <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Portal</span>
               </button>
-
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
-                <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
-                <span className="text-[9px] font-bold tracking-wide">Profil</span>
+              
+              <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Terminal className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Console</span>
               </button>
             </nav>
           </div>
@@ -1286,6 +1416,40 @@
                   <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs">Batal</button>
                   <button onClick={applyCrop} className="flex-1 py-2.5 rounded-xl bg-kai-blue text-white font-bold text-xs">Simpan</button>
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Modal Form MikroTik User */}
+          {isMikrotikUserModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-kai-blue dark:text-white">
+                    <Terminal className="w-5 h-5"/> {editingMikrotikUser ? 'Edit Akun PPPoE' : 'Buat Secret Baru'}
+                </h3>
+                <form onSubmit={handleSaveMikrotikUser} className="space-y-4">
+                  <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME (NAME)</label>
+                      <input type="text" required value={mikrotikUserForm.name} onChange={e => setMikrotikUserForm({...mikrotikUserForm, name: e.target.value})} disabled={!!editingMikrotikUser} placeholder="b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue disabled:opacity-60" />
+                  </div>
+                  <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD BARU {editingMikrotikUser && '(Opsional)'}</label>
+                      <input type="text" value={mikrotikUserForm.password} onChange={e => setMikrotikUserForm({...mikrotikUserForm, password: e.target.value})} required={!editingMikrotikUser} placeholder={editingMikrotikUser ? 'Kosongkan jika tidak diubah' : 'Password PPPoE'} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                  </div>
+                  <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PROFILE BANDWIDTH</label>
+                      <input type="text" required value={mikrotikUserForm.profile} onChange={e => setMikrotikUserForm({...mikrotikUserForm, profile: e.target.value})} placeholder="Paket 10 Mbps" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                      <p className="text-[8px] text-slate-400 mt-1 ml-1">Harus sama persis dengan nama profile di MikroTik.</p>
+                  </div>
+                  <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KOMENTAR (OPSIONAL)</label>
+                      <input type="text" value={mikrotikUserForm.comment} onChange={e => setMikrotikUserForm({...mikrotikUserForm, comment: e.target.value})} placeholder="Nama Pelanggan" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsMikrotikUserModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Execute</button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
