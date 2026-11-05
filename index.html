@@ -76,7 +76,7 @@
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Terminal
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Terminal, Wifi, Radio, Link, Key
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -167,8 +167,13 @@
       // State Status MikroTik
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       
-      // State MikroTik Console Data (Dummy untuk UI Frontend)
+      // State MikroTik Submenus & Data
+      const [mikrotikTab, setMikrotikTab] = useState('secret');
       const [mikrotikUsers, setMikrotikUsers] = useState([]);
+      const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = useState([]);
+      const [mikrotikHotspotActive, setMikrotikHotspotActive] = useState([]);
+      const [mikrotikHotspotHosts, setMikrotikHotspotHosts] = useState([]);
+      const [mikrotikIpBindings, setMikrotikIpBindings] = useState([]);
       const [isMikrotikLoading, setIsMikrotikLoading] = useState(false);
       
       const [printData, setPrintData] = useState(null);
@@ -290,11 +295,10 @@
             }
           });
           
-          // Listener Status MikroTik
+          // Listener Status Resource MikroTik
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnapshot) => {
              if (docSnapshot.exists()) {
                  const data = docSnapshot.data();
-                 // Jika update terakhir lebih dari 30 detik yang lalu, anggap offline
                  if (new Date().getTime() - data.lastUpdate > 30000) {
                      setMikrotikStatus(null);
                  } else {
@@ -305,43 +309,62 @@
              }
           });
           
-          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); unsubMikrotik(); };
+          // Listener Data PPPoE Secret dari MikroTik
+          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (docSnapshot) => {
+             if (docSnapshot.exists()) {
+                 setMikrotikUsers(docSnapshot.data().users || []);
+             }
+          });
+          
+          return () => { 
+              unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
+              unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
+          };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
       
-      // Fungsi Dummy untuk UI MikroTik Console
-      const fetchMikrotikUsers = () => {
+      // Fungsi fetch data dummy untuk tab Hotspot (karena backend belum support)
+      const fetchMikrotikData = () => {
           setIsMikrotikLoading(true);
-          // Simulasi Fetch API ke backend
           setTimeout(() => {
-              // Simulasi response dari backend
-              const dummyUsers = [
-                  { id: '*1', name: 'a2@mabu.net', profile: 'Paket 10 Mbps', comment: 'Oom', disabled: 'false' },
-                  { id: '*2', name: 'b1.3@mabu.net', profile: 'Paket 20 Mbps', comment: 'Daerobi', disabled: 'false' },
-                  { id: '*3', name: 's11@mabu.net', profile: 'Paket 10 Mbps', comment: 'Ani Off', disabled: 'true' }
-              ];
-              setMikrotikUsers(dummyUsers);
+              if (mikrotikTab === 'hotspot-users') {
+                  setMikrotikHotspotUsers([
+                      { id: '*1', name: 'voucher_001', profile: '1Jam_2K', uptimeLimit: '1h', bytesIn: '15 MB', bytesOut: '120 MB', disabled: 'false' },
+                      { id: '*2', name: 'voucher_002', profile: '1Hari_5K', uptimeLimit: '24h', bytesIn: '50 MB', bytesOut: '500 MB', disabled: 'false' }
+                  ]);
+              } else if (mikrotikTab === 'hotspot-active') {
+                  setMikrotikHotspotActive([
+                      { id: '*1', user: 'voucher_001', address: '10.5.50.22', macAddress: '00:11:22:AA:BB:CC', uptime: '00:45:20', server: 'hotspot1' }
+                  ]);
+              } else if (mikrotikTab === 'hotspot-hosts') {
+                  setMikrotikHotspotHosts([
+                      { id: '*1', macAddress: '00:11:22:AA:BB:CC', address: '10.5.50.22', toAddress: '10.5.50.22', server: 'hotspot1', authorized: true }
+                  ]);
+              } else if (mikrotikTab === 'hotspot-bindings') {
+                  setMikrotikIpBindings([
+                      { id: '*1', macAddress: 'AA:BB:CC:DD:EE:FF', address: '10.5.50.10', type: 'bypassed', comment: 'HP Admin Utama' },
+                      { id: '*2', macAddress: '11:22:33:44:55:66', address: '10.5.50.15', type: 'blocked', comment: 'User Bandel' }
+                  ]);
+              }
               setIsMikrotikLoading(false);
-          }, 1500);
+          }, 800);
       };
       
-      // Efek untuk memuat data dummy saat tab MikroTik aktif
+      // Muat data dummy setiap tab Hotspot berpindah
       useEffect(() => {
-          if(activeTab === 'mikrotik' && mikrotikUsers.length === 0) {
-              fetchMikrotikUsers();
+          if (activeTab === 'mikrotik' && mikrotikTab !== 'secret') {
+              fetchMikrotikData();
           }
-      }, [activeTab]);
+      }, [activeTab, mikrotikTab]);
 
       const handleSaveMikrotikUser = async (e) => {
           e.preventDefault();
-          // Di sini nanti diintegrasikan ke backend Node.js
-          alert("Fungsi ini membutuhkan integrasi backend untuk mengeksekusi perintah ke MikroTik API.");
+          alert("Fungsi ini membutuhkan integrasi backend Node.js untuk mengeksekusi perintah ke MikroTik API.");
           setIsMikrotikUserModalOpen(false);
       }
       
       const handleDeleteMikrotikUser = (id, name) => {
-          if(confirm(`Hapus akun PPPoE ${name} dari MikroTik?`)){
-              // Integrasi backend
+          if(confirm(`Hapus akun ${name} dari MikroTik?`)){
               alert("Fungsi ini membutuhkan integrasi backend.");
           }
       }
@@ -572,14 +595,14 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\n\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
       const inactiveCustomersList = customers.filter(c => c.status === 'Non-Aktif');
       
-      // Filter Tagihan Tertunda: HANYA yang TIDAK GRATIS
+      // Filter Tagihan Tertunda
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
@@ -1106,78 +1129,263 @@
                 {/* --- MIKROTIK CONSOLE ROUTE --- */}
                 {activeTab === 'mikrotik' && (
                   <div className="space-y-4 pb-6">
-                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                    <div className="flex justify-between items-center mb-2 px-1 lg:px-0">
                       <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">MikroTik Console</h2>
-                      <button onClick={fetchMikrotikUsers} className="text-xs font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                      <button onClick={fetchMikrotikData} className="text-[10px] font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
                          Refresh Data
                       </button>
                     </div>
                     
+                    {/* Inner Tabs / Submenu Navigasi */}
+                    <div className="flex gap-2 overflow-x-auto custom-scrollbar mb-2 px-1 lg:px-0 pb-1">
+                        <button onClick={() => setMikrotikTab('secret')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'secret' ? 'bg-kai-blue text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Key className="w-3.5 h-3.5"/> PPPoE Secret
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-users')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-users' ? 'bg-kai-orange text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Users className="w-3.5 h-3.5"/> Hotspot Users
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-active')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-active' ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Activity className="w-3.5 h-3.5"/> Active
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-hosts')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-hosts' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Server className="w-3.5 h-3.5"/> Hosts
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-bindings')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-bindings' ? 'bg-rose-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Link className="w-3.5 h-3.5"/> IP Bindings
+                        </button>
+                    </div>
+                    
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 md:p-6 shadow-sm">
-                        <div className="flex items-center gap-2 mb-4">
-                           <Terminal className="w-5 h-5 text-kai-blue dark:text-white"/>
-                           <h3 className="text-base font-black text-kai-blue dark:text-white">Daftar Akun PPPoE (Secret)</h3>
-                        </div>
                         
-                        <p className="text-[10px] text-rose-500 bg-rose-50 p-2 rounded-xl border border-rose-100 mb-4 font-bold">
-                            ⚠️ Peringatan: Halaman ini berinteraksi langsung dengan API Router MikroTik. Perubahan di sini akan langsung berdampak pada koneksi pelanggan.
-                        </p>
-                        
-                        {isMikrotikLoading ? (
-                            <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API MikroTik...</div>
-                        ) : (
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full text-left border-collapse min-w-[500px]">
-                                    <thead>
-                                        <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Username (Name)</th>
-                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
-                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
-                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
-                                            <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {mikrotikUsers.length === 0 ? (
-                                            <tr>
-                                                <td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada data ditemukan di MikroTik.</td>
-                                            </tr>
-                                        ) : (
-                                            mikrotikUsers.map((mUser, idx) => (
-                                                <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                                    <td className="p-3 text-xs font-bold text-kai-blue dark:text-white">{mUser.name}</td>
-                                                    <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
-                                                    <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
-                                                    <td className="p-3">
-                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${mUser.disabled === 'false' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                                                            {mUser.disabled === 'false' ? 'AKTIF' : 'DISABLED'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3 flex justify-end gap-2">
-                                                        <button onClick={() => { 
-                                                            setEditingMikrotikUser(mUser); 
-                                                            setMikrotikUserForm({ name: mUser.name, password: '', profile: mUser.profile, comment: mUser.comment || '' });
-                                                            setIsMikrotikUserModalOpen(true);
-                                                        }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
-                                                        <button onClick={() => handleDeleteMikrotikUser(mUser.id, mUser.name)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
-                                                    </td>
+                        {/* TAB: PPPoE SECRET */}
+                        {mikrotikTab === 'secret' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 p-2 rounded-lg border border-slate-200">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
+                                {isMikrotikLoading && mikrotikUsers.length === 0 ? (
+                                    <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[500px]">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Username (Name)</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
                                                 </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                            </thead>
+                                            <tbody>
+                                                {mikrotikUsers.length === 0 ? (
+                                                    <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data kosong atau belum disinkronisasi.</td></tr>
+                                                ) : (
+                                                    mikrotikUsers.map((mUser, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-3 text-xs font-bold text-kai-blue dark:text-white">{mUser.name}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
+                                                            <td className="p-3">
+                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${mUser.disabled === 'false' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                    {mUser.disabled === 'false' ? 'AKTIF' : 'DISABLED'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 flex justify-end gap-2">
+                                                                <button onClick={() => { 
+                                                                    setEditingMikrotikUser(mUser); 
+                                                                    setMikrotikUserForm({ name: mUser.name, password: '', profile: mUser.profile, comment: mUser.comment || '' });
+                                                                    setIsMikrotikUserModalOpen(true);
+                                                                }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                                <button onClick={() => handleDeleteMikrotikUser(mUser.id, mUser.name)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                                <div className="mt-4 flex justify-end">
+                                    <button onClick={() => {
+                                        setEditingMikrotikUser(null);
+                                        setMikrotikUserForm({ name: '', password: '', profile: 'default', comment: '' });
+                                        setIsMikrotikUserModalOpen(true);
+                                    }} className="bg-kai-blue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-kai-bluedark transition-colors">
+                                        <Plus className="w-4 h-4"/> Buat Secret Baru
+                                    </button>
+                                </div>
+                            </>
                         )}
                         
-                        <div className="mt-4 flex justify-end">
-                            <button onClick={() => {
-                                setEditingMikrotikUser(null);
-                                setMikrotikUserForm({ name: '', password: '', profile: 'default', comment: '' });
-                                setIsMikrotikUserModalOpen(true);
-                            }} className="bg-kai-blue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                                <Plus className="w-4 h-4"/> Buat Secret Baru
-                            </button>
-                        </div>
+                        {/* TAB: HOTSPOT USERS */}
+                        {mikrotikTab === 'hotspot-users' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-orange-50 p-2 rounded-lg border border-orange-100">Menampilkan daftar user/voucher Hotspot. (Catatan: Data ini masih dalam mode simulasi antarmuka).</p>
+                                {isMikrotikLoading ? (
+                                    <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[500px]">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">User / Voucher</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Limit Uptime</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Pemakaian (In/Out)</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {mikrotikHotspotUsers.length === 0 ? (
+                                                    <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data kosong atau belum disinkronisasi.</td></tr>
+                                                ) : (
+                                                    mikrotikHotspotUsers.map((mUser, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-3 text-xs font-bold text-kai-orange dark:text-orange-400">{mUser.name}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptimeLimit || 'unlimited'}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.bytesIn} / {mUser.bytesOut}</td>
+                                                            <td className="p-3 flex justify-end gap-2">
+                                                                <button className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        
+                        {/* TAB: HOTSPOT ACTIVE */}
+                        {mikrotikTab === 'hotspot-active' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-emerald-50 p-2 rounded-lg border border-emerald-100">Menampilkan daftar pengguna Hotspot yang sedang terhubung dan menggunakan internet saat ini.</p>
+                                {isMikrotikLoading ? (
+                                    <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[500px]">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">User</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">IP Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Uptime</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {mikrotikHotspotActive.length === 0 ? (
+                                                    <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada pengguna aktif saat ini.</td></tr>
+                                                ) : (
+                                                    mikrotikHotspotActive.map((mUser, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">{mUser.user}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500 font-mono">{mUser.macAddress}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptime}</td>
+                                                            <td className="p-3 flex justify-end gap-2">
+                                                                <button className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors text-[9px] font-bold">KICK</button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        
+                        {/* TAB: HOTSPOT HOSTS */}
+                        {mikrotikTab === 'hotspot-hosts' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-purple-50 p-2 rounded-lg border border-purple-100">Menampilkan daftar seluruh perangkat (Hosts) yang terdeteksi di jaringan Hotspot (baik sudah login maupun belum).</p>
+                                {isMikrotikLoading ? (
+                                    <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[500px]">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">To Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Server</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {mikrotikHotspotHosts.length === 0 ? (
+                                                    <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada perangkat (Host) terdeteksi.</td></tr>
+                                                ) : (
+                                                    mikrotikHotspotHosts.map((mUser, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-3 text-xs font-bold text-purple-600 dark:text-purple-400 font-mono">{mUser.macAddress}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.toAddress}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.server}</td>
+                                                            <td className="p-3">
+                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${mUser.authorized ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                                                                    {mUser.authorized ? 'AUTH' : 'UNAUTH'}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        
+                        {/* TAB: IP BINDINGS */}
+                        {mikrotikTab === 'hotspot-bindings' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-rose-50 p-2 rounded-lg border border-rose-100">Menampilkan daftar Bypass atau Blokir akses tanpa perlu login Hotspot.</p>
+                                {isMikrotikLoading ? (
+                                    <div className="text-center py-10 font-bold text-slate-400 text-xs animate-pulse">Menghubungkan ke API...</div>
+                                ) : (
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[500px]">
+                                            <thead>
+                                                <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">IP Address</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Tipe (Type)</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
+                                                    <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {mikrotikIpBindings.length === 0 ? (
+                                                    <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data IP Bindings kosong.</td></tr>
+                                                ) : (
+                                                    mikrotikIpBindings.map((mUser, idx) => (
+                                                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                            <td className="p-3 text-[11px] font-bold text-rose-600 dark:text-rose-400 font-mono">{mUser.macAddress}</td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address || '-'}</td>
+                                                            <td className="p-3">
+                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${mUser.type === 'bypassed' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                    {mUser.type}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
+                                                            <td className="p-3 flex justify-end gap-2">
+                                                                <button className="p-1.5 bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                        
                     </div>
                   </div>
                 )}
@@ -1382,20 +1590,20 @@
                 <Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Pelanggan</span>
               </button>
+              
+              <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Terminal className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Console</span>
+              </button>
 
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Keuangan</span>
               </button>
-              
-              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
-                <span className="text-[9px] font-bold tracking-wide">Portal</span>
-              </button>
-              
-              <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Terminal className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
-                <span className="text-[9px] font-bold tracking-wide">Console</span>
+
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Profil</span>
               </button>
             </nav>
           </div>
