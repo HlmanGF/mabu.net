@@ -52,6 +52,8 @@
     }
     .dark .ticket-divider { background-image: linear-gradient(to bottom, #334155 50%, rgba(255,255,255,0) 0%); }
     
+    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
+
     @media print {
       body * { visibility: hidden; }
       #print-receipt, #print-receipt * { visibility: visible; }
@@ -74,7 +76,7 @@
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Map, Share2, Copy
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -199,13 +201,16 @@
       useEffect(() => {
         const handleBackButton = (e) => {
           if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen) {
+            e.preventDefault();
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
             setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
             window.history.pushState({ page: activeTab }, ''); 
             return;
           }
           if (activeTab !== 'dashboard') {
+            e.preventDefault();
             setActiveTab('dashboard');
+            window.history.pushState({ page: 'dashboard' }, '', `#dashboard`);
           }
         };
         window.addEventListener('popstate', handleBackButton);
@@ -299,7 +304,10 @@
 
       const handleDeleteCustomer = async (id) => {
         const cust = customers.find(c => c.id === id);
-        if(confirm("Yakin hapus pelanggan ini?")) { await deleteDoc(doc(db, 'customers', id)); writeLog(`Menghapus pelanggan: ${cust.name}`); }
+        if(confirm(`Yakin ingin menghapus data pelanggan ${cust.name}? Data yang dihapus tidak bisa dikembalikan.`)) { 
+          await deleteDoc(doc(db, 'customers', id)); 
+          writeLog(`Menghapus pelanggan: ${cust.name}`); 
+        }
       };
 
       const handleDeleteExpense = async (id) => {
@@ -495,7 +503,7 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Untuk pendaftaran baru MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -673,7 +681,7 @@
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
-              <SidebarItem id="portal" icon={Map} label="Portal Web" />
+              <SidebarItem id="portal" icon={Globe} label="Portal Web" />
               <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
             </nav>
@@ -917,11 +925,12 @@
                                   })}
                                </div>
                                
-                               <div className="flex justify-end gap-1.5 pt-1">
-                                  <button onClick={() => toggleIsolirManual(cust)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => triggerPrint(cust)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><Printer className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500"><FileText className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                               <div className="flex justify-end gap-1.5 pt-1 flex-wrap">
+                                  <button onClick={() => toggleIsolirManual(cust)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => triggerPrint(cust)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-kai-blue"><Printer className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-emerald-500"><FileText className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => handleDeleteCustomer(cust.id)} className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                                </div>
                             </div>
                           ))
@@ -997,6 +1006,7 @@
                     
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm text-center flex flex-col items-center">
                         <div className="w-20 h-20 bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                            <Globe className="w-10 h-10 text-kai-blue dark:text-white"/>
                         </div>
                         <h3 className="text-lg font-black text-kai-blue dark:text-white mb-2">Tautan Registrasi Mandiri</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Bagikan link ini kepada calon pelanggan untuk melakukan pendaftaran secara mandiri.</p>
@@ -1175,26 +1185,32 @@
               </div>
             </main>
 
-            {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-around px-4 pb-2 pt-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni dengan Teks Label Bawah) */}
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-2 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               
-              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'dashboard' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
-                <LayoutDashboard className="w-6 h-6" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
+              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <LayoutDashboard className="w-5 h-5 mb-1" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Beranda</span>
               </button>
               
-              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'customers' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
-                <Users className="w-6 h-6" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Pelanggan</span>
               </button>
 
-              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'ledger' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
-                <BookOpen className="w-6 h-6" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
+              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Keuangan</span>
               </button>
               
-              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`p-3 transition-transform ${activeTab === 'portal' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Portal</span>
               </button>
 
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`p-3 transition-transform ${activeTab === 'settings' ? 'text-kai-orange scale-125' : 'text-slate-400 hover:text-slate-600'}`}>
-                <User className="w-6 h-6" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 w-full transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Profil</span>
               </button>
             </nav>
           </div>
