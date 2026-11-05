@@ -2,193 +2,412 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulir Pendaftaran MabuNet</title>
-    <!-- Firebase SDK yang sesuai dengan indexV4.html Anda -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Pelanggan MabuNet</title>
+    
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
     
-    <style>
-        :root {
-            --bg-color: #0f172a; 
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #06b6d4; 
-            --border-color: #334155;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            padding: 40px 20px;
-            margin: 0;
-        }
-
-        .form-container {
-            background-color: var(--bg-color);
-            width: 100%;
-            max-width: 600px;
-        }
-
-        h2 {
-            color: var(--text-main);
-            margin-bottom: 5px;
-        }
-        h2 span {
-            color: var(--accent);
-        }
-        p.subtitle {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 25px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .grid-2-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--text-main);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            background-color: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-main);
-            font-size: 0.95rem;
-            box-sizing: border-box;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .section-title {
-            color: var(--accent);
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-top: 30px;
-            margin-bottom: 5px;
-        }
-
-        button.submit-btn {
-            background-color: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 12px 20px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 6px;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: opacity 0.2s;
-        }
-
-        button.submit-btn:hover {
-            opacity: 0.9;
-        }
-
-        @media (max-width: 500px) {
-            .grid-2-col {
-                grid-template-columns: 1fr;
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kai: {
+                            blue: '#1A2C5B',      // Biru Navy MabuNet
+                            bluedark: '#111D42',  // Biru Navy Gelap
+                            orange: '#F97316',    // Orange MabuNet
+                            orangedark: '#EA580C',
+                            bg: '#F3F4F6'         // Abu-abu terang background
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+                }
             }
         }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Akordeon Transisi */
+        .accordion-content { max-height: 0; transition: max-height 0.3s ease-out; }
+        .accordion-icon { transition: transform 0.3s ease; }
+        .accordion-item.active .accordion-icon { transform: rotate(180deg); }
     </style>
 </head>
-<body>
+<body class="bg-kai-bg text-slate-800 pb-24">
 
-    <div class="form-container">
-        <h2>Formulir <span>Pendaftaran</span></h2>
-        <p class="subtitle">Isi data diri Anda, dan pesan akan langsung dikirim ke WhatsApp admin kami.</p>
-
-        <div class="form-group">
-                <label>Pilih Paket Internet</label>
-                <select id="paket" required>
-                    <option value="">-- Pilih Paket --</option>
-                    <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
-                    <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
-                    <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
-                    <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
-                    <option value="30mbps_350">Standar 30 Mbps - Rp 350.000</option>
-                    <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
-                    <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
-                    <option value="netflix_20mbps_300">Netflix 20 Mbps - Rp 300.000</option>
-                    <option value="netflix_25mbps_350">Netflix 25 Mbps - Rp 350.000</option>
-                    <option value="netflix_30mbps_400">Netflix 30 Mbps - Rp 400.000</option>
-                </select>
+    <!-- HEADER TOP -->
+    <div class="bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
+        <div class="max-w-xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
+                <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Portal Pelanggan</p>
             </div>
-
-            <!-- Nama & WA dikembalikan seperti gambar -->
-            <div class="grid-2-col">
-                <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" id="nama" placeholder="Masukkan nama Anda" required>
-                </div>
-                <div class="form-group">
-                    <label>No. HP / WhatsApp Aktif</label>
-                    <input type="tel" id="whatsapp" placeholder="Contoh: 08123456789" required>
-                </div>
+            <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-
-            <!-- TAMBAHAN: Dropdown Blok untuk kebutuhan database MabuNet dan PPPoE -->
-            <div class="form-group">
-                <label>Blok Rumah (Wajib Untuk PPPoE)</label>
-                <select id="blok" required>
-                    <option value="">-- Pilih Blok --</option>
-                    <option value="Mabu">Mabu</option>
-                    <option value="Ranau">Ranau</option>
-                    <option value="RG">RG</option>
-                    <option value="Pesona">Pesona</option>
-                    <option value="PLT">PLT</option>
-                </select>
-            </div>
-
-            <!-- Textarea Alamat dikembalikan seperti gambar -->
-            <div class="form-group">
-                <label>Alamat Lengkap / Blok Rumah</label>
-                <textarea id="alamat" rows="3" placeholder="Contoh: Perumahan Mabu Park Blok A No. 12" required></textarea>
-            </div>
-
-            <!-- WiFi dikembalikan seperti gambar -->
-            <div class="section-title">Pengaturan WiFi (Wajib Diisi)</div>
-            <p class="subtitle" style="margin-bottom: 15px;">Tentukan nama dan password untuk jaringan WiFi di rumah Anda.</p>
-
-            <div class="grid-2-col">
-                <div class="form-group">
-                    <label>Request Nama WiFi (SSID)</label>
-                    <input type="text" id="ssid" placeholder="Contoh: RumahKeluarga" required>
-                </div>
-                <div class="form-group">
-                    <label>Request Password WiFi</label>
-                    <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required>
-                </div>
-            </div>
-
-            <button type="submit" class="submit-btn" id="btnSubmit">Kirim Pendaftaran</button>
-        </form>
+        </div>
     </div>
 
+    <!-- 1. KONTEN: BERANDA (OPENING) -->
+    <div id="view-home" class="view-section active max-w-xl mx-auto px-4">
+        
+        <!-- Banner Promo/Greeting -->
+        <div class="bg-gradient-to-r from-kai-blue to-kai-bluedark p-5 rounded-3xl shadow-sm border border-slate-700 text-white mb-6 relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
+            <h2 class="text-lg font-black mb-1 relative z-10">Internet Tanpa Batas! 🚀</h2>
+            <p class="text-xs text-slate-300 relative z-10">Nikmati layanan internet fiber optik unlimited untuk keluarga Anda.</p>
+        </div>
+
+        <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
+        
+        <!-- Grid Menu Visual -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <!-- Menu Registrasi -->
+            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-blue transition-colors group">
+                <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                </div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Daftar Internet</p>
+            </div>
+
+            <!-- Menu Paket Netflix -->
+            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-500 transition-colors group">
+                <div class="w-14 h-14 bg-rose-50 text-red-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M21.593 7.203a2.506 2.506 0 00-1.762-1.766C18.265 5.007 12 5 12 5s-6.264-.007-7.831.43a2.508 2.508 0 00-1.762 1.767C2 8.784 2 12 2 12s0 3.216.407 4.797a2.505 2.505 0 001.762 1.766C5.736 18.993 12 19 12 19s6.265.007 7.831-.437a2.508 2.508 0 001.762-1.766C22 15.216 22 12 22 12s0-3.216-.407-4.797zM9.545 14.83V8.898L15.3 11.86l-5.755 2.97z"/></svg>
+                </div>
+                <h4 class="font-extrabold text-xs text-slate-800">Paket Netflix</h4>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Internet + Hiburan</p>
+            </div>
+
+            <!-- Menu Pembayaran -->
+            <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-orange transition-colors group">
+                <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                </div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Via QRIS Otomatis</p>
+            </div>
+
+            <!-- Menu Bantuan -->
+            <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 transition-colors group">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan</h4>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Tanya & Kendala</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. KONTEN: REGISTRASI -->
+    <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
+            <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
+
+            <form id="regForm" class="space-y-4">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
+                    <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all cursor-pointer">
+                        <option value="">-- Pilih Paket --</option>
+                        <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
+                        <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
+                        <option value="10mbps_180">Standar 10 Mbps - Rp 180.000</option>
+                        <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
+                        <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
+                        <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
+                        <option value="30mbps_350">Standar 30 Mbps - Rp 350.000</option>
+                        <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
+                        <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
+                        <option value="netflix_20mbps_300">Netflix 20 Mbps - Rp 300.000</option>
+                        <option value="netflix_25mbps_350">Netflix 25 Mbps - Rp 350.000</option>
+                        <option value="netflix_30mbps_400">Netflix 30 Mbps - Rp 400.000</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
+                        <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No. HP / WhatsApp</label>
+                        <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                    </div>
+                </div>
+
+                <!-- Perubahan Terminologi: Blok Rumah -> Pilih Area -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Area</label>
+                        <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all cursor-pointer">
+                            <option value="">-- Pilih Area --</option>
+                            <option value="Mabu">Mabu</option>
+                            <option value="Ranau">Ranau</option>
+                            <option value="RG">RG</option>
+                            <option value="Pesona">Pesona</option>
+                            <option value="PLT">PLT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat</label>
+                        <input type="text" id="alamat" placeholder="Contoh: No. Rumah 12" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 mt-6">
+                    <h3 class="text-sm font-black text-kai-blue mb-1">Pengaturan WiFi</h3>
+                    <p class="text-[10px] font-semibold text-slate-500 mb-3">Tentukan nama dan sandi jaringan Anda.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Nama WiFi</label>
+                            <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Password</label>
+                            <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/30 transition-all transform active:scale-95">
+                    Kirim Pendaftaran
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. KONTEN: PEMBAYARAN (QRIS) -->
+    <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
+        
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center">
+            <h2 class="text-xl font-black text-kai-blue mb-1">Pembayaran Tagihan</h2>
+            <p class="text-xs font-semibold text-slate-500 mb-6">Scan QRIS di bawah ini untuk membayar langganan internet Anda.</p>
+            
+            <!-- Kotak QRIS Placeholder -->
+            <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-3xl mx-auto max-w-xs mb-6 flex flex-col items-center justify-center">
+                <div class="text-kai-blue font-black text-xl tracking-widest mb-4">QRIS MABUNET</div>
+                
+                <!-- Ganti source image ini dengan gambar QRIS asli Anda jika sudah ada -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="QRIS Code" class="w-48 h-48 object-cover mb-4 opacity-70">
+                
+                <p class="text-[10px] font-bold text-slate-400">Support All Payment (Gopay, OVO, Dana, Shopee, M-Banking)</p>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-left mb-6">
+                <h3 class="text-xs font-bold text-kai-blue mb-2">Cara Pembayaran:</h3>
+                <ol class="list-decimal pl-4 text-[10px] font-semibold text-slate-600 space-y-1">
+                    <li>Buka aplikasi Mobile Banking atau E-Wallet pilihan Anda.</li>
+                    <li>Pilih menu <strong>Scan QRIS</strong>.</li>
+                    <li>Scan (atau upload dari galeri) gambar QRIS di atas.</li>
+                    <li>Masukkan nominal tagihan paket Anda dengan benar.</li>
+                    <li>Setelah sukses, <strong>Wajib Konfirmasi</strong> ke Admin MabuNet.</li>
+                </ol>
+            </div>
+
+            <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20tagihan%20internet.%20Berikut%20bukti%20transfernya:" target="_blank" class="block w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg shadow-emerald-500/30 transition-all transform active:scale-95">
+                Kirim Bukti Pembayaran ke WA
+            </a>
+        </div>
+
+    </div>
+
+    <!-- 4. KONTEN: PUSAT BANTUAN (FAQ) -->
+    <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
+        
+        <h2 class="text-lg font-black text-kai-blue mb-4 px-1">Hubungi Kami</h2>
+        
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <a href="https://wa.me/62811122699" target="_blank" class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col items-center justify-center text-center col-span-2 group hover:border-emerald-300 transition-colors cursor-pointer relative overflow-hidden">
+                <div class="absolute top-0 inset-x-0 h-1 bg-emerald-500"></div>
+                <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.71.44 3.38 1.28 4.85L2 22l5.37-1.41c1.42.78 3.03 1.19 4.67 1.19 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.46 14.18c-.23.65-1.34 1.23-1.85 1.34-.48.11-1.09.21-3.14-.64-2.45-1.02-4.04-3.53-4.16-3.7-.12-.17-1-1.33-1-2.54s.64-1.8.87-2.05c.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.17.01.39-.06.61.47.23.55.75 1.83.82 1.97.07.14.12.3.03.48-.09.18-.14.3-.29.47-.14.17-.3.37-.43.51-.15.15-.31.31-.13.62.18.31.81 1.34 1.74 2.16 1.2.1 2.21 1.41 2.53 1.73.32.32.32.53.25.68z"/></svg>
+                </div>
+                <h3 class="font-bold text-xs text-slate-500 uppercase">WhatsApp Admin</h3>
+                <p class="font-black text-lg text-emerald-600">0811-122-699</p>
+                <span class="mt-2 bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full">FAST RESPON</span>
+            </a>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
+                <div class="w-10 h-10 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 class="font-bold text-[10px] text-slate-500 uppercase">Operasional</h3>
+                <p class="font-black text-sm text-kai-blue mt-0.5">08:00 - 21:00</p>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
+                <div class="w-10 h-10 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <h3 class="font-bold text-[10px] text-slate-500 uppercase">Alamat</h3>
+                <p class="font-black text-sm text-kai-blue mt-0.5">Mabu Park</p>
+            </div>
+        </div>
+
+        <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-4">Tanya Jawab (FAQ)</h2>
+        
+        <div class="space-y-3">
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
+                    <span class="font-extrabold text-sm text-kai-blue">Kendala Gangguan Internet</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Tunggu 5 s/d 10 menit. (Hal wajar karena sistem merestart).</li>
+                            <li>Jika lebih dari 30 menit, matikan lalu hidupkan kembali (on/off) modem Anda.</li>
+                            <li>Jika masih berlanjut, kirim video modem ke admin (perhatikan apakah ada kedip merah). Mohon tunggu admin mengecek sistem.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
+                    <span class="font-extrabold text-sm text-kai-blue">Internet Lemot & Solusinya</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <span class="text-rose-500 font-bold block mb-1">Kemungkinan Penyebab:</span>
+                        <ol class="list-decimal pl-4 space-y-1 mb-3">
+                            <li>Auto Update sistem HP, Laptop, PC, TV.</li>
+                            <li>Auto Update/Download Game berukuran besar.</li>
+                            <li>Melebihi batas penggunaan wajar.</li>
+                            <li>Handphone tipe lama yang tidak mendukung bandwidth besar.</li>
+                        </ol>
+                        <span class="text-emerald-500 font-bold block mb-1">Cara Mengatasi:</span>
+                        <ol class="list-decimal pl-4 space-y-1">
+                            <li>Matikan modem, tunggu 10 menit nyalakan kembali.</li>
+                            <li>Jika sedang update perangkat, tunggu hingga selesai.</li>
+                            <li>Upgrade Mbps paket Anda ke yang lebih tinggi.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
+                    <span class="font-extrabold text-sm text-kai-blue">Merubah Nama & Password WiFi</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Wajib terhubung dari WiFi rumah Anda.</li>
+                            <li>Buka browser, ketik IP: <span class="bg-blue-100 text-kai-blue px-1.5 py-0.5 rounded">192.168.1.1</span></li>
+                            <li>Password login: <span class="bg-blue-100 text-kai-blue px-1.5 py-0.5 rounded">kabeliz123</span></li>
+                            <li>Pilih menu <strong class="text-slate-800">Best Config</strong> lalu ke <strong class="text-slate-800">WLAN</strong>.</li>
+                            <li>Ubah <strong class="text-slate-800">SSID</strong> untuk Nama, dan <strong class="text-slate-800">Password</strong> untuk kata sandi baru. Simpan.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item bg-rose-50 border border-rose-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-rose-100 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span class="font-extrabold text-sm text-rose-600">Penting Diperhatikan</span>
+                    </div>
+                    <svg class="accordion-icon w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-white">
+                    <div class="p-4 border-t border-rose-100 text-xs font-semibold text-rose-700 leading-relaxed">
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Jangan memindahkan posisi modem & kabel sembarangan.</li>
+                            <li>Jangan menekuk kabel fiber optik karena kaca di dalamnya rentan patah.</li>
+                            <li>Simpan modem terhindar dari jangkauan anak-anak dan percikan air.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENU NAVIGASI BAWAH (4 Menu Utama) -->
+    <nav class="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        
+        <!-- 1. Home / Beranda -->
+        <button id="nav-home" class="nav-item active flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span class="text-[9px] font-black tracking-wide">Beranda</span>
+        </button>
+
+        <!-- 2. Daftar -->
+        <button id="nav-registrasi" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-registrasi', this)">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            <span class="text-[9px] font-black tracking-wide">Daftar</span>
+        </button>
+
+        <!-- 3. Pembayaran -->
+        <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+            <span class="text-[9px] font-black tracking-wide">Bayar</span>
+        </button>
+
+        <!-- 4. Bantuan -->
+        <button id="nav-bantuan" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-bantuan', this)">
+            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span class="text-[9px] font-black tracking-wide">Bantuan</span>
+        </button>
+        
+    </nav>
+
     <script>
-        // Konfigurasi Database Firebase MabuNet Anda
+        // Logika Switch Tab Menu Utama
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active', 'text-kai-orange', 'scale-110');
+                btn.classList.add('text-slate-400');
+            });
+            
+            document.getElementById(viewId).classList.add('active');
+            
+            btnElement.classList.remove('text-slate-400');
+            btnElement.classList.add('active', 'text-kai-orange', 'scale-110');
+            window.scrollTo(0,0);
+        }
+
+        // Logika Akordeon (FAQ)
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const item = this.parentElement;
+                const content = item.querySelector('.accordion-content');
+                const isActive = item.classList.contains('active');
+
+                // Tutup yang lain
+                document.querySelectorAll('.accordion-item').forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                    otherItem.querySelector('.accordion-content').style.maxHeight = null;
+                });
+
+                if (!isActive) {
+                    item.classList.add('active');
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
+            });
+        });
+
+        // Konfigurasi Database Firebase MabuNet
         const firebaseConfig = {
             apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
             authDomain: "billing-mabunet.firebaseapp.com",
@@ -198,7 +417,6 @@
             appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
         };
 
-        // Inisialisasi
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -206,52 +424,51 @@
 
         document.getElementById('regForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const btn = document.getElementById('btnSubmit');
-            btn.innerText = "Mengirim...";
+            
+            btn.innerText = "Mengirim Data...";
             btn.disabled = true;
 
-            // Ambil semua data dari formulir
             const nama = document.getElementById('nama').value;
             const whatsapp = document.getElementById('whatsapp').value;
             const paket = document.getElementById('paket').value; 
-            const blok = document.getElementById('blok').value; 
+            const area = document.getElementById('area').value; 
             const alamat = document.getElementById('alamat').value;
             const ssid = document.getElementById('ssid').value;
             const password_wifi = document.getElementById('password_wifi').value;
 
-            // Generate PPPoE berdasarkan Blok (Contoh: mabu-123)
+            // Generate PPPoE berdasarkan Area
             const randomNum = Math.floor(100 + Math.random() * 900);
-            const pppoe_secret = `${blok.toLowerCase()}-${randomNum}`;
+            const pppoe_secret = `${area.toLowerCase()}-${randomNum}`;
 
             try {
-                // Simpan langsung ke Data Pelanggan MabuNet
+                // Simpan ke Firestore (menggunakan parameter 'block' agar terbaca di dashboard admin)
                 await db.collection('customers').add({
                     name: nama,
-                    block: blok,
+                    block: area, // Di UI namanya Area, tapi di database tetap 'block' agar sinkron
                     phone: whatsapp,
                     packageId: paket,
                     dueDate: 1, 
-                    status: 'Non-Aktif', // Masuk sebagai Non-Aktif agar divalidasi admin
+                    status: 'Non-Aktif', 
                     notes: `Alamat: ${alamat} | SSID: ${ssid} | Pass: ${password_wifi}`, 
                     pppoe_user: pppoe_secret, 
                     payments: {} 
                 });
 
-                // Catat di System Logs MabuNet
                 await db.collection('logs').add({
                     time: new Date().getTime(),
                     dateStr: new Date().toLocaleString('id-ID'),
-                    admin: 'Web Registrasi',
-                    action: `Pendaftaran baru: ${nama} (${blok})`
+                    admin: 'Portal Pelanggan',
+                    action: `Pendaftaran baru: ${nama} (${area})`
                 });
 
-                alert("Pendaftaran berhasil! Data Anda sudah masuk ke sistem MabuNet.");
+                alert("Pendaftaran berhasil! Tim MabuNet akan segera menghubungi WhatsApp Anda.");
                 document.getElementById('regForm').reset();
-                
+                switchView('view-home', document.getElementById('nav-home'));
+
             } catch (error) {
-                console.error("Error menambah dokumen: ", error);
-                alert("Terjadi kesalahan jaringan. Silakan coba lagi.");
+                console.error("Error: ", error);
+                alert("Terjadi kesalahan jaringan. Pastikan koneksi internet Anda stabil dan coba lagi.");
             } finally {
                 btn.innerText = "Kirim Pendaftaran";
                 btn.disabled = false;
