@@ -106,7 +106,9 @@
 
     const PACKAGES = [
       { id: 'free_0', speed: 'Gratis', price: 0, label: 'Gratis - Rp 0' },
+      { id: '5mbps_100', speed: 'Standar 5 Mbps', price: 100000, label: 'Standar 5 Mbps - Rp 100.000' },
       { id: 'std_10', speed: 'Standar 10 Mbps', price: 150000, label: 'Standar 10 Mbps - Rp 150.000' },
+      { id: '10mbps_180', speed: 'Standar 10 Mbps', price: 180000, label: 'Standar 10 Mbps - Rp 180.000' },
       { id: 'std_15', speed: 'Standar 15 Mbps', price: 200000, label: 'Standar 15 Mbps - Rp 200.000' },
       { id: 'std_20', speed: 'Standar 20 Mbps', price: 250000, label: 'Standar 20 Mbps - Rp 250.000' },
       { id: 'std_25', speed: 'Standar 25 Mbps', price: 300000, label: 'Standar 25 Mbps - Rp 300.000' },
@@ -161,6 +163,9 @@
       const [auditLogs, setAuditLogs] = useState([]); 
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
+      
+      // State Status MikroTik
+      const [mikrotikStatus, setMikrotikStatus] = useState(null);
       
       const [printData, setPrintData] = useState(null);
       const [alarmEnabled, setAlarmEnabled] = useState(false);
@@ -273,7 +278,21 @@
                 setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); 
             }
           });
-          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); };
+          
+          const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnapshot) => {
+             if (docSnapshot.exists()) {
+                 const data = docSnapshot.data();
+                 if (new Date().getTime() - data.lastUpdate > 30000) {
+                     setMikrotikStatus(null);
+                 } else {
+                     setMikrotikStatus(data);
+                 }
+             } else {
+                 setMikrotikStatus(null);
+             }
+          });
+          
+          return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); unsubMikrotik(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
@@ -503,7 +522,7 @@
       };
       
       const sendPortalWA = () => {
-        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\n\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
       };
       
@@ -531,10 +550,10 @@
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
         
         let matchCat = true;
-        if (filterCategory === 'Semua') matchCat = c.packageId !== 'free_0'; // Hilangkan Gratis di 'Semua'
+        if (filterCategory === 'Semua') matchCat = c.packageId !== 'free_0'; 
         if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
         if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif' && c.packageId !== 'free_0';
-        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0'; // Muncul HANYA ketika diklik Gratis
+        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0'; 
 
         return matchSearch && matchBlock && matchCat;
       });
@@ -754,6 +773,42 @@
                         <div className="text-right">
                           <p className="text-[10px] font-bold text-slate-400">Total Pelanggan</p>
                           <p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Status MikroTik Card */}
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mt-2 mb-2">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-kai-blue text-white rounded-lg"><Server className="w-4 h-4"/></div>
+                          <h3 className="font-black text-sm text-kai-blue dark:text-white">RouterOS MikroTik</h3>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`relative flex h-2.5 w-2.5`}>
+                            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${mikrotikStatus ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
+                            <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${mikrotikStatus ? 'bg-emerald-500' : 'bg-rose-500'}`}></span>
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">{mikrotikStatus ? 'Online' : 'Offline'}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 gap-2">
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">CPU Load</p>
+                          <p className="font-black text-xs text-kai-blue dark:text-white">{mikrotikStatus?.cpu || '0'}%</p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Free RAM</p>
+                          <p className="font-black text-xs text-kai-blue dark:text-white">{mikrotikStatus?.ram || '0'} MB</p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Uptime</p>
+                          <p className="font-black text-[9px] text-kai-blue dark:text-white leading-tight break-words">{mikrotikStatus?.uptime || '--'}</p>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">User Aktif</p>
+                          <p className="font-black text-xs text-kai-orange">{mikrotikStatus?.activeUsers || '0'}</p>
                         </div>
                       </div>
                     </div>
