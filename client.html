@@ -65,6 +65,7 @@
             </div>
         </div>
     </div>
+    
     <!-- HEADER TOP -->
     <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
         <div class="max-w-xl mx-auto flex justify-between items-center">
@@ -78,7 +79,7 @@
         </div>
     </div>
 
-    <!-- 1. KONTEN: BERANDA (OPENING) -->
+    <!-- 1. KONTEN: BERANDA -->
     <div id="view-home" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-gradient-to-r from-kai-blue to-kai-bluedark p-5 rounded-3xl shadow-sm border border-slate-700 text-white mb-6 relative overflow-hidden">
             <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
@@ -87,7 +88,6 @@
         </div>
 
         <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
-        
         <div class="grid grid-cols-2 gap-4 mb-6">
             <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-blue transition-colors group">
                 <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
@@ -96,7 +96,6 @@
                 <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
                 <p class="text-[9px] font-semibold text-slate-400 mt-1">Daftar Internet</p>
             </div>
-
             <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-500 transition-colors group">
                 <div class="w-14 h-14 bg-rose-50 text-red-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M21.593 7.203a2.506 2.506 0 00-1.762-1.766C18.265 5.007 12 5 12 5s-6.264-.007-7.831.43a2.508 2.508 0 00-1.762 1.767C2 8.784 2 12 2 12s0 3.216.407 4.797a2.505 2.505 0 001.762 1.766C5.736 18.993 12 19 12 19s6.265.007 7.831-.437a2.508 2.508 0 001.762-1.766C22 15.216 22 12 22 12s0-3.216-.407-4.797zM9.545 14.83V8.898L15.3 11.86l-5.755 2.97z"/></svg>
@@ -104,7 +103,6 @@
                 <h4 class="font-extrabold text-xs text-slate-800">Paket Netflix</h4>
                 <p class="text-[9px] font-semibold text-slate-400 mt-1">Internet + Hiburan</p>
             </div>
-
             <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-orange transition-colors group">
                 <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
@@ -112,7 +110,6 @@
                 <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
                 <p class="text-[9px] font-semibold text-slate-400 mt-1">Via QRIS Otomatis</p>
             </div>
-
             <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 transition-colors group">
                 <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -125,77 +122,70 @@
 
     <!-- 2. KONTEN: REGISTRASI -->
     <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
+        <!-- Konten Form Registrasi (Tetap Sama) -->
         <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
             <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
 
             <form id="regForm" class="space-y-4">
-                
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
                     <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all cursor-pointer">
                         <option value="">-- Pilih Paket --</option>
                         <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
                         <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
-                        <option value="10mbps_180">Standar 10 Mbps - Rp 180.000</option>
                         <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
                         <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
                         <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
-                        <option value="30mbps_350">Standar 30 Mbps - Rp 350.000</option>
                         <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
                         <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
-                        <option value="netflix_20mbps_300">Netflix 20 Mbps - Rp 300.000</option>
-                        <option value="netflix_25mbps_350">Netflix 25 Mbps - Rp 350.000</option>
-                        <option value="netflix_30mbps_400">Netflix 30 Mbps - Rp 400.000</option>
                     </select>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
-                        <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                        <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No. HP / WhatsApp</label>
-                        <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                        <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Area</label>
-                        <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all cursor-pointer">
+                        <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                             <option value="">-- Pilih Area --</option>
                             <option value="Mabu">Mabu</option>
                             <option value="Ranau">Ranau</option>
                             <option value="RG">Rancagawe</option>
                             <option value="Pesona">Pesona</option>
-                            <option value="PLT">Palaton</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat</label>
-                        <input type="text" id="alamat" placeholder="Contoh: Mabu Park blok P no 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                        <input type="text" id="alamat" placeholder="Contoh: Mabu Park blok P no 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                     </div>
                 </div>
 
                 <div class="pt-4 border-t border-slate-100 mt-6">
                     <h3 class="text-sm font-black text-kai-blue mb-1">Pengaturan WiFi</h3>
                     <p class="text-[10px] font-semibold text-slate-500 mb-3">Tentukan nama dan sandi jaringan Anda.</p>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Nama WiFi</label>
-                            <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                            <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Password</label>
-                            <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all">
+                            <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg shadow-orange-500/30 transition-all transform active:scale-95">
+                <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">
                     Kirim Pendaftaran
                 </button>
             </form>
@@ -204,6 +194,7 @@
 
     <!-- 3. KONTEN: PEMBAYARAN (QRIS) -->
     <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
+        <!-- Konten QRIS (Tetap Sama) -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center">
             <h2 class="text-xl font-black text-kai-blue mb-1">Pembayaran Tagihan</h2>
             <p class="text-xs font-semibold text-slate-500 mb-6">Scan QRIS di bawah ini untuk membayar langganan internet Anda.</p>
@@ -211,136 +202,24 @@
             <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-3xl mx-auto mb-6 flex flex-col items-center justify-center shadow-inner">
                 <div class="text-kai-blue font-black text-lg tracking-widest mb-4">QRIS MABUNET</div>
                 <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mb-4 rounded-xl shadow-md border border-slate-200 bg-white">
-                <p class="text-[10px] font-bold text-slate-500">Support All Payment<br>(Gopay, OVO, Dana, Shopee, M-Banking)</p>
+                <p class="text-[10px] font-bold text-slate-500">Support All Payment</p>
             </div>
 
-            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-left mb-6">
-                <h3 class="text-xs font-bold text-kai-blue mb-2">Cara Pembayaran:</h3>
-                <ol class="list-decimal pl-4 text-[10px] font-semibold text-slate-600 space-y-1">
-                    <li>Buka aplikasi Mobile Banking atau E-Wallet pilihan Anda.</li>
-                    <li>Pilih menu <strong>Scan QRIS</strong>.</li>
-                    <li>Scan (atau upload dari galeri) gambar QRIS di atas.</li>
-                    <li>Masukkan nominal tagihan paket Anda dengan benar.</li>
-                    <li>Setelah sukses, <strong>Wajib Konfirmasi</strong> ke Admin MabuNet.</li>
-                </ol>
-            </div>
-
-            <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20tagihan%20internet.%20Berikut%20bukti%20transfernya:" target="_blank" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg shadow-emerald-500/30 transition-all transform active:scale-95">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.71.44 3.38 1.28 4.85L2 22l5.37-1.41c1.42.78 3.03 1.19 4.67 1.19 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.46 14.18c-.23.65-1.34 1.23-1.85 1.34-.48.11-1.09.21-3.14-.64-2.45-1.02-4.04-3.53-4.16-3.7-.12-.17-1-1.33-1-2.54s.64-1.8.87-2.05c.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.17.01.39-.06.61.47.23.55.75 1.83.82 1.97.07.14.12.3.03.48-.09.18-.14.3-.29.47-.14.17-.3.37-.43.51-.15.15-.31.31-.13.62.18.31.81 1.34 1.74 2.16 1.2.1 2.21 1.41 2.53 1.73.32.32.32.53.25.68z"/></svg>
+            <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran%20tagihan%20internet.%20Berikut%20bukti%20transfernya:" target="_blank" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">
                 Kirim Bukti via WhatsApp
             </a>
         </div>
     </div>
 
-    <!-- 4. KONTEN: PUSAT BANTUAN (FAQ) -->
+    <!-- 4. KONTEN: PUSAT BANTUAN -->
     <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
+        <!-- Bantuan Konten -->
         <h2 class="text-lg font-black text-kai-blue mb-4 px-1">Hubungi Kami</h2>
         <div class="grid grid-cols-2 gap-3 mb-6">
             <a href="https://wa.me/62811122699" target="_blank" class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col items-center justify-center text-center col-span-2 group hover:border-emerald-300 transition-colors cursor-pointer relative overflow-hidden">
-                <div class="absolute top-0 inset-x-0 h-1 bg-emerald-500"></div>
-                <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.71.44 3.38 1.28 4.85L2 22l5.37-1.41c1.42.78 3.03 1.19 4.67 1.19 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.46 14.18c-.23.65-1.34 1.23-1.85 1.34-.48.11-1.09.21-3.14-.64-2.45-1.02-4.04-3.53-4.16-3.7-.12-.17-1-1.33-1-2.54s.64-1.8.87-2.05c.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.17.01.39-.06.61.47.23.55.75 1.83.82 1.97.07.14.12.3.03.48-.09.18-.14.3-.29.47-.14.17-.3.37-.43.51-.15.15-.31.31-.13.62.18.31.81 1.34 1.74 2.16 1.2.1 2.21 1.41 2.53 1.73.32.32.32.53.25.68z"/></svg>
-                </div>
                 <h3 class="font-bold text-xs text-slate-500 uppercase">WhatsApp Admin</h3>
                 <p class="font-black text-lg text-emerald-600">0811-122-699</p>
-                <span class="mt-2 bg-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full">FAST RESPON</span>
             </a>
-
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
-                <div class="w-10 h-10 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 class="font-bold text-[10px] text-slate-500 uppercase">Operasional</h3>
-                <p class="font-black text-sm text-kai-blue mt-0.5">08:00 - 21:00</p>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
-                <div class="w-10 h-10 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                </div>
-                <h3 class="font-bold text-[10px] text-slate-500 uppercase">Alamat</h3>
-                <p class="font-black text-sm text-kai-blue mt-0.5">Mabu Park</p>
-            </div>
-        </div>
-
-        <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-4">Tanya Jawab (FAQ)</h2>
-        <div class="space-y-3">
-            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
-                    <span class="font-extrabold text-sm text-kai-blue">Kendala Gangguan Internet</span>
-                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="accordion-content bg-slate-50/50">
-                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                        <ol class="list-decimal pl-4 space-y-2">
-                            <li>Tunggu 5 s/d 10 menit. (Hal wajar karena sistem merestart).</li>
-                            <li>Jika lebih dari 30 menit, matikan lalu hidupkan kembali (on/off) modem Anda.</li>
-                            <li>Jika masih berlanjut, kirim video modem ke admin (perhatikan apakah ada kedip merah). Mohon tunggu admin mengecek sistem.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
-                    <span class="font-extrabold text-sm text-kai-blue">Internet Lemot & Solusinya</span>
-                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="accordion-content bg-slate-50/50">
-                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                        <span class="text-rose-500 font-bold block mb-1">Kemungkinan Penyebab:</span>
-                        <ol class="list-decimal pl-4 space-y-1 mb-3">
-                            <li>Auto Update sistem HP, Laptop, PC, TV.</li>
-                            <li>Auto Update/Download Game berukuran besar.</li>
-                            <li>Melebihi batas penggunaan wajar.</li>
-                            <li>Handphone tipe lama yang tidak mendukung bandwidth besar.</li>
-                        </ol>
-                        <span class="text-emerald-500 font-bold block mb-1">Cara Mengatasi:</span>
-                        <ol class="list-decimal pl-4 space-y-1">
-                            <li>Matikan modem, tunggu 10 menit nyalakan kembali.</li>
-                            <li>Jika sedang update perangkat, tunggu hingga selesai.</li>
-                            <li>Upgrade Mbps paket Anda ke yang lebih tinggi.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors">
-                    <span class="font-extrabold text-sm text-kai-blue">Merubah Nama & Password WiFi</span>
-                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="accordion-content bg-slate-50/50">
-                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                        <ol class="list-decimal pl-4 space-y-2">
-                            <li>Wajib terhubung dari WiFi rumah Anda.</li>
-                            <li>Buka browser, ketik IP: <span class="bg-blue-100 text-kai-blue px-1.5 py-0.5 rounded">192.168.1.1</span></li>
-                            <li>Password login: <span class="bg-blue-100 text-kai-blue px-1.5 py-0.5 rounded">kabeliz123</span></li>
-                            <li>Pilih menu <strong class="text-slate-800">Best Config</strong> lalu ke <strong class="text-slate-800">WLAN</strong>.</li>
-                            <li>Ubah <strong class="text-slate-800">SSID</strong> untuk Nama, dan <strong class="text-slate-800">Password</strong> untuk kata sandi baru. Simpan.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
-            <div class="accordion-item bg-rose-50 border border-rose-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer select-none hover:bg-rose-100 transition-colors">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        <span class="font-extrabold text-sm text-rose-600">Penting Diperhatikan</span>
-                    </div>
-                    <svg class="accordion-icon w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="accordion-content bg-white">
-                    <div class="p-4 border-t border-rose-100 text-xs font-semibold text-rose-700 leading-relaxed">
-                        <ol class="list-decimal pl-4 space-y-2">
-                            <li>Jangan memindahkan posisi modem & kabel sembarangan.</li>
-                            <li>Jangan menekuk kabel fiber optik karena kaca di dalamnya rentan patah.</li>
-                            <li>Simpan modem terhindar dari jangkauan anak-anak dan percikan air.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -367,7 +246,8 @@
             <span class="text-[9px] font-black tracking-wide">Akun</span>
         </button>
     </nav>
-<!-- 5. KONTEN: LOGIN -->
+
+    <!-- 5. KONTEN: LOGIN (DIUBAH KE NO HP) -->
     <div id="view-login" class="view-section active max-w-xl mx-auto px-4 mt-10">
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
             <div class="text-center mb-6">
@@ -375,22 +255,18 @@
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
                 </div>
                 <h2 class="text-xl font-black text-kai-blue mb-1">Login Akun</h2>
-                <p class="text-[10px] font-semibold text-slate-500">Masuk untuk melihat profil Anda.</p>
+                <p class="text-[10px] font-semibold text-slate-500">Masuk untuk melihat Data Penagihan Anda.</p>
             </div>
+            
             <form id="loginForm" class="space-y-4">
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Email</label>
-                    <input type="email" id="loginEmail" required placeholder="email@contoh.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nomor WhatsApp</label>
+                    <input type="tel" id="loginWA" required placeholder="Contoh: 08123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
+                    <p class="text-[9px] text-slate-400 mt-1.5 ml-1">*Masukkan nomor WhatsApp yang terdaftar pada sistem kami.</p>
                 </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Password</label>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
-                </div>
-                <div class="flex justify-end">
-                    <button type="button" onclick="switchView('view-lupa-password', document.getElementById('nav-akun'))" class="text-[10px] font-bold text-kai-orange hover:underline">Lupa Password?</button>
-                </div>
-                <button type="submit" id="btnLogin" class="w-full py-4 mt-2 bg-kai-blue hover:bg-kai-bluedark text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">Masuk</button>
+                <button type="submit" id="btnLogin" class="w-full py-4 mt-2 bg-kai-blue hover:bg-kai-bluedark text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">Masuk ke Portal</button>
             </form>
+            
             <div class="mt-8 text-center border-t border-slate-100 pt-5">
                 <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Belum berlangganan?</p>
                 <button type="button" onclick="masukSebagaiTamu()" class="w-full py-3 bg-slate-50 text-kai-blue border border-slate-200 hover:bg-slate-100 rounded-xl font-black text-sm transition-all">Daftar Pasang Baru</button>
@@ -398,33 +274,11 @@
         </div>
     </div>
 
-    <!-- 6. KONTEN: LUPA PASSWORD -->
-    <div id="view-lupa-password" class="view-section max-w-xl mx-auto px-4 mt-10">
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <button onclick="switchView('view-login', document.getElementById('nav-akun'))" class="mb-4 flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-kai-blue">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                Kembali ke Login
-            </button>
-            <h2 class="text-lg font-black text-kai-blue mb-1">Cari Password</h2>
-            <p class="text-[10px] font-semibold text-slate-500 mb-4">Masukkan email yang terdaftar. Password Anda akan langsung ditampilkan.</p>
-            <div class="space-y-4">
-                <input type="email" id="forgotEmail" placeholder="Masukkan Email Anda" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
-                <button onclick="cariPassword()" id="btnCariPw" class="w-full py-3 bg-kai-orange text-white rounded-xl font-black text-sm shadow-lg transition-all">Tampilkan Password</button>
-                
-                <!-- Hasil Password -->
-                <div id="resultPassword" class="hidden p-4 mt-4 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                    <p class="text-[10px] font-bold text-emerald-600 mb-1">Password Anda:</p>
-                    <p id="thePassword" class="text-lg font-black text-slate-800 tracking-wider select-all"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 7. KONTEN: PROFIL (BIODATA) -->
+    <!-- 6. KONTEN: PROFIL (READONLY MODE) -->
     <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-black text-kai-blue">Biodata Pelanggan</h2>
+                <h2 class="text-xl font-black text-kai-blue">Data Pelanggan</h2>
                 <button onclick="logoutAkun()" class="text-[10px] font-bold px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100">Keluar</button>
             </div>
             
@@ -437,32 +291,75 @@
                     </label>
                     <input type="file" id="uploadFoto" accept="image/*" class="hidden" onchange="openCropper(event)">
                 </div>
-                <p class="text-[9px] font-bold text-slate-400 mt-2">Ketuk ikon kamera untuk ubah foto</p>
             </div>
 
-            <!-- Form Biodata -->
+            <!-- Form Biodata (Read Only Mode) -->
             <form id="profilForm" class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
-                    <input type="text" id="profilNama" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No WhatsApp</label>
-                    <input type="tel" id="profilWA" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Email</label>
-                    <input type="email" id="profilEmail" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Password Akun</label>
-                    <input type="text" id="profilPassword" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
+                    <input type="text" id="profilNama" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
                 </div>
                 
-                <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg shadow-emerald-500/30 transition-all transform active:scale-95">Simpan Biodata</button>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No WhatsApp</label>
+                        <input type="tel" id="profilWA" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Status Internet</label>
+                        <input type="text" id="profilStatus" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-black outline-none cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Blok Rumah</label>
+                        <input type="text" id="profilBlok" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Jatuh Tempo (Tgl)</label>
+                        <input type="text" id="profilTempo" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Paket Internet</label>
+                    <input type="text" id="profilPaket" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                </div>
+                
+                <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">Simpan Perubahan Foto</button>
+
+                <!-- TOMBOL MENU RIWAYAT BARU -->
+                <button type="button" onclick="bukaRiwayat()" class="w-full py-4 mt-2 bg-blue-50 hover:bg-blue-100 text-kai-blue border border-blue-200 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Lihat Riwayat Pembayaran
+                </button>
             </form>
         </div>
     </div>
+
+    <!-- 7. KONTEN: RIWAYAT PEMBAYARAN -->
+    <div id="view-riwayat" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <button onclick="switchView('view-profil', document.getElementById('nav-akun'))" class="mb-4 flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-kai-blue transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Kembali ke Profil
+            </button>
+            
+            <h2 class="text-xl font-black text-kai-blue mb-1">Riwayat Tagihan</h2>
+            <p class="text-[10px] font-semibold text-slate-500 mb-6">Status histori pembayaran internet Anda.</p>
+
+            <div id="listRiwayat" class="space-y-3">
+                <!-- Konten digenerate dari Javascript -->
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-[9px] font-bold text-slate-400">Ada kendala tagihan?</p>
+                <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20ingin%20bertanya%20seputar%20riwayat%20tagihan%20saya..." target="_blank" class="text-[9px] font-bold text-kai-orange hover:underline">Hubungi Admin</a>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.querySelectorAll('.accordion-header').forEach(header => {
             header.addEventListener('click', function() {
@@ -492,79 +389,11 @@
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
-
-        document.getElementById('regForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmit');
-            btn.innerText = "Mengirim Data...";
-            btn.disabled = true;
-
-            const nama = document.getElementById('nama').value;
-            const whatsapp = document.getElementById('whatsapp').value;
-            const paket = document.getElementById('paket').value; 
-            const area = document.getElementById('area').value; 
-            const alamat = document.getElementById('alamat').value;
-            const ssid = document.getElementById('ssid').value;
-            const password_wifi = document.getElementById('password_wifi').value;
-
-            // Generate PPPoE berdasarkan Aturan Regex Cerdas MabuNet
-            let pppoe_secret = "";
-            const namaDepan = nama.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-            const regexBlok = /(?:blok\s+)? ([a-zA-Z])\s*(\d*)\s*(?:no\.?|nomor|blk|\.|-|\/)?\s*(\d+) /i;
-            const match = alamat.match(regexBlok);
-
-            if (match) {
-                const hurufBlok = match[1].toLowerCase();
-                const angkaBlok = match[2];               
-                const noRumah = match[3];                 
-                if (angkaBlok) {
-                    pppoe_secret = `${hurufBlok}${angkaBlok}.${noRumah}@mabu.net`;
-                } else {
-                    pppoe_secret = `${hurufBlok}${noRumah}@mabu.net`;
-                }
-            } else {
-                pppoe_secret = `${namaDepan}@mabu.net`;
-            }
-
-            try {
-                await db.collection('customers').add({
-                    name: nama,
-                    block: area,
-                    phone: whatsapp,
-                    packageId: paket,
-                    dueDate: 1, 
-                    status: 'Non-Aktif', 
-                    notes: `Alamat: ${alamat} | SSID: ${ssid} | Pass: ${password_wifi}`, 
-                    pppoe_user: pppoe_secret, 
-                    payments: {} 
-                });
-
-                await db.collection('logs').add({
-                    time: new Date().getTime(),
-                    dateStr: new Date().toLocaleString('id-ID'),
-                    admin: 'Portal Pelanggan',
-                    action: `Pendaftaran baru: ${nama} (${area})`
-                });
-
-                alert("Pendaftaran berhasil! Tim MabuNet akan segera menghubungi WhatsApp Anda.");
-                document.getElementById('regForm').reset();
-                switchView('view-home', document.getElementById('nav-home'));
-            } catch (error) {
-                console.error("Error: ", error);
-                alert("Terjadi kesalahan jaringan. Pastikan koneksi internet Anda stabil dan coba lagi.");
-            } finally {
-                btn.innerText = "Kirim Pendaftaran";
-                btn.disabled = false;
-            }
-        });
         
-        // ==========================================
-        // SISTEM LOGIN, PROFIL & CROPPER FOTO MABUNET
-        // ==========================================
         let currentUserDocId = null;
         let cropperInstance = null;
+        let currentPackageName = ""; // Simpan nama paket untuk riwayat
         
-        // Update fungsi switchView agar aman saat header hilang
         function switchView(viewId, btnElement) {
             document.querySelectorAll('.view-section').forEach(view => {
                 view.classList.remove('active');
@@ -582,15 +411,13 @@
             window.scrollTo(0,0);
         }
 
-        // SISTEM PINTU MASUK (GATEKEEPER)
         window.addEventListener('load', () => {
             const savedUser = localStorage.getItem('mabunet_session');
             if (savedUser) {
                 const data = JSON.parse(savedUser);
                 currentUserDocId = data.id;
                 if(data.foto) document.getElementById('profilImage').src = data.foto;
-                
-                bukaAplikasiPenuh(); // Jika sesi ada, langsung masuk beranda
+                bukaAplikasiPenuh();
             }
         });
 
@@ -612,7 +439,6 @@
             switchView('view-registrasi', document.getElementById('nav-registrasi'));
         }
 
-        // Kontrol Navigasi Akun
         function bukaMenuAkun(btn) {
             if (currentUserDocId) {
                 muatDataProfil();
@@ -622,22 +448,17 @@
             }
         }
 
-        // LOGIC: LOGIN (Diperbarui untuk buka gembok aplikasi)
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
-            const email = document.getElementById('loginEmail').value;
-            const pass = document.getElementById('loginPassword').value;
+            const wa = document.getElementById('loginWA').value.trim();
             
-            btn.innerText = "Memeriksa..."; btn.disabled = true;
+            btn.innerText = "Memeriksa Data..."; btn.disabled = true;
 
             try {
-                const snapshot = await db.collection('customers')
-                    .where('email', '==', email)
-                    .where('password_akun', '==', pass).get();
-                    
+                const snapshot = await db.collection('customers').where('phone', '==', wa).get();
                 if (snapshot.empty) {
-                    alert("Email atau Password salah!");
+                    alert("Nomor WhatsApp Anda tidak terdaftar dalam sistem. Silakan periksa kembali atau daftar Pasang Baru.");
                 } else {
                     const userDoc = snapshot.docs[0];
                     currentUserDocId = userDoc.id;
@@ -646,95 +467,137 @@
                     localStorage.setItem('mabunet_session', JSON.stringify({id: currentUserDocId, foto: userData.foto_profil}));
                     document.getElementById('loginForm').reset();
                     muatDataProfil();
-                    
-                    bukaAplikasiPenuh(); // Buka aplikasi setelah sukses login
+                    bukaAplikasiPenuh(); 
                 }
             } catch (err) {
                 console.error(err); alert("Terjadi kesalahan jaringan.");
             } finally {
-                btn.innerText = "Masuk"; btn.disabled = false;
+                btn.innerText = "Masuk ke Portal"; btn.disabled = false;
             }
         });
 
-        // LOGIC: LUPA PASSWORD (Cukup Input Email, Password Muncul)
-        async function cariPassword() {
-            const email = document.getElementById('forgotEmail').value;
-            const btn = document.getElementById('btnCariPw');
-            const resultDiv = document.getElementById('resultPassword');
-            
-            if(!email) return alert("Harap masukkan email!");
-            btn.innerText = "Mencari...";
-            
-            try {
-                const snapshot = await db.collection('customers').where('email', '==', email).get();
-                if (snapshot.empty) {
-                    alert("Email tidak terdaftar!");
-                    resultDiv.classList.add('hidden');
-                } else {
-                    const pw = snapshot.docs[0].data().password_akun;
-                    document.getElementById('thePassword').innerText = pw ? pw : "(Belum Disetting)";
-                    resultDiv.classList.remove('hidden');
-                }
-            } catch (err) {
-                console.error(err);
-            } finally {
-                btn.innerText = "Tampilkan Password";
-            }
-        }
-
-        // LOGIC: MUAT DATA PROFIL
         async function muatDataProfil() {
             if(!currentUserDocId) return;
             try {
                 const doc = await db.collection('customers').doc(currentUserDocId).get();
                 if (doc.exists) {
                     const data = doc.data();
-                    document.getElementById('profilNama').value = data.name || '';
-                    document.getElementById('profilWA').value = data.phone || '';
-                    document.getElementById('profilEmail').value = data.email || '';
-                    document.getElementById('profilPassword').value = data.password_akun || '';
+                    
+                    document.getElementById('profilNama').value = data.name || '-';
+                    document.getElementById('profilWA').value = data.phone || '-';
+                    document.getElementById('profilBlok').value = data.block || '-';
+                    document.getElementById('profilTempo').value = data.dueDate ? `Tanggal ${data.dueDate}` : '-';
+                    
+                    currentPackageName = data.packageId || 'Belum Ada Paket';
+                    document.getElementById('profilPaket').value = currentPackageName.replace(/_/g, ' ').toUpperCase();
+
+                    const statEl = document.getElementById('profilStatus');
+                    statEl.value = data.status || '-';
+                    if(data.status === 'Aktif') {
+                        statEl.classList.add('text-emerald-600');
+                        statEl.classList.remove('text-rose-600');
+                    } else {
+                        statEl.classList.add('text-rose-600');
+                        statEl.classList.remove('text-emerald-600');
+                    }
+
                     if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
                 }
             } catch(err) { console.error(err); }
         }
 
-        // LOGIC: SIMPAN PROFIL
+        // ==========================================
+        // LOGIC BARU: RIWAYAT PEMBAYARAN
+        // ==========================================
+        async function bukaRiwayat() {
+            // Pindah View tanpa mengubah warna tombol navigasi bawah
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-riwayat').classList.add('active');
+            window.scrollTo(0,0);
+            
+            const listDiv = document.getElementById('listRiwayat');
+            listDiv.innerHTML = `
+                <div class="flex justify-center items-center py-8">
+                    <svg class="animate-spin h-6 w-6 text-kai-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+            `;
+
+            try {
+                const doc = await db.collection('customers').doc(currentUserDocId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    const payments = data.payments || {};
+                    listDiv.innerHTML = '';
+                    
+                    const keys = Object.keys(payments);
+                    if (keys.length === 0) {
+                        listDiv.innerHTML = `
+                            <div class="text-center py-10 px-4 bg-slate-50 border border-slate-200 border-dashed rounded-2xl">
+                                <svg class="w-10 h-10 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan yang tercatat.</p>
+                            </div>`;
+                        return;
+                    }
+
+                    // Urutkan riwayat dari yang terbaru
+                    keys.sort().reverse().forEach(bulan => {
+                        const status = payments[bulan];
+                        const isLunas = status.toLowerCase() === 'lunas';
+                        
+                        listDiv.innerHTML += `
+                            <div class="flex justify-between items-center p-4 rounded-xl border shadow-sm ${isLunas ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50 border-rose-100'}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${isLunas ? 'bg-emerald-100 text-emerald-500' : 'bg-rose-100 text-rose-500'}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            ${isLunas 
+                                                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' 
+                                                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-black text-sm ${isLunas ? 'text-emerald-800' : 'text-rose-800'}">${bulan}</h4>
+                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">${currentPackageName.replace(/_/g, ' ')}</p>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-1 rounded-md ${isLunas ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'} text-[9px] font-black uppercase tracking-wider shadow-sm">
+                                    ${status}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch(e) {
+                listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data dari server.</p>';
+            }
+        }
+
         document.getElementById('profilForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSimpanProfil');
             btn.innerText = "Menyimpan..."; btn.disabled = true;
 
-            const updatedData = {
-                name: document.getElementById('profilNama').value,
-                phone: document.getElementById('profilWA').value,
-                email: document.getElementById('profilEmail').value,
-                password_akun: document.getElementById('profilPassword').value,
-                foto_profil: document.getElementById('profilImage').src
-            };
-
+            const fotoBaru = document.getElementById('profilImage').src;
             try {
-                await db.collection('customers').doc(currentUserDocId).update(updatedData);
+                await db.collection('customers').doc(currentUserDocId).update({ foto_profil: fotoBaru });
                 const ls = JSON.parse(localStorage.getItem('mabunet_session'));
-                ls.foto = updatedData.foto_profil;
+                ls.foto = fotoBaru;
                 localStorage.setItem('mabunet_session', JSON.stringify(ls));
-                alert("Biodata berhasil diperbarui!");
+                alert("Foto profil berhasil diperbarui!");
             } catch(err) {
-                console.error(err); alert("Gagal menyimpan profil.");
+                console.error(err); alert("Gagal menyimpan foto.");
             } finally {
-                btn.innerText = "Simpan Biodata"; btn.disabled = false;
+                btn.innerText = "Simpan Perubahan Foto"; btn.disabled = false;
             }
         });
 
-        // LOGIC: LOGOUT (Diperbarui untuk mengunci kembali aplikasi)
         function logoutAkun() {
-            if(confirm("Yakin ingin keluar dari akun?")) {
+            if(confirm("Yakin ingin keluar dari portal?")) {
                 currentUserDocId = null;
                 localStorage.removeItem('mabunet_session');
-                tutupAplikasiPenuh(); // Kunci dan kembali ke layar login
+                tutupAplikasiPenuh();
             }
         }
 
-        // LOGIC: FOTO CROPPER (Resize)
         function openCropper(event) {
             const file = event.target.files[0];
             if (file) {
@@ -743,13 +606,8 @@
                     document.getElementById('imageToCrop').src = e.target.result;
                     document.getElementById('cropperModal').classList.remove('hidden');
                     document.getElementById('cropperModal').classList.add('flex');
-                    
                     if (cropperInstance) cropperInstance.destroy();
-                    cropperInstance = new Cropper(document.getElementById('imageToCrop'), {
-                        aspectRatio: 1, // Memaksa potongan persegi
-                        viewMode: 1,
-                        autoCropArea: 1
-                    });
+                    cropperInstance = new Cropper(document.getElementById('imageToCrop'), { aspectRatio: 1, viewMode: 1, autoCropArea: 1 });
                 };
                 reader.readAsDataURL(file);
             }
