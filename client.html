@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -55,7 +56,9 @@
             </div>
         </div>
         <!-- Chat Messages -->
-        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50"></div>
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50">
+            <!-- Messages dimuat otomatis dari Firebase -->
+        </div>
         <!-- Chat Input -->
         <form id="chatForm" class="p-3 bg-white border-t border-slate-200 flex gap-2">
             <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik balasan..." required class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold outline-none focus:border-kai-blue">
@@ -145,6 +148,7 @@
 
         <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
         <div class="grid grid-cols-2 gap-4 mb-6">
+            <!-- (TOMBOL MENU UTAMA TETAP SAMA) -->
             <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
                 <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
@@ -160,7 +164,7 @@
         </div>
     </div>
 
-    <!-- 2. KONTEN: REGISTRASI -->
+    <!-- 2. KONTEN: REGISTRASI (SINGKAT KODE DEMI KERAPIHAN) -->
     <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200 text-center py-10">
             <h2 class="text-lg font-black text-kai-blue mb-2">Formulir Pendaftaran</h2>
@@ -178,7 +182,6 @@
                 <div class="text-kai-blue font-black text-lg tracking-widest mb-4">QRIS MABUNET</div>
                 <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mx-auto mb-4 rounded-xl shadow-md border bg-white">
             </div>
-            
             <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20sudah%20melakukan%20pembayaran." target="_blank" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg">Kirim Bukti via WhatsApp</a>
         </div>
     </div>
@@ -236,6 +239,7 @@
                     </div>
                 </div>
             </div>
+            <!-- FAQ Lainnya -->
             <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                 <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
                     <span class="font-extrabold text-sm text-kai-blue">Internet Lemot & Solusinya</span>
@@ -247,25 +251,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- TAMBAHAN FAQ MENGIRIM BUKTI PEMBAYARAN -->
-            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
-                    <span class="font-extrabold text-sm text-kai-blue">Cara Kirim Bukti Pembayaran</span>
-                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </div>
-                <div class="accordion-content bg-slate-50/50">
-                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                        <ol class="list-decimal pl-4 space-y-2">
-                            <li>Lakukan pembayaran melalui menu <strong>Bayar Tagihan</strong> menggunakan QRIS.</li>
-                            <li>Simpan/Screenshot bukti transfer dari aplikasi perbankan (BCA, DANA, GoPay, dll) atau simpan struk fisik jika dari agen.</li>
-                            <li>Tekan tombol hijau <strong>"Kirim Bukti via WhatsApp"</strong> di halaman pembayaran, lalu lampirkan gambar bukti transfer Anda.</li>
-                            <li>Admin akan memverifikasi dan mengubah status pembayaran Anda.</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
