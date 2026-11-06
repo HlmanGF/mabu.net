@@ -42,7 +42,7 @@
         .accordion-icon { transition: transform 0.3s ease; }
         .accordion-item.active .accordion-icon { transform: rotate(180deg); }
     </style>
-    <!-- Library Cropper JS untuk Ubah Ukuran Foto -->
+    <!-- Library Cropper JS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
@@ -85,19 +85,17 @@
         </div>
     </div>
     
-    <!-- HEADER TOP (DIUBAH UNTUK LONCENG NOTIFIKASI) -->
+    <!-- HEADER TOP -->
     <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
         <div class="max-w-xl mx-auto flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
                 <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Portal Pelanggan</p>
             </div>
-            <!-- Ikon Lonceng -->
             <div class="relative cursor-pointer" onclick="bukaNotifikasi()">
                 <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                 </div>
-                <!-- Titik Merah Notif -->
                 <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-kai-blue animate-pulse"></span>
             </div>
         </div>
@@ -139,7 +137,7 @@
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan</h4>
-                <p class="text-[9px] font-semibold text-slate-400 mt-1">Tanya & Kendala</p>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Lapor Gangguan</p>
             </div>
         </div>
     </div>
@@ -233,14 +231,46 @@
         </div>
     </div>
 
-    <!-- 4. KONTEN: PUSAT BANTUAN -->
+    <!-- 4. KONTEN: PUSAT BANTUAN & TICKETING -->
     <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
-        <h2 class="text-lg font-black text-kai-blue mb-4 px-1">Hubungi Kami</h2>
-        <div class="grid grid-cols-2 gap-3 mb-6">
-            <a href="https://wa.me/62811122699" target="_blank" class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col items-center justify-center text-center col-span-2 group hover:border-emerald-300 transition-colors cursor-pointer relative overflow-hidden">
-                <h3 class="font-bold text-xs text-slate-500 uppercase">WhatsApp Admin</h3>
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-4">
+            <h2 class="text-xl font-black text-kai-blue mb-1">Pusat Bantuan</h2>
+            <p class="text-[10px] font-semibold text-slate-500 mb-4">Hubungi admin atau lapor kendala jaringan.</p>
+            
+            <a href="https://wa.me/62811122699" target="_blank" class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-emerald-100 transition-colors">
+                <svg class="w-8 h-8 text-emerald-500 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.71.44 3.38 1.28 4.85L2 22l5.37-1.41c1.42.78 3.03 1.19 4.67 1.19 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.46 14.18c-.23.65-1.34 1.23-1.85 1.34-.48.11-1.09.21-3.14-.64-2.45-1.02-4.04-3.53-4.16-3.7-.12-.17-1-1.33-1-2.54s.64-1.8.87-2.05c.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.17.01.39-.06.61.47.23.55.75 1.83.82 1.97.07.14.12.3.03.48-.09.18-.14.3-.29.47-.14.17-.3.37-.43.51-.15.15-.31.31-.13.62.18.31.81 1.34 1.74 2.16 1.2.1 2.21 1.41 2.53 1.73.32.32.32.53.25.68z"/></svg>
+                <h3 class="font-bold text-xs text-slate-500 uppercase">Tanya Admin via WA</h3>
                 <p class="font-black text-lg text-emerald-600">0811-122-699</p>
             </a>
+        </div>
+
+        <!-- FORM TICKETING -->
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <h3 class="text-lg font-black text-kai-blue mb-1">Buat Laporan Gangguan</h3>
+            <p class="text-[10px] font-semibold text-slate-500 mb-5">Laporkan kendala Anda, sistem akan mencatat dan meneruskannya ke Teknisi.</p>
+            
+            <form id="ticketForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Jenis Kendala</label>
+                    <select id="ticketType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400">
+                        <option value="">-- Pilih Kendala --</option>
+                        <option value="Internet Mati (LOS Merah)">Internet Mati (LOS Merah)</option>
+                        <option value="Internet Lemot">Internet Lemot / Sering Putus</option>
+                        <option value="Kabel Fiber Putus">Kabel Fiber Putus</option>
+                        <option value="Lupa Password WiFi">Ganti / Lupa Password WiFi</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Deskripsi Detail</label>
+                    <textarea id="ticketDesc" rows="3" required placeholder="Jelaskan detail kendala yang dialami..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-400"></textarea>
+                </div>
+                
+                <button type="submit" id="btnSubmitTicket" class="w-full py-4 mt-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    Kirim Laporan & Hubungi Teknisi
+                </button>
+            </form>
         </div>
     </div>
 
@@ -268,7 +298,7 @@
         </button>
     </nav>
 
-    <!-- 5. KONTEN: LOGIN (DIUBAH KE NO HP) -->
+    <!-- 5. KONTEN: LOGIN -->
     <div id="view-login" class="view-section active max-w-xl mx-auto px-4 mt-10">
         <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
             <div class="text-center mb-6">
@@ -399,6 +429,11 @@
         let currentPackageName = ""; 
         let globalDueDate = null;
         
+        // VARIABEL GLOBAL TICKETING
+        let globalName = "";
+        let globalBlock = "";
+        let globalPhone = "";
+        
         function switchView(viewId, btnElement) {
             document.querySelectorAll('.view-section').forEach(view => {
                 view.classList.remove('active');
@@ -423,7 +458,8 @@
                 currentUserDocId = data.id;
                 if(data.foto) document.getElementById('profilImage').src = data.foto;
                 bukaAplikasiPenuh();
-                muatNotifikasi(); // Tarik notifikasi begitu masuk
+                muatNotifikasi(); 
+                muatDataProfil(); // Tarik data untuk disiapkan di form tiket
             }
         });
 
@@ -489,53 +525,102 @@
                 if (doc.exists) {
                     const data = doc.data();
                     
-                    document.getElementById('profilNama').value = data.name || '-';
-                    document.getElementById('profilWA').value = data.phone || '-';
-                    document.getElementById('profilBlok').value = data.block || '-';
-                    document.getElementById('profilTempo').value = data.dueDate ? `Tanggal ${data.dueDate}` : '-';
+                    // Simpan ke variabel global untuk Form Tiket
+                    globalName = data.name || '-';
+                    globalPhone = data.phone || '-';
+                    globalBlock = data.block || '-';
                     
-                    globalDueDate = data.dueDate; // Simpan untuk logic lonceng
-                    currentPackageName = data.packageId || 'Belum Ada Paket';
-                    document.getElementById('profilPaket').value = currentPackageName.replace(/_/g, ' ').toUpperCase();
+                    if(document.getElementById('profilNama')) {
+                        document.getElementById('profilNama').value = globalName;
+                        document.getElementById('profilWA').value = globalPhone;
+                        document.getElementById('profilBlok').value = globalBlock;
+                        document.getElementById('profilTempo').value = data.dueDate ? `Tanggal ${data.dueDate}` : '-';
+                        
+                        globalDueDate = data.dueDate;
+                        currentPackageName = data.packageId || 'Belum Ada Paket';
+                        document.getElementById('profilPaket').value = currentPackageName.replace(/_/g, ' ').toUpperCase();
 
-                    const statEl = document.getElementById('profilStatus');
-                    statEl.value = data.status || '-';
-                    if(data.status === 'Aktif') {
-                        statEl.classList.add('text-emerald-600');
-                        statEl.classList.remove('text-rose-600');
-                    } else {
-                        statEl.classList.add('text-rose-600');
-                        statEl.classList.remove('text-emerald-600');
+                        const statEl = document.getElementById('profilStatus');
+                        statEl.value = data.status || '-';
+                        if(data.status === 'Aktif') {
+                            statEl.classList.add('text-emerald-600');
+                            statEl.classList.remove('text-rose-600');
+                        } else {
+                            statEl.classList.add('text-rose-600');
+                            statEl.classList.remove('text-emerald-600');
+                        }
+
+                        if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
                     }
-
-                    if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
                 }
             } catch(err) { console.error(err); }
         }
 
         // ==========================================
-        // LOGIC BARU: NOTIFIKASI LONCENG
+        // LOGIC: SISTEM TICKETING LAPORAN GANGGUAN
         // ==========================================
+        document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Wajib Login untuk lapor gangguan agar nama & blok tercatat
+            if(!currentUserDocId) {
+                alert("Anda harus Login terlebih dahulu untuk menggunakan fitur Lapor Gangguan.");
+                switchView('view-login', document.getElementById('nav-akun'));
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitTicket');
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Mengirim...`;
+            btn.disabled = true;
+
+            const type = document.getElementById('ticketType').value;
+            const desc = document.getElementById('ticketDesc').value;
+
+            try {
+                // 1. Simpan ke database Firestore (koleksi tickets)
+                await db.collection('tickets').add({
+                    customerId: currentUserDocId,
+                    name: globalName,
+                    block: globalBlock,
+                    phone: globalPhone,
+                    issueType: type,
+                    description: desc,
+                    status: 'Open', // Status tiket baru
+                    timestamp: new Date().getTime(),
+                    dateStr: new Date().toLocaleString('id-ID')
+                });
+
+                // 2. Siapkan format pesan WhatsApp ke Admin (62811122699)
+                const waNumber = "62811122699";
+                const waText = `Halo Admin MABUNET,%0A%0ASaya ingin melaporkan gangguan jaringan.%0A%0A*Nama:* ${globalName}%0A*Blok:* ${globalBlock}%0A*Kendala:* ${type}%0A*Detail:* ${desc}%0A%0AMohon bantuannya segera. Terima kasih.`;
+                const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+
+                // 3. Buka WhatsApp & Reset Form
+                document.getElementById('ticketForm').reset();
+                window.open(waUrl, '_blank');
+
+            } catch (err) {
+                console.error(err);
+                alert("Gagal mengirim laporan. Pastikan koneksi internet stabil.");
+            } finally {
+                btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg> Kirim Laporan & Hubungi Teknisi`;
+                btn.disabled = false;
+            }
+        });
+
+        // NOTIFIKASI
         function bukaNotifikasi() {
             const modal = document.getElementById('notifModal');
             const content = document.getElementById('notifContent');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
-            // Animasi slide up
-            setTimeout(() => {
-                content.classList.remove('translate-y-full');
-            }, 10);
-            
-            // Sembunyikan titik merah setelah dibaca
+            setTimeout(() => { content.classList.remove('translate-y-full'); }, 10);
             document.getElementById('notifBadge').classList.add('hidden');
         }
 
         function tutupNotifikasi() {
             const modal = document.getElementById('notifModal');
             const content = document.getElementById('notifContent');
-            
-            // Animasi slide down
             content.classList.add('translate-y-full');
             setTimeout(() => {
                 modal.classList.add('hidden');
@@ -549,7 +634,6 @@
             let hasNotif = false;
             let htmlContent = '';
 
-            // 1. Cek Tanggal Jatuh Tempo (Pengingat Otomatis H-3)
             try {
                 const userDoc = await db.collection('customers').doc(currentUserDocId).get();
                 if(userDoc.exists) {
@@ -557,8 +641,6 @@
                     if(data.dueDate && data.status === 'Aktif') {
                         const dueDay = parseInt(data.dueDate);
                         const currentDay = new Date().getDate();
-                        
-                        // Cek apakah hari ini masuk range H-3 sampai hari H
                         if (currentDay >= dueDay - 3 && currentDay <= dueDay) {
                             hasNotif = true;
                             htmlContent += `
@@ -578,7 +660,6 @@
                 }
             } catch(e) { console.log("Gagal cek jatuh tempo lokal"); }
 
-            // 2. Tarik Pengumuman Global dari Database Firebase
             try {
                 const snap = await db.collection('announcements').orderBy('time', 'desc').limit(5).get();
                 if(!snap.empty) {
@@ -597,12 +678,8 @@
                         `;
                     });
                 }
-            } catch(e) {
-                // Jangan error jika collection 'announcements' belum dibuat admin
-                console.log("Collection announcements belum ada atau kosong.");
-            }
+            } catch(e) { console.log("Collection announcements belum ada."); }
 
-            // Update UI
             if(!hasNotif) {
                 listDiv.innerHTML = `
                     <div class="text-center py-12">
