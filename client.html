@@ -133,12 +133,13 @@
                 <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
                 <p class="text-[9px] font-semibold text-slate-400 mt-1">Via QRIS Otomatis</p>
             </div>
+            <!-- MENU BANTUAN DIUBAH NAMA JADI LAPOR GANGGUAN -->
             <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-emerald-500 transition-colors group">
                 <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                 </div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan</h4>
-                <p class="text-[9px] font-semibold text-slate-400 mt-1">Lapor Gangguan</p>
+                <p class="text-[9px] font-semibold text-slate-400 mt-1">Lapor Gangguan & Tiket</p>
             </div>
         </div>
     </div>
@@ -236,7 +237,7 @@
     <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-4">
             <h2 class="text-xl font-black text-kai-blue mb-1">Pusat Bantuan</h2>
-            <p class="text-[10px] font-semibold text-slate-500 mb-4">Hubungi admin atau lapor kendala jaringan.</p>
+            <p class="text-[10px] font-semibold text-slate-500 mb-4">Hubungi admin atau lapor kendala jaringan Anda.</p>
             
             <a href="https://wa.me/62811122699" target="_blank" class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer hover:bg-emerald-100 transition-colors">
                 <svg class="w-8 h-8 text-emerald-500 mb-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.71.44 3.38 1.28 4.85L2 22l5.37-1.41c1.42.78 3.03 1.19 4.67 1.19 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.46 14.18c-.23.65-1.34 1.23-1.85 1.34-.48.11-1.09.21-3.14-.64-2.45-1.02-4.04-3.53-4.16-3.7-.12-.17-1-1.33-1-2.54s.64-1.8.87-2.05c.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.17.01.39-.06.61.47.23.55.75 1.83.82 1.97.07.14.12.3.03.48-.09.18-.14.3-.29.47-.14.17-.3.37-.43.51-.15.15-.31.31-.13.62.18.31.81 1.34 1.74 2.16 1.2.1 2.21 1.41 2.53 1.73.32.32.32.53.25.68z"/></svg>
@@ -326,7 +327,7 @@
         </div>
     </div>
 
-    <!-- 6. KONTEN: PROFIL -->
+    <!-- 6. KONTEN: PROFIL (READONLY & UPGRADE) -->
     <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-6">
@@ -376,6 +377,12 @@
                 
                 <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">Simpan Perubahan Foto</button>
 
+                <!-- TOMBOL UPGRADE LAYANAN -->
+                <button type="button" onclick="upgradePaket()" class="w-full py-4 mt-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Ajukan Upgrade / Ganti Paket
+                </button>
+
                 <button type="button" onclick="bukaRiwayat()" class="w-full py-4 mt-2 bg-blue-50 hover:bg-blue-100 text-kai-blue border border-blue-200 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     Lihat Riwayat Pembayaran
@@ -397,23 +404,8 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        document.querySelectorAll('.accordion-header').forEach(header => {
-            header.addEventListener('click', function() {
-                const item = this.parentElement;
-                const content = item.querySelector('.accordion-content');
-                const isActive = item.classList.contains('active');
-                document.querySelectorAll('.accordion-item').forEach(otherItem => {
-                    otherItem.classList.remove('active');
-                    otherItem.querySelector('.accordion-content').style.maxHeight = null;
-                });
-                if (!isActive) {
-                    item.classList.add('active');
-                    content.style.maxHeight = content.scrollHeight + "px";
-                }
-            });
-        });
-
         const firebaseConfig = {
             apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
             authDomain: "billing-mabunet.firebaseapp.com",
@@ -430,7 +422,7 @@
         let currentPackageName = ""; 
         let globalDueDate = null;
         
-        // VARIABEL GLOBAL TICKETING
+        // VARIABEL GLOBAL TICKETING & UPGRADE
         let globalName = "";
         let globalBlock = "";
         let globalPhone = "";
@@ -460,7 +452,7 @@
                 if(data.foto) document.getElementById('profilImage').src = data.foto;
                 bukaAplikasiPenuh();
                 muatNotifikasi(); 
-                muatDataProfil(); // Tarik data untuk disiapkan di form tiket
+                muatDataProfil(); 
             }
         });
 
@@ -491,6 +483,7 @@
             }
         }
 
+        // FUNGSI LOGIN
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
@@ -519,6 +512,7 @@
             }
         });
 
+        // FUNGSI TARIK DATA PROFIL
         async function muatDataProfil() {
             if(!currentUserDocId) return;
             try {
@@ -526,7 +520,6 @@
                 if (doc.exists) {
                     const data = doc.data();
                     
-                    // Simpan ke variabel global untuk Form Tiket
                     globalName = data.name || '-';
                     globalPhone = data.phone || '-';
                     globalBlock = data.block || '-';
@@ -557,28 +550,78 @@
             } catch(err) { console.error(err); }
         }
 
-        // ==========================================
-        // LOGIC: SISTEM TICKETING LAPORAN GANGGUAN
-        // ==========================================
+        // FUNGSI DAFTAR BARU
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerText = "Mengirim Data..."; btn.disabled = true;
+
+            const nama = document.getElementById('nama').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const paket = document.getElementById('paket').value; 
+            const area = document.getElementById('area').value; 
+            const alamat = document.getElementById('alamat').value;
+            const ssid = document.getElementById('ssid').value;
+            const password_wifi = document.getElementById('password_wifi').value;
+
+            // Generate PPPoE Otomatis (Hidden dari User)
+            let pppoe_secret = "";
+            const namaDepan = nama.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+            const regexBlok = /(?:blok\s+)?([a-zA-Z])\s*(\d*)\s*(?:no\.?|nomor|blk|\.|-|\/)?\s*(\d+)/i;
+            const match = alamat.match(regexBlok);
+
+            if (match) {
+                const hurufBlok = match[1].toLowerCase();
+                const angkaBlok = match[2];               
+                const noRumah = match[3];                 
+                if (angkaBlok) {
+                    pppoe_secret = `${hurufBlok}${angkaBlok}.${noRumah}@mabu.net`;
+                } else {
+                    pppoe_secret = `${hurufBlok}${noRumah}@mabu.net`;
+                }
+            } else {
+                pppoe_secret = `${namaDepan}@mabu.net`;
+            }
+
+            try {
+                await db.collection('customers').add({
+                    name: nama,
+                    block: area,
+                    phone: whatsapp,
+                    packageId: paket,
+                    dueDate: 1, 
+                    status: 'Non-Aktif', 
+                    notes: `Alamat: ${alamat} | SSID: ${ssid} | Pass: ${password_wifi}`, 
+                    pppoe_user: pppoe_secret, 
+                    payments: {} 
+                });
+
+                alert("Pendaftaran berhasil! Tim MabuNet akan segera menghubungi WhatsApp Anda.");
+                document.getElementById('regForm').reset();
+                switchView('view-home', document.getElementById('nav-home'));
+            } catch (error) {
+                alert("Terjadi kesalahan jaringan.");
+            } finally {
+                btn.innerText = "Kirim Pendaftaran"; btn.disabled = false;
+            }
+        });
+
+        // FUNGSI TICKETING (LAPOR GANGGUAN)
         document.getElementById('ticketForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            // Wajib Login untuk lapor gangguan agar nama & blok tercatat
             if(!currentUserDocId) {
-                alert("Anda harus Login terlebih dahulu untuk menggunakan fitur Lapor Gangguan.");
+                alert("Anda harus Login terlebih dahulu untuk lapor gangguan.");
                 switchView('view-login', document.getElementById('nav-akun'));
                 return;
             }
 
             const btn = document.getElementById('btnSubmitTicket');
-            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Mengirim...`;
-            btn.disabled = true;
+            btn.innerHTML = `Mengirim...`; btn.disabled = true;
 
             const type = document.getElementById('ticketType').value;
             const desc = document.getElementById('ticketDesc').value;
 
             try {
-                // 1. Simpan ke database Firestore (koleksi tickets)
                 await db.collection('tickets').add({
                     customerId: currentUserDocId,
                     name: globalName,
@@ -586,22 +629,15 @@
                     phone: globalPhone,
                     issueType: type,
                     description: desc,
-                    status: 'Open', // Status tiket baru
+                    status: 'Open', 
                     timestamp: new Date().getTime(),
                     dateStr: new Date().toLocaleString('id-ID')
                 });
 
-                // 2. Siapkan format pesan WhatsApp ke Admin (62811122699)
-                const waNumber = "62811122699";
                 const waText = `Halo Admin MABUNET,%0A%0ASaya ingin melaporkan gangguan jaringan.%0A%0A*Nama:* ${globalName}%0A*Blok:* ${globalBlock}%0A*Kendala:* ${type}%0A*Detail:* ${desc}%0A%0AMohon bantuannya segera. Terima kasih.`;
-                const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
-
-                // 3. Buka WhatsApp & Reset Form
+                window.open(`https://wa.me/62811122699?text=${waText}`, '_blank');
                 document.getElementById('ticketForm').reset();
-                window.open(waUrl, '_blank');
-
             } catch (err) {
-                console.error(err);
                 alert("Gagal mengirim laporan. Pastikan koneksi internet stabil.");
             } finally {
                 btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg> Kirim Laporan & Hubungi Teknisi`;
@@ -609,7 +645,14 @@
             }
         });
 
-        // NOTIFIKASI
+        // FUNGSI UPGRADE LAYANAN
+        function upgradePaket() {
+            if(!currentUserDocId) return;
+            const waText = `Halo Admin MABUNET,%0A%0ASaya pelanggan atas nama *${globalName}* (Blok ${globalBlock}).%0A%0ASaya ingin mengajukan *Perubahan / Upgrade Paket Internet* saya saat ini.%0A%0AMohon info lebih lanjut. Terima kasih.`;
+            window.open(`https://wa.me/62811122699?text=${waText}`, '_blank');
+        }
+
+        // FUNGSI NOTIFIKASI
         function bukaNotifikasi() {
             const modal = document.getElementById('notifModal');
             const content = document.getElementById('notifContent');
@@ -623,17 +666,13 @@
             const modal = document.getElementById('notifModal');
             const content = document.getElementById('notifContent');
             content.classList.add('translate-y-full');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 300);
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
         async function muatNotifikasi() {
             if(!currentUserDocId) return;
             const listDiv = document.getElementById('listNotif');
-            let hasNotif = false;
-            let htmlContent = '';
+            let hasNotif = false; let htmlContent = '';
 
             try {
                 const userDoc = await db.collection('customers').doc(currentUserDocId).get();
@@ -659,7 +698,7 @@
                         }
                     }
                 }
-            } catch(e) { console.log("Gagal cek jatuh tempo lokal"); }
+            } catch(e) { console.log("Gagal cek jatuh tempo"); }
 
             try {
                 const snap = await db.collection('announcements').orderBy('time', 'desc').limit(5).get();
@@ -679,13 +718,13 @@
                         `;
                     });
                 }
-            } catch(e) { console.log("Collection announcements belum ada."); }
+            } catch(e) {}
 
             if(!hasNotif) {
                 listDiv.innerHTML = `
                     <div class="text-center py-12">
                         <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                        <p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman untuk Anda.</p>
+                        <p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman.</p>
                     </div>`;
             } else {
                 listDiv.innerHTML = htmlContent;
@@ -693,6 +732,7 @@
             }
         }
 
+        // FUNGSI RIWAYAT
         async function bukaRiwayat() {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('view-riwayat').classList.add('active');
@@ -710,7 +750,7 @@
                     
                     const keys = Object.keys(payments);
                     if (keys.length === 0) {
-                        listDiv.innerHTML = `<div class="text-center py-10"><p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan yang tercatat.</p></div>`;
+                        listDiv.innerHTML = `<div class="text-center py-10"><p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan.</p></div>`;
                         return;
                     }
 
@@ -741,6 +781,7 @@
             } catch(e) { listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data.</p>'; }
         }
 
+        // CROPPER
         document.getElementById('profilForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSimpanProfil');
@@ -754,7 +795,7 @@
                 localStorage.setItem('mabunet_session', JSON.stringify(ls));
                 alert("Foto profil berhasil diperbarui!");
             } catch(err) {
-                console.error(err); alert("Gagal menyimpan foto.");
+                alert("Gagal menyimpan foto.");
             } finally {
                 btn.innerText = "Simpan Perubahan Foto"; btn.disabled = false;
             }
