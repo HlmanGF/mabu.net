@@ -47,7 +47,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body class="bg-kai-bg text-slate-800 pb-24">
-<!-- MODAL CROPPER (UBAH UKURAN FOTO) -->
+
+    <!-- MODAL CROPPER FOTO -->
     <div id="cropperModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex-col items-center justify-center p-4">
         <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
             <div class="p-4 bg-kai-blue text-white flex justify-between items-center">
@@ -65,16 +66,39 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL PUSAT NOTIFIKASI -->
+    <div id="notifModal" class="fixed inset-0 bg-black/60 z-[100] hidden flex-col justify-end">
+        <div class="bg-white w-full max-w-xl mx-auto h-[80vh] rounded-t-[30px] flex flex-col shadow-2xl transform transition-transform translate-y-full duration-300" id="notifContent">
+            <div class="p-5 flex justify-between items-center border-b border-slate-100 bg-white rounded-t-[30px]">
+                <h3 class="font-black text-kai-blue text-lg flex items-center gap-2">
+                    <svg class="w-5 h-5 text-kai-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    Pusat Informasi
+                </h3>
+                <button onclick="tutupNotifikasi()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-rose-100 hover:text-rose-500 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="listNotif" class="p-5 overflow-y-auto flex-1 space-y-3 bg-slate-50 pb-10">
+                <!-- Konten notifikasi dimuat dari JS -->
+            </div>
+        </div>
+    </div>
     
-    <!-- HEADER TOP -->
+    <!-- HEADER TOP (DIUBAH UNTUK LONCENG NOTIFIKASI) -->
     <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
         <div class="max-w-xl mx-auto flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
                 <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Portal Pelanggan</p>
             </div>
-            <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <!-- Ikon Lonceng -->
+            <div class="relative cursor-pointer" onclick="bukaNotifikasi()">
+                <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20 hover:bg-white/20 transition-colors">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                </div>
+                <!-- Titik Merah Notif -->
+                <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-kai-blue animate-pulse"></span>
             </div>
         </div>
     </div>
@@ -122,7 +146,6 @@
 
     <!-- 2. KONTEN: REGISTRASI -->
     <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
-        <!-- Konten Form Registrasi (Tetap Sama) -->
         <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
             <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
@@ -130,7 +153,7 @@
             <form id="regForm" class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
-                    <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue transition-all cursor-pointer">
+                    <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                         <option value="">-- Pilih Paket --</option>
                         <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
                         <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
@@ -194,7 +217,6 @@
 
     <!-- 3. KONTEN: PEMBAYARAN (QRIS) -->
     <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
-        <!-- Konten QRIS (Tetap Sama) -->
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center">
             <h2 class="text-xl font-black text-kai-blue mb-1">Pembayaran Tagihan</h2>
             <p class="text-xs font-semibold text-slate-500 mb-6">Scan QRIS di bawah ini untuk membayar langganan internet Anda.</p>
@@ -213,7 +235,6 @@
 
     <!-- 4. KONTEN: PUSAT BANTUAN -->
     <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
-        <!-- Bantuan Konten -->
         <h2 class="text-lg font-black text-kai-blue mb-4 px-1">Hubungi Kami</h2>
         <div class="grid grid-cols-2 gap-3 mb-6">
             <a href="https://wa.me/62811122699" target="_blank" class="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100 flex flex-col items-center justify-center text-center col-span-2 group hover:border-emerald-300 transition-colors cursor-pointer relative overflow-hidden">
@@ -274,7 +295,7 @@
         </div>
     </div>
 
-    <!-- 6. KONTEN: PROFIL (READONLY MODE) -->
+    <!-- 6. KONTEN: PROFIL -->
     <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
         <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-6">
@@ -282,7 +303,6 @@
                 <button onclick="logoutAkun()" class="text-[10px] font-bold px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100">Keluar</button>
             </div>
             
-            <!-- Foto Profil -->
             <div class="flex flex-col items-center mb-6">
                 <div class="relative">
                     <img id="profilImage" src="https://ui-avatars.com/api/?name=User&background=1A2C5B&color=fff" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md">
@@ -293,13 +313,11 @@
                 </div>
             </div>
 
-            <!-- Form Biodata (Read Only Mode) -->
             <form id="profilForm" class="space-y-4">
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
                     <input type="text" id="profilNama" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No WhatsApp</label>
@@ -310,7 +328,6 @@
                         <input type="text" id="profilStatus" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-black outline-none cursor-not-allowed">
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Blok Rumah</label>
@@ -321,7 +338,6 @@
                         <input type="text" id="profilTempo" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Paket Internet</label>
                     <input type="text" id="profilPaket" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
@@ -329,7 +345,6 @@
                 
                 <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-all transform active:scale-95">Simpan Perubahan Foto</button>
 
-                <!-- TOMBOL MENU RIWAYAT BARU -->
                 <button type="button" onclick="bukaRiwayat()" class="w-full py-4 mt-2 bg-blue-50 hover:bg-blue-100 text-kai-blue border border-blue-200 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     Lihat Riwayat Pembayaran
@@ -345,18 +360,9 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                 Kembali ke Profil
             </button>
-            
             <h2 class="text-xl font-black text-kai-blue mb-1">Riwayat Tagihan</h2>
             <p class="text-[10px] font-semibold text-slate-500 mb-6">Status histori pembayaran internet Anda.</p>
-
-            <div id="listRiwayat" class="space-y-3">
-                <!-- Konten digenerate dari Javascript -->
-            </div>
-            
-            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                <p class="text-[9px] font-bold text-slate-400">Ada kendala tagihan?</p>
-                <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20ingin%20bertanya%20seputar%20riwayat%20tagihan%20saya..." target="_blank" class="text-[9px] font-bold text-kai-orange hover:underline">Hubungi Admin</a>
-            </div>
+            <div id="listRiwayat" class="space-y-3"></div>
         </div>
     </div>
 
@@ -385,14 +391,13 @@
             messagingSenderId: "362703627315",
             appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
         };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
         
         let currentUserDocId = null;
         let cropperInstance = null;
-        let currentPackageName = ""; // Simpan nama paket untuk riwayat
+        let currentPackageName = ""; 
+        let globalDueDate = null;
         
         function switchView(viewId, btnElement) {
             document.querySelectorAll('.view-section').forEach(view => {
@@ -418,6 +423,7 @@
                 currentUserDocId = data.id;
                 if(data.foto) document.getElementById('profilImage').src = data.foto;
                 bukaAplikasiPenuh();
+                muatNotifikasi(); // Tarik notifikasi begitu masuk
             }
         });
 
@@ -452,13 +458,12 @@
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
             const wa = document.getElementById('loginWA').value.trim();
-            
             btn.innerText = "Memeriksa Data..."; btn.disabled = true;
 
             try {
                 const snapshot = await db.collection('customers').where('phone', '==', wa).get();
                 if (snapshot.empty) {
-                    alert("Nomor WhatsApp Anda tidak terdaftar dalam sistem. Silakan periksa kembali atau daftar Pasang Baru.");
+                    alert("Nomor WhatsApp Anda tidak terdaftar dalam sistem.");
                 } else {
                     const userDoc = snapshot.docs[0];
                     currentUserDocId = userDoc.id;
@@ -468,6 +473,7 @@
                     document.getElementById('loginForm').reset();
                     muatDataProfil();
                     bukaAplikasiPenuh(); 
+                    muatNotifikasi();
                 }
             } catch (err) {
                 console.error(err); alert("Terjadi kesalahan jaringan.");
@@ -488,6 +494,7 @@
                     document.getElementById('profilBlok').value = data.block || '-';
                     document.getElementById('profilTempo').value = data.dueDate ? `Tanggal ${data.dueDate}` : '-';
                     
+                    globalDueDate = data.dueDate; // Simpan untuk logic lonceng
                     currentPackageName = data.packageId || 'Belum Ada Paket';
                     document.getElementById('profilPaket').value = currentPackageName.replace(/_/g, ' ').toUpperCase();
 
@@ -507,20 +514,114 @@
         }
 
         // ==========================================
-        // LOGIC BARU: RIWAYAT PEMBAYARAN
+        // LOGIC BARU: NOTIFIKASI LONCENG
         // ==========================================
+        function bukaNotifikasi() {
+            const modal = document.getElementById('notifModal');
+            const content = document.getElementById('notifContent');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Animasi slide up
+            setTimeout(() => {
+                content.classList.remove('translate-y-full');
+            }, 10);
+            
+            // Sembunyikan titik merah setelah dibaca
+            document.getElementById('notifBadge').classList.add('hidden');
+        }
+
+        function tutupNotifikasi() {
+            const modal = document.getElementById('notifModal');
+            const content = document.getElementById('notifContent');
+            
+            // Animasi slide down
+            content.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        async function muatNotifikasi() {
+            if(!currentUserDocId) return;
+            const listDiv = document.getElementById('listNotif');
+            let hasNotif = false;
+            let htmlContent = '';
+
+            // 1. Cek Tanggal Jatuh Tempo (Pengingat Otomatis H-3)
+            try {
+                const userDoc = await db.collection('customers').doc(currentUserDocId).get();
+                if(userDoc.exists) {
+                    const data = userDoc.data();
+                    if(data.dueDate && data.status === 'Aktif') {
+                        const dueDay = parseInt(data.dueDate);
+                        const currentDay = new Date().getDate();
+                        
+                        // Cek apakah hari ini masuk range H-3 sampai hari H
+                        if (currentDay >= dueDay - 3 && currentDay <= dueDay) {
+                            hasNotif = true;
+                            htmlContent += `
+                                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/10 rounded-full blur-xl"></div>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <svg class="w-4 h-4 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                                        <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Pengingat Tagihan</span>
+                                    </div>
+                                    <h4 class="font-black text-sm text-slate-800 mb-1">Jatuh Tempo Tanggal ${dueDay}</h4>
+                                    <p class="text-[10px] font-semibold text-slate-600 leading-relaxed mb-3">Tagihan internet Anda akan segera jatuh tempo. Mohon lakukan pembayaran agar layanan tetap aktif.</p>
+                                    <button onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran')); tutupNotifikasi();" class="text-[10px] font-black bg-rose-500 text-white px-4 py-2 rounded-lg hover:bg-rose-600 transition-colors">Bayar Sekarang</button>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            } catch(e) { console.log("Gagal cek jatuh tempo lokal"); }
+
+            // 2. Tarik Pengumuman Global dari Database Firebase
+            try {
+                const snap = await db.collection('announcements').orderBy('time', 'desc').limit(5).get();
+                if(!snap.empty) {
+                    hasNotif = true;
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        htmlContent += `
+                            <div class="bg-white border border-slate-200 shadow-sm rounded-2xl p-4">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-kai-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">${data.dateStr || 'Info Baru'}</span>
+                                </div>
+                                <h4 class="font-black text-sm text-kai-blue mb-1">${data.title}</h4>
+                                <p class="text-[10px] font-semibold text-slate-600 leading-relaxed">${data.body}</p>
+                            </div>
+                        `;
+                    });
+                }
+            } catch(e) {
+                // Jangan error jika collection 'announcements' belum dibuat admin
+                console.log("Collection announcements belum ada atau kosong.");
+            }
+
+            // Update UI
+            if(!hasNotif) {
+                listDiv.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg class="w-12 h-12 text-slate-200 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                        <p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman untuk Anda.</p>
+                    </div>`;
+            } else {
+                listDiv.innerHTML = htmlContent;
+                document.getElementById('notifBadge').classList.remove('hidden'); 
+            }
+        }
+
         async function bukaRiwayat() {
-            // Pindah View tanpa mengubah warna tombol navigasi bawah
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('view-riwayat').classList.add('active');
             window.scrollTo(0,0);
             
             const listDiv = document.getElementById('listRiwayat');
-            listDiv.innerHTML = `
-                <div class="flex justify-center items-center py-8">
-                    <svg class="animate-spin h-6 w-6 text-kai-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                </div>
-            `;
+            listDiv.innerHTML = `<div class="flex justify-center py-8"><svg class="animate-spin h-6 w-6 text-kai-blue" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>`;
 
             try {
                 const doc = await db.collection('customers').doc(currentUserDocId).get();
@@ -531,15 +632,10 @@
                     
                     const keys = Object.keys(payments);
                     if (keys.length === 0) {
-                        listDiv.innerHTML = `
-                            <div class="text-center py-10 px-4 bg-slate-50 border border-slate-200 border-dashed rounded-2xl">
-                                <svg class="w-10 h-10 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                <p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan yang tercatat.</p>
-                            </div>`;
+                        listDiv.innerHTML = `<div class="text-center py-10"><p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan yang tercatat.</p></div>`;
                         return;
                     }
 
-                    // Urutkan riwayat dari yang terbaru
                     keys.sort().reverse().forEach(bulan => {
                         const status = payments[bulan];
                         const isLunas = status.toLowerCase() === 'lunas';
@@ -549,9 +645,7 @@
                                 <div class="flex items-center gap-3">
                                     <div class="w-10 h-10 rounded-full flex items-center justify-center ${isLunas ? 'bg-emerald-100 text-emerald-500' : 'bg-rose-100 text-rose-500'}">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            ${isLunas 
-                                                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' 
-                                                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                                            ${isLunas ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
                                         </svg>
                                     </div>
                                     <div>
@@ -566,9 +660,7 @@
                         `;
                     });
                 }
-            } catch(e) {
-                listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data dari server.</p>';
-            }
+            } catch(e) { listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data.</p>'; }
         }
 
         document.getElementById('profilForm').addEventListener('submit', async function(e) {
