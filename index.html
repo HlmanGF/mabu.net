@@ -1575,4 +1575,151 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">NAMA</label><input type="text" required value={editProfile.name} onChange={e => setEditProfile({...editProfile, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">USERNAME</label><input type="text" required value={editProfile.username} onChange={e => setEditProfile({...editProfile, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">PASSWORD</label><input type="text" required value={editProfile.password} onChange={e => setEditProfile({...editProfile, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
-                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border
+                          <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
+
+                          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
+                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik</label>
+                            {!editProfile.credentialId ? (
+                              <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
+                                <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
+                              </button>
+                            ) : (
+                              <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                                <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
+                                  <input type="checkbox" checked={editProfile.fingerprintEnabled} onChange={(e) => setEditProfile({...editProfile, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
+                                </label>
+                              </div>
+                            )}
+                          </div>
+
+                          {currentUser.id === 'admin1' && (
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
+                               <label className="block text-[9px] font-bold text-slate-500 mb-1 mt-2 uppercase">Nomor Gateway Bot WA</label>
+                               <input type="text" required value={settingsData.waGatewayPhone} onChange={e => setSettingsData({...settingsData, waGatewayPhone: e.target.value})} placeholder="62811122699" className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" />
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-2 mt-4">
+                            <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs">Batal</button>
+                            <button type="submit" className="flex-1 py-2.5 bg-kai-blue text-white rounded-xl font-bold text-xs shadow-md">Simpan</button>
+                          </div>
+                        </form>
+                      </div>
+                    ) : null}
+                    
+                    {currentUser.id === 'admin1' && !isEditingProfile && !showAdminManagement && (
+                      <button onClick={() => setShowAdminManagement(true)} className="w-full bg-white dark:bg-slate-800 p-4 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center text-kai-blue dark:text-white font-bold text-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <div className="flex items-center gap-2"><ShieldAlert className="w-5 h-5"/> Kelola Akses Admin</div>
+                        <ChevronRight className="w-4 h-4 text-slate-400"/>
+                      </button>
+                    )}
+
+                    {currentUser.id === 'admin1' && showAdminManagement && (
+                      <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                        <button onClick={() => setShowAdminManagement(false)} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-kai-blue dark:hover:text-white transition-colors">
+                          <ArrowLeft className="w-4 h-4"/> Kembali ke Profil
+                        </button>
+                        
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm">
+                          <h3 className="text-base font-extrabold mb-4 flex items-center gap-2"><ShieldAlert className="w-4 h-4 text-rose-500"/> Kelola Akses Admin</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {admins.filter(a => a.id !== 'admin1').map(admin => (
+                              <div key={admin.id} className={`flex flex-col p-4 rounded-2xl border transition-colors ${admin.status === 'Aktif' ? 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700' : 'bg-rose-50 dark:bg-rose-900/10 border-rose-200 dark:border-rose-900/50'}`}>
+                                <div className="flex items-center gap-3 mb-3">
+                                  <div className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-600 overflow-hidden bg-slate-200 dark:bg-slate-700 shrink-0">
+                                    {admin.photo ? <img src={admin.photo} className="w-full h-full object-cover" /> : <User className="w-5 h-5 m-2.5 text-slate-400" />}
+                                  </div>
+                                  <div>
+                                    <p className="font-extrabold text-sm">{admin.name}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{admin.role}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 border-t border-slate-200 dark:border-slate-700/50 pt-3">
+                                  <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5"><UserCog className="w-3.5 h-3.5"/> Edit</button>
+                                  <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 ${admin.status === 'Aktif' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
+                                    {admin.status === 'Aktif' ? 'Blokir' : 'Aktifkan'}
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm">
+                          <h3 className="text-base font-extrabold mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-kai-blue dark:text-kai-orange"/> System Logs</h3>
+                          <div className="h-64 overflow-y-auto pr-1 custom-scrollbar">
+                            {auditLogs.length === 0 ? (
+                              <p className="text-center text-slate-400 py-10 font-bold text-xs">Log kosong.</p>
+                            ) : (
+                              <ul className="space-y-2">
+                                {auditLogs.map((log) => (
+                                  <li key={log.id} className="flex gap-2 text-xs p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                                    <div className="text-slate-400 w-20 shrink-0 text-[8px] font-bold font-mono">{log.dateStr}</div>
+                                    <div><span className="font-extrabold text-kai-blue dark:text-white">{log.admin}</span> <span className="text-slate-600 dark:text-slate-300 text-[10px] font-bold ml-1">{log.action}</span></div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </main>
+
+            {/* Mobile Nav */}
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-md">
+              <button onClick={() => {setActiveTab('dashboard'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400'}`}><LayoutDashboard className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Beranda</span></button>
+              <button onClick={() => {setActiveTab('customers'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400'}`}><Users className="w-5 h-5 mb-1"/>{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold">Pelanggan</span></button>
+              <button onClick={() => {setActiveTab('tickets'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400'}`}><MessageCircle className="w-5 h-5 mb-1"/>{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Chat</span></button>
+              {currentUser?.id === 'admin1' && <button onClick={() => {setActiveTab('mikrotik'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400'}`}><Server className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">MikroTik</span></button>}
+              <button onClick={() => {setActiveTab('settings'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400'}`}><User className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Profil</span></button>
+            </nav>
+          </div>
+
+          {/* Modal Chat Baru */}
+          {isNewChatModalOpen && (
+            <div className="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col max-h-[80vh]">
+                <div className="flex justify-between items-center mb-4"><h3 className="text-base font-extrabold text-kai-blue dark:text-white">Mulai Chat Pelanggan</h3><button onClick={() => setIsNewChatModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button></div>
+                <input type="text" placeholder="Cari nama pelanggan..." value={chatCustomerSearch} onChange={e => setChatCustomerSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none" />
+                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                  {customers.filter(c => (c.name || '').toLowerCase().includes(chatCustomerSearch.toLowerCase())).map(c => (
+                    <button key={c.id} onClick={() => handleStartNewChatWithCustomer(c)} className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-kai-blue hover:text-white transition-colors flex justify-between items-center border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <img src={c.foto_profil || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1A2C5B&color=fff`} className="w-8 h-8 rounded-full object-cover border bg-white" />
+                        <div><p className="font-bold text-xs">{c.name}</p><p className="text-[10px] opacity-75">Blok {c.block} • {c.phone || '-'}</p></div>
+                      </div>
+                      <MessageCircle className="w-4 h-4 shrink-0"/>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Lightbox Zoom Foto */}
+          {previewLightbox && (
+            <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
+              <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full"><X className="w-6 h-6"/></button>
+              <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    const rootElement = document.getElementById('root');
+    const root = createRoot(rootElement);
+    root.render(
+        <ErrorBoundary>
+            <App />
+        </ErrorBoundary>
+    );
+  </script>
+</body>
+</html>
