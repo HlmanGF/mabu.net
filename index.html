@@ -18,11 +18,11 @@
         extend: {
           colors: {
             kai: {
-              blue: '#1A2C5B',      // Biru Navy KAI
-              bluedark: '#111D42',  // Biru Navy Gelap
-              orange: '#F97316',    // Orange Aksen KAI
+              blue: '#1A2C5B',
+              bluedark: '#111D42',
+              orange: '#F97316',
               orangedark: '#EA580C',
-              bg: '#F3F4F6'         // Abu-abu terang background
+              bg: '#F3F4F6'
             }
           },
           fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
@@ -31,8 +31,8 @@
     }
   </script>
   
+  <!-- HANYA BABEL SAJA (KEMBALI KE VERSI STABIL BAPAK) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
@@ -78,11 +78,11 @@
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X, RefreshCw
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
     const firebaseConfig = {
@@ -396,7 +396,7 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // PENGELOMPOKAN 1 THREAD
+          // --- LOGIKA PENGELOMPOKAN 1 KLIEN 1 TIKET ---
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              
@@ -420,7 +420,7 @@
              const mergedList = Array.from(uniqueMap.values());
              mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
              
-             // BUNYIKAN NOTIFIKASI
+             // --- NOTIFIKASI SUARA ---
              let latestTime = 0;
              mergedList.forEach(t => {
                  const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
@@ -428,7 +428,7 @@
              });
              
              if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-                 notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
+                 notificationAudioRef.current.play().catch(e => console.log('Audio autoplay blocked by browser.'));
              }
              lastTicketUpdateRef.current = latestTime;
 
@@ -448,9 +448,8 @@
               unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, []);
+      }, [customers]);
 
-      // LISTENER CHAT UNTUK TIKET AKTIF
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
@@ -580,19 +579,29 @@
 
               const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
               if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
-                  await addDoc(collection(db, 'mikrotik_commands'), { action: 'UPGRADE_PACKAGE', pppoeUser: custDoc.pppoe_user, packageId: targetPkg });
-                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: null });
+                  await addDoc(collection(db, 'mikrotik_commands'), {
+                      action: 'UPGRADE_PACKAGE',
+                      pppoeUser: custDoc.pppoe_user,
+                      packageId: targetPkg
+                  });
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: deleteField() });
               } else {
                   const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
                   await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
               }
-              await updateDoc(doc(db, 'approvals', approvalData.id), { status: 'approved', approvedBy: currentUser.name, approvedAt: serverTimestamp() });
+              await updateDoc(doc(db, 'approvals', approvalData.id), {
+                  status: 'approved',
+                  approvedBy: currentUser.name,
+                  approvedAt: serverTimestamp()
+              });
               alert("Proses Approve Berhasil!");
           } catch (err) { alert("Gagal memproses approval: " + err.message); }
       };
 
       const handleRejectApprove = async (approvalId) => {
-          if (confirm("Tolak permohonan ini?")) { await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name }); }
+          if (confirm("Tolak permohonan ini?")) {
+              await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name });
+          }
       };
 
       const handleSaveMikrotikData = async (e) => {
@@ -670,7 +679,7 @@
 
       const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
-      // VARIABLES
+      // --- RENDERING VARIABELS ---
       const actualPaidRevenue = customers.filter(c => c.status === 'Aktif' && c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const totalPotentialRevenue = customers.filter(c => c.status === 'Aktif' && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
@@ -703,7 +712,6 @@
         </button>
       );
 
-      // ========== LAYAR LOGIN ==========
       if (!currentUser) {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
