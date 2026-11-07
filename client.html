@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +11,6 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-storage-compat.js"></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +38,7 @@
         .chat-bubble-client { background-color: #1A2C5B; color: white; border-radius: 16px 16px 0 16px; align-self: flex-end; }
         .chat-bubble-admin { background-color: #F1F5F9; color: #334155; border-radius: 16px 16px 16px 0; align-self: flex-start; }
     </style>
+    <!-- Library Cropper JS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
@@ -88,10 +89,9 @@
                     <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center mt-4">
                         <p class="text-xs font-bold text-kai-blue mb-2">QRIS Pembayaran Upgrade</p>
                         <img src="./qris.jpg" alt="QRIS" class="w-32 h-32 object-contain mx-auto mb-2 rounded-lg bg-white p-2 border">
-                        <p class="text-[9px] text-slate-600">Selesaikan pembayaran & kirim bukti untuk memproses paket baru Anda.</p>
+                        <p class="text-[9px] text-slate-600">Scan QRIS ini untuk membayar biaya tagihan paket baru Anda.</p>
                     </div>
                     
-                    <!-- UPLOAD BUKTI UPGRADE -->
                     <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 mt-4 text-center">
                         <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Upload Bukti Pembayaran</p>
                         <input type="file" id="upgradeProofInput" accept="image/*" required class="hidden" onchange="previewUpgradeProof(event)">
@@ -209,7 +209,6 @@
                 <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mx-auto mb-4 rounded-xl shadow-md border bg-white">
             </div>
             
-            <!-- TOMBOL BARU KIRIM BUKTI IN-APP -->
             <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 Upload Bukti Pembayaran
@@ -217,13 +216,12 @@
         </div>
     </div>
 
-    <!-- 4. KONTEN: BANTUAN & TICKETING (IN-APP CHAT) -->
+    <!-- 4. KONTEN: BANTUAN & TICKETING -->
     <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
         
         <!-- TIKET SAYA -->
         <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-2">Daftar Tiket & Pesan Anda</h2>
         <div id="listTickets" class="space-y-3 mb-6">
-            <!-- Dimuat via JS -->
             <div class="text-center py-6 bg-white border border-slate-200 border-dashed rounded-2xl"><p class="text-[10px] font-bold text-slate-400">Belum ada laporan atau pesan masuk.</p></div>
         </div>
 
@@ -279,6 +277,22 @@
                 <div class="accordion-content bg-slate-50/50">
                     <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
                         <p>Matikan modem selama 10 menit, lalu nyalakan kembali. Pastikan tidak ada HP yang sedang mendownload update otomatis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                    <span class="font-extrabold text-sm text-kai-blue">Cara Kirim Bukti Pembayaran</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Lakukan pembayaran melalui menu <strong>Bayar Tagihan</strong> menggunakan QRIS.</li>
+                            <li>Simpan/Screenshot bukti transfer dari aplikasi perbankan (BCA, DANA, GoPay, dll) atau simpan struk fisik jika dari agen.</li>
+                            <li>Tekan tombol hijau <strong>"Upload Bukti Pembayaran"</strong> di halaman pembayaran, lalu lampirkan gambar bukti transfer Anda.</li>
+                            <li>Admin akan memverifikasi dan mengubah status pembayaran Anda.</li>
+                        </ol>
                     </div>
                 </div>
             </div>
@@ -370,14 +384,13 @@
                 
                 <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-2 bg-emerald-500 text-white rounded-xl font-black text-sm shadow-lg">Simpan Perubahan Foto</button>
 
-                <!-- TOMBOL UPGRADE MEMBUKA MODAL IN-APP -->
                 <button type="button" id="btnBukaUpgrade" onclick="bukaUpgrade()" class="w-full py-4 mt-2 bg-kai-orange text-white rounded-xl font-black text-sm shadow-lg flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     Ajukan Ganti Paket Baru
                 </button>
 
                 <button type="button" onclick="bukaRiwayat()" class="w-full py-4 mt-2 bg-blue-50 text-kai-blue border border-blue-200 rounded-xl font-black text-sm flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     Lihat Riwayat Pembayaran
                 </button>
             </form>
@@ -395,7 +408,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC FULL -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
@@ -407,24 +420,20 @@
         };
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
-        const storage = firebase.storage();
         
         let currentUserDocId = null;
         let cropperInstance = null;
         let currentPackageName = ""; 
-        let globalName = ""; let globalBlock = ""; let globalPhone = "";
+        let globalName = ""; let globalBlock = ""; let globalPhone = ""; let globalDueDate = null;
         
-        // Listener References
         let profilListener = null;
         let ticketsListener = null;
         let chatListener = null;
         let currentChatTicketId = null;
 
-        // Base 64 Images temp
         let tempUpgradeProofBase64 = null;
         let tempBillProofBase64 = null;
 
-        // FUNGSI AKORDEON
         document.querySelectorAll('.accordion-header').forEach(header => {
             header.addEventListener('click', function() {
                 const item = this.parentElement; const content = item.querySelector('.accordion-content');
@@ -483,7 +492,6 @@
             if (currentUserDocId) { switchView('view-profil', btn); } else { switchView('view-login', btn); }
         }
 
-        // 1. FUNGSI LOGIN
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnLogin');
@@ -498,7 +506,6 @@
                     const userData = snapshot.docs[0].data();
                     localStorage.setItem('mabunet_session', JSON.stringify({id: currentUserDocId, foto: userData.foto_profil}));
                     document.getElementById('loginForm').reset();
-                    
                     bukaAplikasiPenuh(); 
                     mulaiListenerRealtime();
                 }
@@ -506,7 +513,6 @@
             finally { btn.innerText = "Masuk ke Portal"; btn.disabled = false; }
         });
 
-        // 2. LISTENER REAL-TIME (PROFIL & TIKET)
         function mulaiListenerRealtime() {
             if(!currentUserDocId) return;
 
@@ -514,6 +520,7 @@
                 if (doc.exists) {
                     const data = doc.data();
                     globalName = data.name || '-'; globalPhone = data.phone || '-'; globalBlock = data.block || '-';
+                    globalDueDate = data.dueDate || null;
                     
                     if(document.getElementById('profilNama')) {
                         document.getElementById('profilNama').value = globalName;
@@ -575,7 +582,6 @@
             muatNotifikasi();
         }
 
-        // 3. FUNGSI TICKETING (IN-APP CHAT KELUHAN / UMUM)
         document.getElementById('ticketForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             if(!currentUserDocId) { alert("Login dahulu."); return; }
@@ -588,20 +594,17 @@
 
             try {
                 await db.collection('tickets').add({
-                    customerId: currentUserDocId,
-                    name: globalName, block: globalBlock, phone: globalPhone,
+                    customerId: currentUserDocId, name: globalName, block: globalBlock, phone: globalPhone,
                     issueType: type, status: 'Open', 
                     timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
                     messages: [{ sender: 'client', text: desc, time: new Date().getTime() }]
                 });
-
                 document.getElementById('ticketForm').reset();
                 alert("Pesan/Laporan berhasil dikirim! Silakan pantau di 'Daftar Tiket & Pesan Anda' di atas.");
             } catch (err) { alert("Gagal mengirim."); } 
             finally { btn.innerHTML = `Kirim Pesan`; btn.disabled = false; }
         });
 
-        // BUKA MODAL CHAT
         function bukaChat(ticketId, type, status) {
             currentChatTicketId = ticketId;
             document.getElementById('chatTicketType').innerText = type;
@@ -622,7 +625,6 @@
                         
                         if(msg.sender === 'client') {
                             html += `<div class="chat-bubble-client max-w-[80%] px-4 py-2 shadow-sm text-sm"><p>${msg.text}</p><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
-                            // Tampilkan jika ada attachment
                             if(msg.attachmentUrl) {
                                 html += `<div class="chat-bubble-client max-w-[80%] px-2 py-2 shadow-sm"><img src="${msg.attachmentUrl}" class="w-full rounded-lg" onclick="window.open('${msg.attachmentUrl}', '_blank')"><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
                             }
@@ -648,7 +650,6 @@
             const input = document.getElementById('chatInput');
             const teks = input.value.trim();
             if(!teks || !currentChatTicketId) return;
-            
             input.value = ''; 
             try {
                 await db.collection('tickets').doc(currentChatTicketId).update({
@@ -659,7 +660,9 @@
             } catch(e) { alert("Gagal mengirim pesan."); }
         });
 
-        // 4A. FUNGSI KIRIM BUKTI TAGIHAN BULANAN (BARU)
+        // ===============================================
+        // FUNGSI BARU (TERLEWAT SEBELUMNYA): PAYMENT PROOF
+        // ===============================================
         function bukaPaymentProof() {
             if(!currentUserDocId) {
                 alert("Anda harus login untuk mengirim bukti pembayaran lewat aplikasi.");
@@ -701,7 +704,6 @@
             btn.innerText = "Mengupload Bukti..."; btn.disabled = true;
 
             try {
-                // Konsep: Membuat tiket otomatis bernama "Konfirmasi Pembayaran"
                 await db.collection('tickets').add({
                     customerId: currentUserDocId,
                     name: globalName, block: globalBlock, phone: globalPhone,
@@ -709,20 +711,19 @@
                     timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
                     messages: [
                         { sender: 'client', text: "Berikut ini bukti transfer tagihan bulan ini.", time: new Date().getTime() },
-                        { sender: 'client', text: "[Gambar Bukti Transfer]", attachmentUrl: tempBillProofBase64, time: new Date().getTime() + 100 } // Simulasi delay tipis
+                        { sender: 'client', text: "Bukti Transfer Terlampir", attachmentUrl: tempBillProofBase64, time: new Date().getTime() + 100 } 
                     ]
                 });
-                
                 tutupPaymentProof();
                 alert("Bukti pembayaran telah terkirim! Admin akan segera memproses tagihan Anda.");
-                // Bawa user melihat tiketnya
                 switchView('view-bantuan', document.getElementById('nav-bantuan'));
             } catch (err) { alert("Gagal mengupload bukti pembayaran. Coba perkecil ukuran gambar."); } 
             finally { btn.innerText = "Kirim Bukti ke Admin"; btn.disabled = false; }
         });
 
-
-        // 4B. FUNGSI PENGAJUAN UPGRADE PAKET (IN-APP) DENGAN GAMBAR
+        // ===============================================
+        // FUNGSI BARU (TERLEWAT SEBELUMNYA): UPGRADE PROOF
+        // ===============================================
         function previewUpgradeProof(event) {
             const file = event.target.files[0];
             if(file) {
@@ -761,12 +762,10 @@
             const paketBaru = document.getElementById('upgradeSelect').value;
 
             try {
-                // 1. Update status customer
                 await db.collection('customers').doc(currentUserDocId).update({
                     pendingUpgrade: { packageId: paketBaru, status: 'Menunggu Pembayaran', timestamp: new Date().getTime() }
                 });
 
-                // 2. Buat otomatis Tiket Laporan Pembayaran Upgrade
                 await db.collection('tickets').add({
                     customerId: currentUserDocId,
                     name: globalName, block: globalBlock, phone: globalPhone,
@@ -774,18 +773,17 @@
                     timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
                     messages: [
                         { sender: 'client', text: `Saya ingin ganti ke paket: ${paketBaru}. Ini bukti transfernya.`, time: new Date().getTime() },
-                        { sender: 'client', text: "[Gambar Bukti Transfer Upgrade]", attachmentUrl: tempUpgradeProofBase64, time: new Date().getTime() + 100 }
+                        { sender: 'client', text: "Bukti Transfer Upgrade", attachmentUrl: tempUpgradeProofBase64, time: new Date().getTime() + 100 }
                     ]
                 });
                 
                 tutupUpgrade();
-                alert("Pengajuan Upgrade berhasil dikirim! Silakan tunggu konfirmasi Admin (bisa dicek di menu Tiket/Bantuan).");
+                alert("Pengajuan Upgrade berhasil dikirim! Silakan tunggu konfirmasi Admin (bisa dicek di menu Tiket).");
             } catch (err) { alert("Gagal mengajukan. Coba kurangi ukuran gambar."); } 
             finally { btn.innerText = "Ajukan & Kirim Bukti"; btn.disabled = false; }
         });
 
-
-        // 5. FUNGSI NOTIFIKASI
+        // FUNGSI NOTIFIKASI
         function bukaNotifikasi() {
             document.getElementById('notifModal').classList.remove('hidden'); document.getElementById('notifModal').classList.add('flex');
             setTimeout(() => { document.getElementById('notifContent').classList.remove('translate-y-full'); }, 10);
@@ -820,7 +818,6 @@
             if(hasNotif) document.getElementById('notifBadge').classList.remove('hidden'); 
         }
 
-        // FUNGSI LAINNYA (Riwayat & Cropper)
         async function bukaRiwayat() {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('view-riwayat').classList.add('active');
