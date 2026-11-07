@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MABUNET - Master Admin Panel</title>
+    <title>MABUNET - Admin Panel</title>
    
     <!-- Favicon MabuNet -->
     <link rel="icon" href="https://mabunet.site/favicon.ico" type="image/x-icon">
@@ -50,12 +50,13 @@
 </head>
 <body class="text-slate-800 h-screen overflow-hidden flex">
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR KIRI -->
     <aside class="w-64 bg-kai-blue text-white flex flex-col shadow-xl z-20 h-full flex-shrink-0">
         <!-- Logo -->
         <div class="p-6 border-b border-white/10 flex items-center gap-3">
             <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center p-1">
-                <img src="https://mabunet.site/favicon.ico" alt="Logo" class="w-full h-full object-contain">
+                <!-- Anda bisa ganti URL logo ini jika perlu -->
+                <svg class="w-6 h-6 text-kai-blue" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
             </div>
             <div>
                 <h1 class="text-lg font-black tracking-tight leading-none">MABUNET</h1>
@@ -74,7 +75,7 @@
             </div>
         </div>
 
-        <!-- Menu Links -->
+        <!-- Menu Navigasi -->
         <nav class="flex-1 overflow-y-auto py-4 space-y-1">
             <button onclick="switchView('view-dashboard', this)" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
@@ -85,7 +86,7 @@
                 Data Pelanggan
             </button>
             
-            <!-- TIKET MENU -->
+            <!-- MENU UTAMA KITA: TIKET & PESAN -->
             <button onclick="switchView('view-tickets', this)" class="sidebar-item active w-full flex items-center justify-between px-6 py-3 text-sm text-white bg-kai-orange border-l-4 border-white font-bold">
                 <div class="flex items-center gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
@@ -94,61 +95,64 @@
                 <span id="badge-tickets" class="bg-white text-kai-orange text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm hidden">0</span>
             </button>
 
-            <!-- Menu Lainnya (Dummy untuk kelengkapan visual) -->
-            <button class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300 opacity-50 cursor-not-allowed">
+            <button onclick="switchView('view-finance', this)" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
                 Kas Keuangan
             </button>
-            <button class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300 opacity-50 cursor-not-allowed">
+            <button onclick="switchView('view-mikrotik', this)" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg>
                 MikroTik
             </button>
+            <button onclick="switchView('view-portal', this)" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                Portal Web
+            </button>
+            <button onclick="switchView('view-settings', this)" class="sidebar-item w-full flex items-center gap-3 px-6 py-3 text-sm text-slate-300 mt-4 border-t border-white/5 pt-6">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                Pengaturan
+            </button>
         </nav>
-        
-        <div class="p-4 border-t border-white/10">
-            <button class="w-full py-2 bg-white/5 text-slate-400 text-xs font-bold rounded-lg hover:bg-rose-500 hover:text-white transition-colors">Keluar Sistem</button>
-        </div>
     </aside>
 
-    <!-- MAIN CONTENT AREA -->
+    <!-- KONTEN UTAMA KANAN -->
     <main class="flex-1 flex flex-col h-full bg-slate-50 relative">
         
         <!-- HEADER KANAN ATAS -->
         <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-10 shadow-sm">
             <h2 class="font-black text-kai-blue text-lg" id="page-title">Tiket & Pesan Klien</h2>
             <div class="flex items-center gap-4">
-                <div class="px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-bold text-kai-blue">
+                <div class="px-3 py-1.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-bold text-kai-blue" id="current-month-display">
                     November 2026
                 </div>
             </div>
         </header>
 
-        <!-- KONTEN: VIEW TIKET & CHAT -->
+        <!-- HALAMAN 1: TIKET & CHAT (AKTIF) -->
         <div id="view-tickets" class="view-section active flex-1 overflow-hidden">
             <div class="h-full flex p-4 gap-4">
                 
-                <!-- LIST TIKET (KIRI) -->
-                <div class="w-1/3 min-w-[300px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                <!-- PANEL KIRI: DAFTAR TIKET MASUK -->
+                <div class="w-1/3 min-w-[320px] bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
                     <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                         <div>
                             <h3 class="font-black text-kai-blue">Tiket Masuk</h3>
-                            <p class="text-[10px] font-semibold text-slate-500">Pesan & Keluhan Pelanggan</p>
+                            <p class="text-[10px] font-semibold text-slate-500">Pesan & Keluhan Klien</p>
                         </div>
                         <span id="total-open-badge" class="bg-rose-100 text-rose-600 text-[10px] font-black px-2 py-1 rounded">0 Open</span>
                     </div>
                     
-                    <div id="adminListTickets" class="flex-1 overflow-y-auto p-3 space-y-2 bg-white">
+                    <div id="adminListTickets" class="flex-1 overflow-y-auto p-3 bg-white">
                         <div class="text-center py-10"><p class="text-xs font-bold text-slate-400">Memuat tiket...</p></div>
                     </div>
                 </div>
 
-                <!-- AREA RUANG CHAT (KANAN) -->
+                <!-- PANEL KANAN: RUANG OBROLAN (CHAT) -->
                 <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden relative">
                     
                     <!-- State: Kosong / Belum pilih tiket -->
                     <div id="emptyChatState" class="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center z-10">
                         <svg class="w-16 h-16 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                        <p class="text-sm font-bold text-slate-400">Pilih tiket di samping untuk mulai percakapan</p>
+                        <p class="text-sm font-bold text-slate-400">Pilih tiket di samping untuk mulai percakapan...</p>
                     </div>
 
                     <!-- Chat Header -->
@@ -162,27 +166,27 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="chatTicketTypeBadge" class="bg-blue-50 border border-blue-200 text-kai-blue text-[10px] font-bold px-2 py-1 rounded">Topik</span>
-                            <button onclick="tutupTiketSelesai()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-black px-3 py-1.5 rounded transition-colors shadow-sm">Tutup Tiket (Selesai)</button>
+                            <button onclick="tutupTiketSelesai()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-black px-3 py-1.5 rounded transition-colors shadow-sm cursor-pointer">Tutup Tiket</button>
                         </div>
                     </div>
 
-                    <!-- Area Panel Eksekusi (Upgrade / Pembayaran) -->
+                    <!-- Panel Eksekusi (Muncul khusus untuk Upgrade & Bukti Bayar) -->
                     <div id="actionPanel" class="hidden bg-orange-50 border-b border-orange-200 p-3 flex justify-between items-center z-0">
                         <div>
-                            <p class="text-[10px] font-black text-orange-600 uppercase tracking-wider mb-0.5" id="actionTitle">Pengajuan Upgrade Paket</p>
-                            <p class="text-xs font-bold text-slate-700" id="actionDesc">Klien ingin ganti paket ke: Standar 10 Mbps</p>
+                            <p class="text-[10px] font-black text-orange-600 uppercase tracking-wider mb-0.5" id="actionTitle">Persetujuan</p>
+                            <p class="text-xs font-bold text-slate-700" id="actionDesc">Keterangan aksi klien.</p>
                         </div>
                         <button onclick="approveAction()" id="btnApproveAction" class="bg-kai-orange hover:bg-kai-orangedark text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Approve & Ubah Status
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Setujui & Proses
                         </button>
                     </div>
 
-                    <!-- Chat Messages List -->
+                    <!-- Daftar Obrolan (Messages) -->
                     <div id="adminChatMessages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4 bg-slate-50/50 hidden z-0">
-                        <!-- Messages dimuat via JS -->
+                        <!-- Pesan-pesan akan dirender di sini via JavaScript -->
                     </div>
 
-                    <!-- Chat Input Box -->
+                    <!-- Input Ketik Pesan -->
                     <form id="adminChatForm" class="p-4 bg-white border-t border-slate-100 flex gap-3 hidden z-0">
                         <input type="text" id="adminChatInput" autocomplete="off" placeholder="Ketik balasan untuk klien..." required class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-kai-blue focus:ring-1 focus:ring-kai-blue">
                         <button type="submit" class="w-12 h-12 bg-kai-blue text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-kai-bluedark transition-transform active:scale-95">
@@ -194,12 +198,33 @@
             </div>
         </div>
         
-        <!-- View Dummy lainnya -->
-        <div id="view-dashboard" class="view-section h-full flex items-center justify-center">
-            <h1 class="text-2xl font-bold text-slate-400">Halaman Beranda (Segera Hadir)</h1>
+        <!-- HALAMAN KOSONG UNTUK FITUR LAIN (Tinggal copy paste fitur lama Bapak ke sini) -->
+        <div id="view-dashboard" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman Beranda</h1>
+            <p class="text-slate-500 text-sm mt-2">Taruh kode fitur Beranda Anda di dalam div ini.</p>
         </div>
-        <div id="view-customers" class="view-section h-full flex items-center justify-center">
-            <h1 class="text-2xl font-bold text-slate-400">Halaman Data Pelanggan (Segera Hadir)</h1>
+        
+        <div id="view-customers" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman Data Pelanggan</h1>
+            <p class="text-slate-500 text-sm mt-2">Taruh kode fitur Tabel Pelanggan Anda di dalam div ini.</p>
+        </div>
+
+        <div id="view-finance" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman Kas Keuangan</h1>
+            <p class="text-slate-500 text-sm mt-2">Taruh kode fitur Jurnal Kas Keluarga & Umum Anda di dalam div ini.</p>
+        </div>
+
+        <div id="view-mikrotik" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman MikroTik</h1>
+            <p class="text-slate-500 text-sm mt-2">Taruh kode fitur integrasi MikroTik (PPPoE/Hotspot) Anda di dalam div ini.</p>
+        </div>
+        
+        <div id="view-portal" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman Portal Web</h1>
+        </div>
+
+        <div id="view-settings" class="view-section h-full flex flex-col items-center justify-center">
+            <h1 class="text-2xl font-bold text-slate-400">Halaman Pengaturan</h1>
         </div>
 
     </main>
@@ -214,6 +239,7 @@
 
     <!-- JAVASCRIPT LOGIC - MASTER ADMIN -->
     <script>
+        // Konfigurasi Database Firebase MABUNET
         const firebaseConfig = {
             apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
             authDomain: "billing-mabunet.firebaseapp.com",
@@ -229,9 +255,10 @@
         let activeChatListener = null;
         let activeTicketId = null;
         let activeCustomerId = null;
-        let activeActionType = null; // 'upgrade' atau 'payment'
+        let activeActionType = null; 
         let activeActionPackage = null;
 
+        // FUNGSI PINDAH MENU SIDEBAR
         function switchView(viewId, btnElement) {
             document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
             document.querySelectorAll('.sidebar-item').forEach(btn => {
@@ -248,10 +275,17 @@
         }
 
         window.addEventListener('load', () => {
+            setBulanTahunSkrg();
             mulaiPantauTiket();
         });
 
-        // 1. MEMANTAU DAFTAR TIKET MASUK
+        function setBulanTahunSkrg() {
+            const date = new Date();
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('current-month-display').innerText = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        }
+
+        // 1. FUNGSI MEMANTAU TIKET DARI KLIEN SECARA REAL-TIME
         function mulaiPantauTiket() {
             allTicketsListener = db.collection('tickets').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
                 const listDiv = document.getElementById('adminListTickets');
@@ -275,21 +309,21 @@
                     const titleColor = isSelesai ? 'text-slate-500' : 'text-kai-blue';
                     const statusBadge = isSelesai ? 'bg-slate-200 text-slate-600' : 'bg-rose-500 text-white shadow-sm';
                     
-                    // Cek pesan terakhir untuk cuplikan
+                    // MEMBACA PESAN DARI FORMAT ARRAY BARU
                     let lastMessageText = "Belum ada pesan";
                     if (t.messages && Array.isArray(t.messages) && t.messages.length > 0) {
                         let lastMsg = t.messages[t.messages.length - 1];
-                        lastMessageText = lastMsg.text || (lastMsg.attachmentUrl ? "Melampirkan Gambar Bukti" : "Pesan...");
+                        lastMessageText = lastMsg.text || (lastMsg.attachmentUrl ? "[Melampirkan Gambar Bukti]" : "Pesan...");
                     }
 
-                    // Tanda khusus jika tiket ini butuh approval
+                    // Tambahkan titik indikator untuk tiket yang butuh aksi (Approval)
                     let requireActionIcon = "";
-                    if (t.issueType === "Pengajuan Ganti Paket" || t.issueType === "Konfirmasi Pembayaran") {
-                        if(t.status === 'Open') requireActionIcon = `<span class="inline-block w-2 h-2 rounded-full bg-kai-orange absolute top-3 right-3 animate-pulse"></span>`;
+                    if ((t.issueType === "Pengajuan Ganti Paket" || t.issueType === "Konfirmasi Pembayaran") && t.status === 'Open') {
+                        requireActionIcon = `<span class="inline-block w-2 h-2 rounded-full bg-kai-orange absolute top-3 right-3 animate-pulse"></span>`;
                     }
 
                     html += `
-                        <div onclick="bukaObrolanKlien('${tId}', '${t.customerId}')" class="relative ${bgCard} border p-3.5 rounded-xl cursor-pointer transition-colors group ${activeTicketId === tId ? 'ring-2 ring-kai-orange border-transparent' : ''}">
+                        <div onclick="bukaObrolanKlien('${tId}', '${t.customerId}')" class="relative ${bgCard} border p-3.5 mb-3 rounded-xl cursor-pointer transition-colors group ${activeTicketId === tId ? 'ring-2 ring-kai-orange border-transparent' : ''}">
                             ${requireActionIcon}
                             <div class="flex justify-between items-start mb-1.5">
                                 <h4 class="font-black text-xs ${titleColor} truncate pr-4">${t.name} <span class="font-normal text-[10px] text-slate-400 ml-1">(${t.block})</span></h4>
@@ -297,14 +331,13 @@
                             </div>
                             <p class="text-[9px] font-bold text-kai-blue mb-1 bg-blue-50 inline-block px-1.5 py-0.5 rounded">${t.issueType}</p>
                             <p class="text-[10px] font-semibold text-slate-500 truncate mt-1">${lastMessageText}</p>
-                            <p class="text-[8px] font-bold text-slate-300 mt-2 text-right">${t.dateStr}</p>
                         </div>
                     `;
                 });
 
                 listDiv.innerHTML = html;
 
-                // Update Badges
+                // Update Lencana Angka Tiket
                 const badgeTotal = document.getElementById('badge-tickets');
                 const badgeHeader = document.getElementById('total-open-badge');
                 
@@ -321,32 +354,27 @@
             });
         }
 
-        // 2. BUKA RUANG CHAT ADMIN KE KLIEN
+        // 2. FUNGSI MEMBUKA RUANG CHAT ADMIN KE KLIEN TERTENTU
         function bukaObrolanKlien(ticketId, customerId) {
-            // Hilangkan highlight tiket sebelumnya
-            if(activeTicketId) {
-                // Render ulang sedikit list tiket biar ring-2 nya update (cara instan)
-                setTimeout(()=> mulaiPantauTiket(), 10);
-            }
+            if(activeTicketId) { setTimeout(()=> mulaiPantauTiket(), 10); } // Refresh gaya tombol aktif
             
             activeTicketId = ticketId;
             activeCustomerId = customerId;
 
-            // Sembunyikan state kosong, munculkan UI chat
+            // Membuka UI Chat
             document.getElementById('emptyChatState').classList.add('hidden');
             document.getElementById('activeChatHeader').classList.remove('hidden');
             document.getElementById('adminChatMessages').classList.remove('hidden');
             document.getElementById('adminChatForm').classList.remove('hidden');
             
-            // Hentikan listener chat sebelumnya jika ada
-            if(activeChatListener) activeChatListener();
+            if(activeChatListener) activeChatListener(); // Matikan pantauan chat sebelumnya
 
-            // Mulai dengarkan chat tiket ini
+            // Dengarkan chat untuk tiket yang dipilih ini
             activeChatListener = db.collection('tickets').doc(ticketId).onSnapshot(doc => {
                 if(!doc.exists) return;
                 const t = doc.data();
                 
-                // Update Header Profil
+                // Ubah Header Chat
                 const initials = t.name ? t.name.substring(0,2).toUpperCase() : 'CL';
                 document.getElementById('chatInitials').innerText = initials;
                 document.getElementById('chatClientName').innerText = t.name;
@@ -354,16 +382,16 @@
                 document.getElementById('chatClientPhone').innerText = t.phone;
                 document.getElementById('chatTicketTypeBadge').innerText = t.issueType;
 
-                // Cek apakah tiket ini adalah Pengajuan Upgrade / Pembayaran yang butuh Aksi Admin
+                // Cek jika butuh tombol Approve Upgrade/Lunas
                 cekDanTampilkanActionPanel(t);
 
-                // Render Pesan
+                // PROSES RENDERING ARRAY CHAT KLIEN
                 const messages = (t.messages && Array.isArray(t.messages)) ? t.messages : [];
                 const chatBox = document.getElementById('adminChatMessages');
                 let html = '';
 
                 if (messages.length === 0) {
-                    html = '<div class="h-full flex items-center justify-center"><p class="text-[10px] font-bold text-slate-400">Mulai percakapan dengan klien...</p></div>';
+                    html = '<div class="h-full flex items-center justify-center"><p class="text-[10px] font-bold text-slate-400">Belum ada obrolan.</p></div>';
                 } else {
                     messages.forEach(msg => {
                         const dateObj = msg.time ? new Date(msg.time) : new Date();
@@ -375,14 +403,14 @@
                                     <p class="text-[9px] font-black text-slate-400 ml-2 mb-1 uppercase tracking-wide">Klien</p>
                                     <div class="chat-bubble-client px-4 py-3 text-sm shadow-sm break-words">
                                         <p>${msg.text || ''}</p>
-                                        ${msg.attachmentUrl ? `<img src="${msg.attachmentUrl}" class="w-48 mt-2 rounded border border-slate-200 cursor-zoom-in" onclick="bukaGambarFull('${msg.attachmentUrl}')" alt="Bukti Klien">` : ''}
+                                        ${msg.attachmentUrl ? `<img src="${msg.attachmentUrl}" class="w-full mt-2 rounded-lg border border-slate-200 cursor-zoom-in" onclick="bukaGambarFull('${msg.attachmentUrl}')" alt="Bukti Klien">` : ''}
                                         <p class="text-[8px] text-slate-400 text-right mt-2">${timeStr}</p>
                                     </div>
                                 </div>`;
                         } else {
                             html += `
                                 <div class="flex flex-col max-w-[75%] self-end">
-                                    <p class="text-[9px] font-black text-kai-blue mr-2 mb-1 text-right uppercase tracking-wide">Anda (Admin)</p>
+                                    <p class="text-[9px] font-black text-kai-blue mr-2 mb-1 text-right uppercase tracking-wide">Admin</p>
                                     <div class="chat-bubble-admin px-4 py-3 text-sm shadow-md break-words">
                                         <p>${msg.text || ''}</p>
                                         <p class="text-[8px] text-blue-200 text-right mt-2">${timeStr}</p>
@@ -393,9 +421,9 @@
                 }
                 
                 chatBox.innerHTML = html;
-                setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+                setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50); // Auto-scroll
 
-                // Jika tiket sudah closed, disable input
+                // Disable ketik jika sudah selesai
                 const inputBtn = document.getElementById('adminChatForm').querySelector('button');
                 const inputField = document.getElementById('adminChatInput');
                 if(t.status === 'Selesai') {
@@ -410,42 +438,65 @@
             });
         }
 
-        // 3. LOGIKA PANEL AKSI (APPROVE UPGRADE & PEMBAYARAN)
-        function cekDanTampilkanActionPanel(ticketData) {
+        // 3. FUNGSI UNTUK MENGIRIM BALASAN KE KLIEN
+        document.getElementById('adminChatForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('adminChatInput');
+            const teks = input.value.trim();
+            if(!teks || !activeTicketId) return;
+            
+            input.value = ''; // Langsung kosongkan biar berasa instan
+            try {
+                await db.collection('tickets').doc(activeTicketId).update({
+                    messages: firebase.firestore.FieldValue.arrayUnion({
+                        sender: 'admin', text: teks, time: new Date().getTime()
+                    })
+                });
+            } catch(e) { alert("Gagal mengirim balasan."); }
+        });
+
+        // 4. LOGIKA TOMBOL APPROVE (UPGRADE & PEMBAYARAN TAGIHAN)
+        async function cekDanTampilkanActionPanel(ticketData) {
             const panel = document.getElementById('actionPanel');
             const title = document.getElementById('actionTitle');
             const desc = document.getElementById('actionDesc');
             const btn = document.getElementById('btnApproveAction');
 
-            // Reset
             panel.classList.add('hidden');
             activeActionType = null;
             activeActionPackage = null;
 
-            if(ticketData.status === 'Selesai') return; // Kalau udah kelar, gak usah tampil
+            if(ticketData.status === 'Selesai') return; 
 
+            // Cek Jika Tiket Mengajukan Upgrade Paket
             if(ticketData.issueType === 'Pengajuan Ganti Paket') {
                 panel.classList.remove('hidden');
+                panel.className = "bg-orange-50 border-b border-orange-200 p-3 flex justify-between items-center z-0";
                 title.innerText = "Verifikasi Upgrade Paket Baru";
+                title.className = "text-[10px] font-black text-orange-600 uppercase tracking-wider mb-0.5";
                 
-                // Cari info paket dari teks pesan pertama (misal: "Saya ingin ganti ke paket: 10mbps_150...")
-                let textReq = ticketData.messages[0].text;
-                let pkgExtracted = textReq.match(/paket:\s*([a-zA-Z0-9_]+)/);
-                activeActionPackage = pkgExtracted ? pkgExtracted[1] : null;
-                let pkgDisplay = activeActionPackage ? activeActionPackage.replace(/_/g, ' ').toUpperCase() : 'Paket Baru';
+                // Ambil data pelanggan untuk mengecek pendingUpgrade
+                const custDoc = await db.collection('customers').doc(ticketData.customerId).get();
+                if(custDoc.exists && custDoc.data().pendingUpgrade) {
+                    activeActionPackage = custDoc.data().pendingUpgrade.packageId;
+                    let pkgDisplay = activeActionPackage.replace(/_/g, ' ').toUpperCase();
+                    desc.innerText = `Klien meminta perubahan ke: ${pkgDisplay}`;
+                } else {
+                    desc.innerText = "Klien meminta ganti paket.";
+                }
 
-                desc.innerText = `Klien meminta perubahan ke: ${pkgDisplay}`;
                 btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Setujui Upgrade`;
                 btn.className = "bg-kai-orange hover:bg-kai-orangedark text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1";
                 activeActionType = 'upgrade';
-
-            } else if (ticketData.issueType === 'Konfirmasi Pembayaran') {
+            } 
+            
+            // Cek Jika Tiket Menyetor Bukti Bayar Tagihan Bulanan
+            else if (ticketData.issueType === 'Konfirmasi Pembayaran') {
                 panel.classList.remove('hidden');
-                panel.classList.remove('bg-orange-50', 'border-orange-200');
-                panel.classList.add('bg-emerald-50', 'border-emerald-200');
-                
+                panel.className = "bg-emerald-50 border-b border-emerald-200 p-3 flex justify-between items-center z-0";
                 title.innerText = "Verifikasi Bukti Tagihan Bulanan";
                 title.className = "text-[10px] font-black text-emerald-600 uppercase tracking-wider mb-0.5";
+                
                 desc.innerText = "Periksa gambar bukti transfer, jika valid klik tombol Lunas.";
                 btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Tandai Lunas`;
                 btn.className = "bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-black px-4 py-2 rounded-lg shadow-md transition-colors flex items-center gap-1";
@@ -456,44 +507,44 @@
         async function approveAction() {
             if(!activeTicketId || !activeCustomerId || !activeActionType) return;
             
-            if(confirm("Yakin ingin menyetujui dan mengubah data klien ini?")) {
+            if(confirm("Yakin ingin menyetujui dan mengubah data klien di database?")) {
                 const btn = document.getElementById('btnApproveAction');
                 btn.innerText = "Memproses..."; btn.disabled = true;
 
                 try {
+                    // AKSI: MENGGANTI PAKET INTERNET KLIEN
                     if (activeActionType === 'upgrade') {
-                        // 1. Update data customer (Ubah paket, hapus status pending)
                         if(activeActionPackage) {
                             await db.collection('customers').doc(activeCustomerId).update({
                                 packageId: activeActionPackage,
-                                pendingUpgrade: firebase.firestore.FieldValue.delete()
+                                pendingUpgrade: firebase.firestore.FieldValue.delete() // Hapus status pending
                             });
                         }
-                        
-                        // 2. Balas chat otomatis & Tutup Tiket
+                        // Admin Auto Reply & Tutup Tiket
                         await db.collection('tickets').doc(activeTicketId).update({
                             status: 'Selesai',
                             messages: firebase.firestore.FieldValue.arrayUnion({
-                                sender: 'admin', text: `🎉 Pengajuan upgrade paket Anda telah disetujui! Paket Anda sekarang telah berubah. Terima kasih.`, time: new Date().getTime()
+                                sender: 'admin', text: `🎉 Pengajuan upgrade paket Anda telah disetujui! Paket Anda sekarang telah otomatis berubah di sistem. Terima kasih.`, time: new Date().getTime()
                             })
                         });
-
-                    } else if (activeActionType === 'payment') {
-                        // 1. Update data customer (Bulan berjalan jadi Lunas)
-                        // Note: Untuk sistem riwayat bulanan, kita ambil bulan saat ini.
+                    } 
+                    
+                    // AKSI: MENANDAI LUNAS TAGIHAN KLIEN
+                    else if (activeActionType === 'payment') {
                         const date = new Date();
                         const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
                         const currentMonthYear = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
                         
+                        // Menulis riwayat lunas ke database klien
                         const customerRef = db.collection('customers').doc(activeCustomerId);
                         await customerRef.set({ payments: { [currentMonthYear]: "Lunas" } }, { merge: true });
-                        await customerRef.update({ status: 'Aktif' }); // Aktifkan jika sebelumnya nonaktif
+                        await customerRef.update({ status: 'Aktif' }); 
 
-                        // 2. Balas chat & Tutup Tiket
+                        // Admin Auto Reply & Tutup Tiket
                         await db.collection('tickets').doc(activeTicketId).update({
                             status: 'Selesai',
                             messages: firebase.firestore.FieldValue.arrayUnion({
-                                sender: 'admin', text: `✅ Pembayaran tagihan bulan ${currentMonthYear} telah kami terima dan diverifikasi. Layanan internet Anda aktif. Terima kasih!`, time: new Date().getTime()
+                                sender: 'admin', text: `✅ Pembayaran tagihan bulan ${currentMonthYear} telah kami verifikasi. Status internet Anda kini Lunas & Aktif. Terima kasih!`, time: new Date().getTime()
                             })
                         });
                     }
@@ -501,45 +552,27 @@
                     document.getElementById('actionPanel').classList.add('hidden');
                     alert("Sukses! Data klien berhasil diperbarui.");
                 } catch(e) {
-                    console.error(e); alert("Terjadi kesalahan saat memproses approval.");
+                    console.error(e); alert("Terjadi kesalahan saat memproses data.");
                 }
             }
         }
 
-
-        // 4. KIRIM PESAN CHAT DARI ADMIN
-        document.getElementById('adminChatForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const input = document.getElementById('adminChatInput');
-            const teks = input.value.trim();
-            if(!teks || !activeTicketId) return;
-            
-            input.value = ''; 
-            try {
-                await db.collection('tickets').doc(activeTicketId).update({
-                    messages: firebase.firestore.FieldValue.arrayUnion({
-                        sender: 'admin', text: teks, time: new Date().getTime()
-                    })
-                });
-            } catch(e) { alert("Gagal membalas pesan."); }
-        });
-
-        // 5. TUTUP TIKET MANUAL (SELESAI)
+        // 5. TUTUP TIKET MANUAL OLEH ADMIN
         async function tutupTiketSelesai() {
             if(!activeTicketId) return;
-            if(confirm("Tutup tiket ini dan tandai sebagai selesai? Klien tidak akan bisa membalas chat ini lagi.")) {
+            if(confirm("Tutup tiket ini? Klien tidak akan bisa membalas chat ini lagi.")) {
                 try {
                     await db.collection('tickets').doc(activeTicketId).update({
                         status: 'Selesai',
                         messages: firebase.firestore.FieldValue.arrayUnion({
-                            sender: 'admin', text: `🔒 Tiket ini telah ditutup oleh Admin karena kendala dianggap sudah selesai. Terima kasih.`, time: new Date().getTime()
+                            sender: 'admin', text: `🔒 Tiket ini telah ditutup oleh Admin karena obrolan dianggap telah selesai.`, time: new Date().getTime()
                         })
                     });
                 } catch(e) { alert("Gagal menutup tiket."); }
             }
         }
 
-        // FUNGSI BANTU GAMBAR FULLSCREEN
+        // 6. FUNGSI PREVIEW GAMBAR ZOOM DARI CHAT
         function bukaGambarFull(url) {
             document.getElementById('imagePreviewFull').src = url;
             document.getElementById('imagePreviewModal').classList.remove('hidden');
@@ -549,7 +582,6 @@
             document.getElementById('imagePreviewModal').classList.add('hidden');
             document.getElementById('imagePreviewModal').classList.remove('flex');
         }
-
     </script>
 </body>
 </html>
