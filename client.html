@@ -1,1206 +1,1057 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MABUNET - Master Billing & Network</title>
-  
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e3a8a">
-  <link rel="icon" href="./mabunetlogo.png" type="image/png">
-  <link rel="apple-touch-icon" href="./mabunetlogo.png">
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { 
-      darkMode: 'class', 
-      theme: { 
-        extend: {
-          colors: {
-            kai: {
-              blue: '#1A2C5B',      // Biru Navy KAI
-              bluedark: '#111D42',  // Biru Navy Gelap
-              orange: '#F97316',    // Orange Aksen KAI
-              orangedark: '#EA580C',
-              bg: '#F3F4F6'         // Abu-abu terang background
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Pelanggan MabuNet</title>
+   
+    <!-- Favicon MabuNet -->
+    <link rel="icon" href="https://mabunet.site/favicon.ico" type="image/x-icon">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-storage-compat.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        kai: { blue: '#1A2C5B', bluedark: '#111D42', orange: '#F97316', orangedark: '#EA580C', bg: '#F3F4F6' }
+                    },
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+                }
             }
-          },
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
-        } 
-      } 
-    }
-  </script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
-  <style>
-    body { font-family: 'Inter', sans-serif; background-color: #F3F4F6; }
-    .dark body { background-color: #0f172a; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark ::-webkit-scrollbar-thumb { background: #334155; }
-    .custom-scrollbar::-webkit-scrollbar { display: none; width: 0px; }
-    .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    /* Efek Tiket Sobek */
-    .ticket-divider {
-      background-image: linear-gradient(to bottom, #e2e8f0 50%, rgba(255,255,255,0) 0%);
-      background-position: right;
-      background-size: 2px 10px;
-      background-repeat: repeat-y;
-    }
-    .dark .ticket-divider { background-image: linear-gradient(to bottom, #334155 50%, rgba(255,255,255,0) 0%); }
-    
-    .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
-
-    @media print {
-      body * { visibility: hidden; }
-      #print-receipt, #print-receipt * { visibility: visible; }
-      #print-receipt { 
-        position: absolute; left: 0; top: 0; width: 58mm; margin: 0; padding: 5px; 
-        font-family: monospace; font-size: 11px; color: #000; background: #fff;
-      }
-      @page { margin: 0; }
-    }
-  </style>
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .accordion-content { max-height: 0; transition: max-height 0.3s ease-out; }
+        .accordion-item.active .accordion-icon { transform: rotate(180deg); }
+        .chat-bubble-client { background-color: #1A2C5B; color: white; border-radius: 16px 16px 0 16px; align-self: flex-end; }
+        .chat-bubble-admin { background-color: #F1F5F9; color: #334155; border-radius: 16px 16px 16px 0; align-self: flex-start; }
+    </style>
+    <!-- Library Cropper JS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
-<body class="text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300">
-  <div id="root" class="h-full w-full"></div>
-
-  <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-    import { 
-      Users, LayoutDashboard, LogOut, Check, BookOpen, Fingerprint,
-      Lock, User, Settings, Camera, ShieldAlert,
-      Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
-      Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
-    } from 'https://esm.sh/lucide-react@0.292.0';
-    
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-
-    // --- FIREBASE CONFIG ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
-      authDomain: "billing-mabunet.firebaseapp.com",
-      projectId: "billing-mabunet",
-      storageBucket: "billing-mabunet.firebasestorage.app",
-      messagingSenderId: "362703627315",
-      appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
-    };
-
-    let app, db;
-    try {
-      app = initializeApp(firebaseConfig);
-      db = getFirestore(app);
-    } catch(e) { console.error("Gagal Firebase:", e); }
-
-    const INITIAL_ADMINS = [
-      { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
-      { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
-      { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
-    ];
-
-    const PACKAGES = [
-      { id: 'free_0', speed: 'Gratis', price: 0, label: 'Gratis - Rp 0' },
-      { id: '5mbps_100', speed: 'Standar 5 Mbps', price: 100000, label: 'Standar 5 Mbps - Rp 100.000' },
-      { id: 'std_10', speed: 'Standar 10 Mbps', price: 150000, label: 'Standar 10 Mbps - Rp 150.000' },
-      { id: '10mbps_180', speed: 'Standar 10 Mbps', price: 180000, label: 'Standar 10 Mbps - Rp 180.000' },
-      { id: 'std_15', speed: 'Standar 15 Mbps', price: 200000, label: 'Standar 15 Mbps - Rp 200.000' },
-      { id: 'std_20', speed: 'Standar 20 Mbps', price: 250000, label: 'Standar 20 Mbps - Rp 250.000' },
-      { id: 'std_25', speed: 'Standar 25 Mbps', price: 300000, label: 'Standar 25 Mbps - Rp 300.000' },
-      { id: 'std_30', speed: 'Standar 30 Mbps', price: 350000, label: 'Standar 30 Mbps - Rp 350.000' },
-      { id: 'ntf_10', speed: 'Netflix 10 Mbps', price: 200000, label: 'Netflix 10 Mbps - Rp 200.000' },
-      { id: 'ntf_15', speed: 'Netflix 15 Mbps', price: 250000, label: 'Netflix 15 Mbps - Rp 250.000' },
-      { id: 'ntf_20', speed: 'Netflix 20 Mbps', price: 300000, label: 'Netflix 20 Mbps - Rp 300.000' },
-      { id: 'ntf_25', speed: 'Netflix 25 Mbps', price: 350000, label: 'Netflix 25 Mbps - Rp 350.000' },
-      { id: 'ntf_30', speed: 'Netflix 30 Mbps', price: 400000, label: 'Netflix 30 Mbps - Rp 400.000' }
-    ];
-
-    const PPPOE_PROFILES = [
-        'default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'
-    ];
-    const HOTSPOT_PROFILES = ['default', 'CLIENT', 'FREE', 'MABU ALL', 'VIP'];
-    
-    const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
-    const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
-    const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
-    
-    const PORTAL_URL = "https://mabunet.site/client"; 
-
-    function formatBytes(bytes, decimals = 2) {
-        if (!+bytes) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    }
-
-    // FUNGSI KOMPRESI GAMBAR OTOMATIS AGAR RINGAN
-    const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            if (width > maxWidth) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', quality));
-          };
-          img.onerror = reject;
-          img.src = event.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    };
-
-    // PENDETEKSI GAMBAR UNIVERSAL (Mendukung attachmentUrl, imageUrl, foto, dll)
-    const extractImageFromObj = (obj) => {
-      if (!obj || typeof obj !== 'object') return null;
-      const direct = obj.attachmentUrl || obj.imageUrl || obj.image || obj.photo || obj.img || obj.foto || obj.gambar || obj.bukti || obj.proofImage || obj.attachment || obj.file || obj.fileUrl || obj.lampiran || obj.media || obj.base64;
-      if (typeof direct === 'string' && (direct.startsWith('data:image') || direct.startsWith('http') || direct.startsWith('blob:'))) {
-        return direct;
-      }
-      for (const key of Object.keys(obj)) {
-        const val = obj[key];
-        if (typeof val === 'string' && val.startsWith('data:image/')) {
-          return val;
-        }
-      }
-      return null;
-    };
-
-    function App() {
-      const [admins, setAdmins] = useState(INITIAL_ADMINS);
-      const [currentUser, setCurrentUser] = useState(null);
-      
-      const [loginForm, setLoginForm] = useState({ password: '' });
-      const [loginError, setLoginError] = useState('');
-      const [isScanning, setIsScanning] = useState(false);
-      const [showPassword, setShowPassword] = useState(false); 
-      const [forgotMode, setForgotMode] = useState(false);
-      const [forgotEmail, setForgotEmail] = useState('');
-      const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
-
-      const [isDarkMode, setIsDarkMode] = useState(false); 
-      
-      const [activeTab, setActiveTab] = useState('dashboard');
-      const [editProfile, setEditProfile] = useState({});
-      const [isEditingProfile, setIsEditingProfile] = useState(false); 
-      
-      const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-      const [targetAdmin, setTargetAdmin] = useState(null);
-      const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
-      
-      const [showAdminManagement, setShowAdminManagement] = useState(false);
-      
-      const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-      const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-      const [searchTerm, setSearchTerm] = useState('');
-      const [filterBlock, setFilterBlock] = useState('Semua Blok');
-      const [filterCategory, setFilterCategory] = useState('Semua'); 
-      const [dueSearchTerm, setDueSearchTerm] = useState(''); 
-
-      const [customers, setCustomers] = useState([]);
-      const [expenses, setExpenses] = useState([]);
-      const [auditLogs, setAuditLogs] = useState([]); 
-      const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
-      const [isDbLoading, setIsDbLoading] = useState(true);
-
-      // STATE CHAT & TIKET
-      const [tickets, setTickets] = useState([]);
-      const [activeTicket, setActiveTicket] = useState(null);
-      const [chatMessages, setChatMessages] = useState([]);
-      const [newChatInput, setNewChatInput] = useState('');
-      const [chatImagePreview, setChatImagePreview] = useState(null);
-      const [previewLightbox, setPreviewLightbox] = useState(null);
-      const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
-      const [chatCustomerSearch, setChatCustomerSearch] = useState('');
-      const chatScrollRef = useRef(null);
-      const chatCameraInputRef = useRef(null);
-      const chatGalleryInputRef = useRef(null);
-      const [pendingApprovals, setPendingApprovals] = useState([]);
-      
-      const [mikrotikStatus, setMikrotikStatus] = useState(null);
-      const [mikrotikTab, setMikrotikTab] = useState('secret');
-      
-      const [mikrotikUsers, setMikrotikUsers] = useState([]);
-      const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = useState([]);
-      const [mikrotikHotspotActive, setMikrotikHotspotActive] = useState([]);
-      const [mikrotikHotspotHosts, setMikrotikHotspotHosts] = useState([]);
-      const [mikrotikIpBindings, setMikrotikIpBindings] = useState([]);
-      const [isMikrotikLoading, setIsMikrotikLoading] = useState(false);
-      
-      const [printData, setPrintData] = useState(null);
-      const [alarmEnabled, setAlarmEnabled] = useState(false);
-      const [isBroadcasting, setIsBroadcasting] = useState(false); 
-      const audioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
-
-      const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-      const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-      const [isMikrotikModalOpen, setIsMikrotikModalOpen] = useState(false);
-      
-      const [mikrotikFormType, setMikrotikFormType] = useState('secret'); 
-      const [editingMikrotikData, setEditingMikrotikData] = useState(null);
-      const [mikrotikForm, setMikrotikForm] = useState({ 
-          name: '', password: '', profile: 'default', comment: '', server: 'all', 
-          macAddress: '', address: '', type: 'bypassed' 
-      });
-
-      const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
-      const [expenseForm, setExpenseForm] = useState({ 
-        date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' 
-      });
-      const [editingCustomer, setEditingCustomer] = useState(null);
-      const [editingExpense, setEditingExpense] = useState(null);
-
-      const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
-      const [isDragging, setIsDragging] = useState(false);
-      const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-      const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
-      const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
-      const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
-      const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
-      const todayDay = new Date().getDate();
-
-      const findMatchedCustomer = (item) => {
-        if (!item) return null;
-        return customers.find(c => 
-          (item.customerId && c.id === item.customerId) ||
-          (item.userId && c.id === item.userId) ||
-          (item.uid && c.id === item.uid) ||
-          (item.clientId && c.id === item.clientId) ||
-          (item.pppoe_user && c.pppoe_user && c.pppoe_user.toLowerCase() === item.pppoe_user.toLowerCase()) ||
-          (item.phone && c.phone && cleanPhone(c.phone) === cleanPhone(item.phone)) ||
-          (item.userPhone && c.phone && cleanPhone(c.phone) === cleanPhone(item.userPhone)) ||
-          (item.name && c.name && c.name.toLowerCase() === item.name.toLowerCase()) ||
-          (item.customerName && c.name && c.name.toLowerCase() === item.customerName.toLowerCase())
-        );
-      };
-
-      const getTicketInfo = (ticket) => {
-        if (!ticket) return { name: 'Pelanggan', block: '', phone: '', subject: 'Obrolan Pelanggan', initialMsg: '', initialImg: null };
-        const matched = findMatchedCustomer(ticket);
-        const name = ticket.customerName || ticket.name || ticket.nama || ticket.userName || ticket.clientName || ticket.senderName || ticket.sender || ticket.user || matched?.name || ticket.pppoe_user || ticket.phone || `Pelanggan #${(ticket.id || '').substring(0, 5)}`;
-        const block = ticket.block || ticket.blok || ticket.customerBlock || matched?.block || '';
-        const phone = ticket.phone || ticket.userPhone || ticket.noHp || ticket.wa || matched?.phone || '';
-        const subject = ticket.issueType || ticket.subject || ticket.title || ticket.judul || ticket.category || ticket.kategori || 'Obrolan & Layanan';
-        
-        let initialMsg = '';
-        let initialImg = extractImageFromObj(ticket);
-        if (ticket.messages && Array.isArray(ticket.messages) && ticket.messages.length > 0) {
-            const firstM = ticket.messages[0];
-            initialMsg = firstM.text || firstM.message || '';
-            if (!initialImg) initialImg = extractImageFromObj(firstM);
-        } else {
-            const rawMsg = ticket.message || ticket.pesan || ticket.description || ticket.keluhan || ticket.content || ticket.text || '';
-            initialMsg = (typeof rawMsg === 'string' && !rawMsg.startsWith('data:image')) ? rawMsg : '';
-        }
-        return { name, block, phone, subject, initialMsg, initialImg, matched };
-      };
-
-      const getApprovalInfo = (approval) => {
-        if (!approval) return { name: 'Pelanggan', block: '', matched: null };
-        const matched = findMatchedCustomer(approval);
-        const name = approval.customerName || approval.name || approval.nama || approval.userName || approval.sender || matched?.name || approval.pppoe_user || 'Pelanggan';
-        const block = approval.block || approval.blok || matched?.block || '';
-        return { name, block, matched };
-      };
-
-      useEffect(() => {
-        if (isDarkMode) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-      }, [isDarkMode]);
-
-      useEffect(() => {
-        if (activeTab !== 'dashboard') { window.history.pushState({ page: activeTab }, ''); }
-      }, [activeTab]);
-
-      useEffect(() => {
-        const handleBackButton = (e) => {
-          if (previewLightbox) { e.preventDefault(); setPreviewLightbox(null); return; }
-          if (activeTicket) { e.preventDefault(); setActiveTicket(null); return; }
-          if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen || isMikrotikModalOpen || isNewChatModalOpen) {
-            e.preventDefault();
-            setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
-            setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
-            setIsMikrotikModalOpen(false); setIsNewChatModalOpen(false);
-            window.history.pushState({ page: activeTab }, ''); 
-            return;
-          }
-          if (activeTab !== 'dashboard') {
-            e.preventDefault();
-            setActiveTab('dashboard');
-            window.history.pushState({ page: 'dashboard' }, '', `#dashboard`);
-          }
-        };
-        window.addEventListener('popstate', handleBackButton);
-        return () => window.removeEventListener('popstate', handleBackButton);
-      }, [activeTab, activeTicket, previewLightbox, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen, isNewChatModalOpen]);
-
-      useEffect(() => {
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }, [currentUser]);
-
-      const writeLog = async (actionDesc) => {
-        if(!db || !currentUser) return;
-        try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
-      };
-
-      useEffect(() => {
-        if (!db) { setIsDbLoading(false); return; }
-        try {
-          const unsubAdmins = onSnapshot(collection(db, 'admins'), (snapshot) => {
-            if (snapshot.empty) { INITIAL_ADMINS.forEach(async (adm) => { await setDoc(doc(db, 'admins', adm.id), adm); }); } 
-            else {
-              const cloudAdmins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              setAdmins(cloudAdmins);
-              const sessionUid = localStorage.getItem('mabunet_session');
-              setCurrentUser(prevUser => {
-                const activeUid = prevUser ? prevUser.id : sessionUid;
-                if (activeUid) {
-                  const activeUser = cloudAdmins.find(a => a.id === activeUid);
-                  if (activeUser && activeUser.status === 'Aktif') return activeUser;
-                  else localStorage.removeItem('mabunet_session'); 
-                } return null;
-              });
-            }
-          });
-          const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
-            setCustomers(data); setIsDbLoading(false);
-          });
-          const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => new Date(b.date) - new Date(a.date));
-            setExpenses(data);
-          });
-          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            data.sort((a,b) => b.time - a.time); setAuditLogs(data);
-          });
-          
-          const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
-            if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
-            else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
-          });
-          
-          const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => {
-             if (docSnap.exists()) {
-                 const data = docSnap.data();
-                 if (new Date().getTime() - data.lastUpdate > 30000) { setMikrotikStatus(null); } 
-                 else { setMikrotikStatus(data); }
-             } else { setMikrotikStatus(null); }
-          });
-          
-          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (docSnap) => {
-             if (docSnap.exists()) setMikrotikUsers(docSnap.data().users || []);
-          });
-          const unsubHSUsers = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_users'), (docSnap) => {
-             if (docSnap.exists()) setMikrotikHotspotUsers(docSnap.data().users || []);
-          });
-          const unsubHSActive = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_active'), (docSnap) => {
-             if (docSnap.exists()) setMikrotikHotspotActive(docSnap.data().users || []);
-          });
-          const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (docSnap) => {
-             if (docSnap.exists()) setMikrotikHotspotHosts(docSnap.data().hosts || []);
-          });
-          const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (docSnap) => {
-             if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
-          });
-
-          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
-             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             data.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.timestamp?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.timestamp?.seconds || a.time || 0));
-             setTickets(data);
-             setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
-          });
-
-          const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
-             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
-          });
-          
-          return () => { 
-              unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
-              unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
-              unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings();
-              unsubTickets(); unsubApprovals();
-          };
-        } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, []);
-
-      // LISTENER CHAT
-      useEffect(() => {
-          if (!activeTicket || !db) return;
-          const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
-              const subMsgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-              const arrayMsgs = [
-                ...(Array.isArray(activeTicket.messages) ? activeTicket.messages : []),
-                ...(Array.isArray(activeTicket.chats) ? activeTicket.chats : [])
-              ];
-              
-              const combined = [...arrayMsgs, ...subMsgs];
-              const uniqueMsgs = combined.filter((v, i, a) => a.findIndex(t => 
-                (t.id && v.id && t.id === v.id) || 
-                (t.time && v.time && Math.abs(t.time - v.time) < 2000 && (t.text || t.message) === (v.text || v.message))
-              ) === i);
-              
-              uniqueMsgs.sort((a, b) => (a.timestamp?.seconds * 1000 || a.time || 0) - (b.timestamp?.seconds * 1000 || b.time || 0));
-              setChatMessages(uniqueMsgs);
-              setTimeout(() => {
-                  if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-              }, 120);
-          });
-          return () => unsubChats();
-      }, [activeTicket]);
-
-      const handleSelectChatImage = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        try {
-          const compressed = await compressImageFile(file, 900, 0.75);
-          setChatImagePreview(compressed);
-        } catch (err) { alert("Gagal memproses gambar: " + err.message); }
-        e.target.value = null;
-      };
-
-      const handleStartNewChatWithCustomer = async (cust) => {
-        if (!cust || !db) return;
-        const existing = tickets.find(t => 
-          t.status !== 'Closed' && (
-            t.customerId === cust.id || 
-            (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
-            (t.customerName && t.customerName.toLowerCase() === cust.name.toLowerCase())
-          )
-        );
-        if (existing) {
-          setActiveTicket(existing);
-          setIsNewChatModalOpen(false);
-          return;
-        }
-        try {
-          const newDoc = await addDoc(collection(db, 'tickets'), {
-            customerId: cust.id,
-            customerName: cust.name,
-            name: cust.name,
-            block: cust.block,
-            phone: cust.phone || '',
-            pppoe_user: cust.pppoe_user || '',
-            issueType: 'Obrolan Layanan MABUNET',
-            subject: 'Obrolan Layanan MABUNET',
-            status: 'In Progress',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            time: Date.now(),
-            messages: []
-          });
-          setActiveTicket({
-            id: newDoc.id,
-            customerId: cust.id,
-            customerName: cust.name,
-            name: cust.name,
-            block: cust.block,
-            phone: cust.phone || '',
-            issueType: 'Obrolan Layanan MABUNET',
-            status: 'In Progress'
-          });
-          setIsNewChatModalOpen(false);
-        } catch (err) { alert("Gagal membuat ruang obrolan: " + err.message); }
-      };
-
-      const handleSendChat = async (e) => {
-          e.preventDefault();
-          if ((!newChatInput.trim() && !chatImagePreview) || !activeTicket) return;
-          const textVal = newChatInput.trim() || (chatImagePreview ? '📷 Mengirim Foto' : '');
-          const imgVal = chatImagePreview || null;
-
-          const msgObj = {
-              id: 'msg_' + Date.now(),
-              sender: currentUser.name,
-              senderName: currentUser.name,
-              senderType: 'admin',
-              role: 'admin',
-              isAdmin: true,
-              text: textVal,
-              message: textVal,
-              pesan: textVal,
-              attachmentUrl: imgVal,
-              imageUrl: imgVal,
-              image: imgVal,
-              photo: imgVal,
-              time: Date.now(),
-              dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-          };
-          try {
-              setNewChatInput('');
-              setChatImagePreview(null);
-
-              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
-                  ...msgObj,
-                  timestamp: serverTimestamp()
-              });
-              await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: 'In Progress',
-                  lastReply: textVal,
-                  lastImage: imgVal || null,
-                  updatedAt: serverTimestamp(),
-                  messages: arrayUnion(msgObj),
-                  chats: arrayUnion(msgObj)
-              });
-          } catch (err) { alert("Gagal kirim pesan: " + err.message); }
-      };
-
-      const closeTicket = async (ticketId) => {
-          if (confirm("Akhiri sesi obrolan/tiket ini?")) {
-              await updateDoc(doc(db, 'tickets', ticketId), { status: 'Closed' });
-              setActiveTicket(null);
-              writeLog(`Menutup obrolan/tiket ID: ${ticketId}`);
-          }
-      };
-
-      const handleApprove = async (approvalData) => {
-          const info = getApprovalInfo(approvalData);
-          if (!confirm(`Yakin menyetujui (Approve) permohonan ${approvalData.type === 'upgrade' ? 'Upgrade Paket' : 'Pembayaran'} dari ${info.name}?`)) return;
-          try {
-              const custDoc = info.matched || customers.find(c => c.id === approvalData.customerId);
-              if (!custDoc) throw new Error("Data pelanggan tidak ditemukan di database!");
-
-              const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
-              if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
-                  await addDoc(collection(db, 'mikrotik_commands'), {
-                      action: 'UPGRADE_PACKAGE',
-                      pppoeUser: custDoc.pppoe_user,
-                      packageId: targetPkg
-                  });
-                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg });
-                  writeLog(`Approve Upgrade: ${custDoc.name} ke ${getPackage(targetPkg).speed}`);
-              } else {
-                  const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
-                  await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
-                  writeLog(`Approve Bayar: ${custDoc.name} LUNAS (${monthKey})`);
-              }
-
-              await updateDoc(doc(db, 'approvals', approvalData.id), {
-                  status: 'approved',
-                  approvedBy: currentUser.name,
-                  approvedAt: serverTimestamp()
-              });
-              alert("Proses Approve Berhasil!");
-          } catch (err) { alert("Gagal memproses approval: " + err.message); }
-      };
-
-      const handleRejectApprove = async (approvalId) => {
-          if (confirm("Tolak permohonan ini?")) {
-              await updateDoc(doc(db, 'approvals', approvalId), {
-                  status: 'rejected',
-                  rejectedBy: currentUser.name,
-                  rejectedAt: serverTimestamp()
-              });
-          }
-      };
-
-      const handleSaveMikrotikData = async (e) => {
-          e.preventDefault();
-          try {
-              let actionName = ''; let payload = {};
-              if (mikrotikFormType === 'secret') {
-                  actionName = editingMikrotikData ? 'EDIT_SECRET' : 'ADD_SECRET';
-                  payload = { name: mikrotikForm.name, password: mikrotikForm.password, profile: mikrotikForm.profile, comment: mikrotikForm.comment };
-              } else if (mikrotikFormType === 'hotspot_user') {
-                  actionName = editingMikrotikData ? 'EDIT_HOTSPOT_USER' : 'ADD_HOTSPOT_USER';
-                  payload = { name: mikrotikForm.name, password: mikrotikForm.password, profile: mikrotikForm.profile, server: mikrotikForm.server, comment: mikrotikForm.comment };
-              } else if (mikrotikFormType === 'ip_binding') {
-                  actionName = editingMikrotikData ? 'EDIT_IP_BINDING' : 'ADD_IP_BINDING';
-                  payload = { macAddress: mikrotikForm.macAddress, address: mikrotikForm.address, type: mikrotikForm.type, server: mikrotikForm.server, comment: mikrotikForm.comment };
-              }
-              if (editingMikrotikData) payload.targetId = editingMikrotikData.id;
-              await addDoc(collection(db, 'mikrotik_commands'), { action: actionName, ...payload });
-              setIsMikrotikModalOpen(false); writeLog(`${actionName} MikroTik: ${payload.name || payload.macAddress}`);
-          } catch(err) { alert("Gagal: " + err.message); }
-      }
-      
-      const runMikrotikCommand = async (action, id, itemName, alertMessage) => {
-          if(confirm(alertMessage || `Jalankan aksi pada ${itemName}?`)){
-              try { await addDoc(collection(db, 'mikrotik_commands'), { action: action, targetId: id }); writeLog(`${action} MikroTik: ${itemName}`); } catch(err) { alert("Gagal: " + err.message); }
-          }
-      }
-
-      const togglePayment = async (custId, monthKey) => {
-        if (!db) return;
-        const cust = customers.find(c => c.id === custId);
-        const isPaid = cust.payments && cust.payments[monthKey];
-        await updateDoc(doc(db, 'customers', custId), { [`payments.${monthKey}`]: !isPaid });
-        writeLog(isPaid ? `Membatalkan lunas tagihan: ${cust.name}` : `Menandai LUNAS tagihan: ${cust.name}`);
-      };
-
-      const handleSaveCustomer = async (e) => {
-        e.preventDefault();
-        if (editingCustomer) { await updateDoc(doc(db, 'customers', editingCustomer.id), formData); writeLog(`Mengedit pelanggan: ${formData.name}`); } 
-        else { await addDoc(collection(db, 'customers'), { ...formData, payments: {} }); writeLog(`Menambah pelanggan: ${formData.name}`); }
-        setIsCustomerModalOpen(false);
-      };
-
-      const handleSaveExpense = async (e) => {
-        e.preventDefault();
-        const finalApplicant = expenseForm.applicantSelect === 'Manual' ? expenseForm.applicantCustom : expenseForm.applicantSelect;
-        const dataToSave = { date: expenseForm.date, category: expenseForm.category, applicant: finalApplicant, description: expenseForm.description, amount: expenseForm.amount, admin: currentUser.name };
-
-        if (editingExpense) { await updateDoc(doc(db, 'expenses', editingExpense.id), dataToSave); writeLog(`Mengedit kas: ${formatIDR(expenseForm.amount)}`); } 
-        else { await addDoc(collection(db, 'expenses'), dataToSave); writeLog(`Catat kas: ${formatIDR(expenseForm.amount)}`); }
-        setIsExpenseModalOpen(false); setEditingExpense(null);
-      };
-
-      const handleDeleteCustomer = async (id) => {
-        const cust = customers.find(c => c.id === id);
-        if(confirm(`Yakin ingin menghapus data pelanggan ${cust.name}?`)) { await deleteDoc(doc(db, 'customers', id)); writeLog(`Menghapus pelanggan: ${cust.name}`); }
-      };
-
-      const handleDeleteExpense = async (id) => {
-        if(confirm("Yakin hapus catatan pengeluaran ini?")) { await deleteDoc(doc(db, 'expenses', id)); writeLog(`Hapus pengeluaran ID: ${id}`); }
-      };
-
-      const toggleIsolirManual = async (cust) => {
-        if(confirm(`Yakin ${cust.status === 'Aktif' ? 'ISOLIR' : 'AKTIFKAN'} internet pelanggan ${cust.name}?`)) {
-          const newStatus = cust.status === 'Aktif' ? 'Non-Aktif' : 'Aktif';
-          await updateDoc(doc(db, 'customers', cust.id), { status: newStatus }); writeLog(`${newStatus} manual: ${cust.name}`);
-        }
-      };
-
-      const handleLogin = (e) => {
-        if(e) e.preventDefault(); setLoginError('');
-        const user = admins.find(a => a.password === loginForm.password);
-        if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
-          setCurrentUser(user); setEditProfile(user);
-          localStorage.setItem('mabunet_session', user.id); localStorage.setItem('mabunet_device_user', user.id); 
-        } else { setLoginError('Password salah!'); }
-      };
-
-      const registerFingerprint = async () => {
-        try {
-          if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
-          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-          const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-          const pubKey = {
-            challenge, rp: { name: "MABUNET", id: window.location.hostname },
-            user: { id: userId, name: editProfile.username, displayName: editProfile.name },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-            timeout: 60000, attestation: "none"
-          };
-          const credential = await navigator.credentials.create({ publicKey: pubKey });
-          const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
-          setEditProfile({...editProfile, credentialId: credentialId, fingerprintEnabled: true});
-          alert("Sidik Jari terkait! Tekan 'Simpan Profil'.");
-        } catch (err) { alert("Gagal."); }
-      };
-
-      const registerFingerprintTarget = async () => {
-        try {
-          if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
-          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-          const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-          const pubKey = {
-            challenge, rp: { name: "MABUNET", id: window.location.hostname },
-            user: { id: userId, name: targetAdmin.username, displayName: targetAdmin.name },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-            timeout: 60000, attestation: "none"
-          };
-          const credential = await navigator.credentials.create({ publicKey: pubKey });
-          const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
-          setTargetAdmin({...targetAdmin, credentialId: credentialId, fingerprintEnabled: true});
-          alert("Sidik Jari tertaut!");
-        } catch (err) { alert("Gagal: " + err.message); }
-      };
-
-      const handleFingerprintScan = async () => {
-        setIsScanning(true); setLoginError('');
-        try {
-          const savedUserId = localStorage.getItem('mabunet_device_user');
-          if (!savedUserId) throw new Error('Perangkat belum dikenali.');
-          const savedUser = admins.find(a => a.id === savedUserId);
-          if (!savedUser || savedUser.status !== 'Aktif') throw new Error('Akun tidak aktif.');
-          
-          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-          const rawId = Uint8Array.from(atob(savedUser.credentialId), c => c.charCodeAt(0));
-          const assertion = await navigator.credentials.get({
-            publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" }
-          });
-          if (assertion) { setCurrentUser(savedUser); setEditProfile(savedUser); localStorage.setItem('mabunet_session', savedUser.id); }
-        } catch (err) { setLoginError('Verifikasi Gagal.'); } finally { setIsScanning(false); }
-      };
-
-      const handleForgotPassword = (e) => {
-        e.preventDefault(); setForgotMessage({text: '', type: ''});
-        const user = admins.find(a => (a.email || '').toLowerCase() === forgotEmail.toLowerCase() && a.email !== '');
-        if (user) { setForgotMessage({text: `Password Anda: ${user.password}`, type: 'success'}); } 
-        else { setForgotMessage({text: 'Email tidak ditemukan.', type: 'error'}); }
-      };
-
-      const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
-
-      const handleBroadcastWA = async () => {
-        if (filteredDueCustomers.length === 0) return alert("Tidak ada tagihan.");
-        if (!confirm(`Kirim pesan otomatis ke ${filteredDueCustomers.length} pelanggan belum lunas?`)) return;
-        setIsBroadcasting(true);
-        for (const cust of filteredDueCustomers) {
-          if (!cust.phone) continue;
-          await new Promise(r => setTimeout(r, 2000));
-        }
-        setIsBroadcasting(false); alert("Broadcast Selesai!");
-      };
-
-      const handlePhotoUploadInit = (e, isTargetAdmin = false) => {
-        const file = e.target.files[0];
-        if (file) { const reader = new FileReader(); reader.onloadend = () => { setCropState({ isOpen: true, src: reader.result, isTarget: isTargetAdmin, zoom: 1, x: 0, y: 0 }); }; reader.readAsDataURL(file); }
-        e.target.value = null; 
-      };
-
-      const handleCropDragStart = (e) => {
-        setIsDragging(true); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        setDragStart({ x: clientX - cropState.x, y: clientY - cropState.y });
-      };
-      const handleCropDragMove = (e) => {
-        if (!isDragging) return; const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        setCropState(prev => ({ ...prev, x: clientX - dragStart.x, y: clientY - dragStart.y }));
-      };
-      const handleCropDragEnd = () => setIsDragging(false);
-
-      const applyCrop = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400; const ctx = canvas.getContext('2d');
-          const scale = (400 / Math.min(img.width, img.height)) * cropState.zoom;
-          const dx = (400 - (img.width * scale)) / 2 + (cropState.x * 2); const dy = (400 - (img.height * scale)) / 2 + (cropState.y * 2);
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 400, 400); ctx.drawImage(img, dx, dy, img.width * scale, img.height * scale);
-          const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          if (cropState.isTarget) { setTargetAdmin({ ...targetAdmin, photo: finalDataUrl }); } else { setEditProfile({ ...editProfile, photo: finalDataUrl }); }
-          setCropState({ ...cropState, isOpen: false });
-        };
-        img.src = cropState.src;
-      };
-
-      const handleSaveProfile = async (e) => {
-        e.preventDefault();
-        try {
-          const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
-          if (currentUser.id === 'admin1') updateData.phone = editProfile.phone;
-          await updateDoc(doc(db, 'admins', currentUser.id), updateData);
-          if (currentUser.id === 'admin1') await updateDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: settingsData.waGatewayPhone });
-          alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
-        } catch (error) { alert('Gagal menyimpan profil.'); }
-      };
-
-      const handleSaveTargetAdmin = async (e) => {
-        e.preventDefault();
-        try {
-          await updateDoc(doc(db, 'admins', targetAdmin.id), { name: targetAdmin.name, username: targetAdmin.username, password: targetAdmin.password, email: targetAdmin.email || '', phone: targetAdmin.phone || '', photo: targetAdmin.photo || '', credentialId: targetAdmin.credentialId || '', fingerprintEnabled: targetAdmin.fingerprintEnabled || false });
-          alert(`Profil ${targetAdmin.name} diperbarui!`); setIsTargetAdminModalOpen(false); writeLog(`Edit admin: ${targetAdmin.name}`);
-        } catch (error) { alert('Gagal menyimpan.'); }
-      };
-
-      const toggleAdminStatus = async (adminId, currentStatus) => {
-        await updateDoc(doc(db, 'admins', adminId), { status: currentStatus === 'Aktif' ? 'Tidak Aktif' : 'Aktif' });
-      };
-
-      const exportCSV = (type) => {
-        let csv = '';
-        if (type === 'customers') { csv = 'Nama,Blok,Paket,Harga,Status\n'; customers.forEach(c => csv += `${c.name},${c.block},${getPackage(c.packageId).speed},${getPackage(c.packageId).price},${c.status}\n`); } 
-        else { csv = 'Tanggal,Kategori,Pengajuan,Uraian,Nominal,Admin\n'; expenses.forEach(e => csv += `${e.date},${e.category},${e.applicant || '-'},${e.description},${e.amount},${e.admin}\n`); }
-        const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MABUNET_${type}_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-      };
-
-      const triggerPrint = (cust) => { setPrintData(cust); setTimeout(() => { window.print(); setPrintData(null); }, 300); };
-      
-      const sendWAInvoice = (cust) => {
-        if (!cust.phone) return alert("Nomor HP kosong!");
-        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(getPackage(cust.packageId).price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*`;
-        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
-      };
-
-      const copyPortalLink = () => { navigator.clipboard.writeText(PORTAL_URL).then(() => { alert("Tautan Portal disalin!"); }); };
-      
-      const activeCustomersList = customers.filter(c => c.status === 'Aktif');
-      const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
-      const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
-      const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      
-      const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      
-      const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
-      const netProfit = actualPaidRevenue - (displayedExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0)); 
-      
-      const filteredCustomers = customers.filter(c => {
-        const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
-        const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
-        let matchCat = true;
-        if (filterCategory === 'Semua') matchCat = c.packageId !== 'free_0'; 
-        if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
-        if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif' && c.packageId !== 'free_0';
-        if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0'; 
-        return matchSearch && matchBlock && matchCat;
-      });
-
-      const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
-
-      useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
-
-      const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
-        <button 
-          onClick={() => { setActiveTab(id); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null); }} 
-          className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 relative ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
-        >
-          <Icon className="w-5 h-5 shrink-0" /> 
-          {!isSidebarCollapsed && <span className="text-sm truncate">{label}</span>}
-          {badgeCount > 0 && (
-            <span className={`absolute ${isSidebarCollapsed ? 'top-1 right-1' : 'top-3 right-3'} bg-rose-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-bounce`}>{badgeCount}</span>
-          )}
-        </button>
-      );
-
-      // ========== LAYAR LOGIN ==========
-      if (!currentUser) {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
-            <div className="absolute top-0 inset-x-0 h-1/2 bg-kai-blue rounded-b-[40px]"></div>
-            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
-              <div className="text-center mb-8">
-                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
-                <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
-                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
-              </div>
-              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg flex items-center gap-2 font-bold"><ShieldAlert className="w-4 h-4"/> {loginError}</div>}
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="relative border-b-2 border-slate-200 dark:border-slate-600 pb-1">
-                  <Lock className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
-                  <input type={showPassword ? "text" : "password"} placeholder="Masukkan Password..." required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-transparent pl-8 pr-8 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-0 text-slate-400">{showPassword ? <EyeOff className="w-5 h-5"/> : <Eye className="w-5 h-5"/>}</button>
-                </div>
-                <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg">Masuk</button>
-              </form>
+<body class="bg-kai-bg text-slate-800 pb-24">
+
+    <!-- MODAL RUANG CHAT TIKET -->
+    <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
+        <div class="bg-kai-blue p-4 flex items-center gap-3 shadow-md">
+            <button onclick="tutupChat()" class="text-white hover:text-kai-orange p-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="flex-1">
+                <h3 class="font-black text-white text-sm" id="chatTicketType">Laporan Kendala</h3>
+                <p class="text-[9px] text-slate-300" id="chatTicketStatus">Status: Menunggu Balasan</p>
             </div>
-          </div>
-        );
-      }
-
-      return (
-        <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
-          
-          {/* === SIDEBAR (DESKTOP) === */}
-          <aside className={`hidden lg:flex flex-col h-full bg-kai-blue text-white shadow-xl z-40 relative transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
-            <div className={`p-5 flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}>
-              <img src="./mabunetlogo.png" className="w-8 h-8 object-contain shrink-0" />
-              {!isSidebarCollapsed && (<div><h2 className="font-black text-lg tracking-tight">MABUNET</h2><p className="text-[9px] font-bold text-kai-orange uppercase tracking-widest">Admin Panel</p></div>)}
-            </div>
-
-            {!isSidebarCollapsed && (
-              <div className="px-5 mb-6 mt-2">
-                <div className="bg-kai-bluedark rounded-xl p-3 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-700 shrink-0 border border-slate-600">
-                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-1.5 text-slate-300" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">{currentUser.name}</p>
-                    <p className="text-[9px] font-black text-slate-400 truncate uppercase mt-0.5">{currentUser.role}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
-              <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" badgeCount={pendingApprovals.length} />
-              <SidebarItem id="tickets" icon={MessageCircle} label="Chat & Layanan" badgeCount={unreadTicketsCount} />
-              <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
-              {currentUser.id === 'admin1' && <SidebarItem id="mikrotik" icon={Server} label="MikroTik" />}
-              <SidebarItem id="portal" icon={Globe} label="Portal Web" />
-              <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
-              <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
-            </nav>
-
-            <div className="p-3 border-t border-kai-bluedark">
-              <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-bold hover:bg-kai-bluedark text-slate-400 mb-1">
-                {isSidebarCollapsed ? <ChevronRight className="w-4 h-4"/> : <><ChevronLeft className="w-4 h-4"/> Sembunyikan</>}
-              </button>
-              <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-2 text-rose-400 rounded-lg text-xs font-bold hover:bg-kai-bluedark"><LogOut className="w-4 h-4"/> Keluar</button>
-            </div>
-          </aside>
-
-          {/* === MAIN CONTENT === */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <div className="hidden lg:flex items-center justify-end p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 gap-3">
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-1.5 gap-2">
-                <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-              </div>
-              <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-kai-orange">{isDarkMode ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button>
-            </div>
-
-            <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
-              <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0">
-                <div className="flex justify-between items-center mb-6">
-                  <div><p className="text-xs text-slate-300">Selamat datang,</p><h2 className="font-bold text-lg">{currentUser.name}</h2></div>
-                  <div className="flex gap-2">
-                    <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-kai-bluedark text-slate-300">{isDarkMode ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button>
-                    <div className="w-10 h-10 rounded-full bg-white overflow-hidden border-2 border-kai-orange">
-                      {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover"/> : <User className="w-full h-full p-2 text-slate-800"/>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-24 lg:mt-6 px-4 lg:px-8 max-w-6xl mx-auto space-y-4">
-                
-                {/* --- DASHBOARD --- */}
-                {activeTab === 'dashboard' && (
-                  <>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
-                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                        <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm">Saldo Kas Bersih</span></div>
-                      </div>
-                      <div className="flex justify-between items-end"><h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3></div>
-                    </div>
-                  </>
-                )}
-
-                {/* --- CUSTOMERS --- */}
-                {activeTab === 'customers' && (
-                  <div className="space-y-4">
-                    <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md">Data Pelanggan</h2>
-                    {pendingApprovals.length > 0 && (
-                      <div className="bg-orange-50 dark:bg-orange-900/20 border border-kai-orange/30 rounded-2xl p-4 shadow-sm mb-4">
-                        <h3 className="font-bold text-sm text-kai-orangedark dark:text-orange-400 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Menunggu Persetujuan ({pendingApprovals.length})</h3>
-                        <div className="space-y-2">
-                          {pendingApprovals.map(approval => {
-                            const appInfo = getApprovalInfo(approval);
-                            const targetPkg = approval.targetPackageId || approval.newPackageId || approval.packageId;
-                            const proofUrl = extractImageFromObj(approval);
-                            return (
-                              <div key={approval.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                                <div className="flex items-start gap-3">
-                                  <div className={`p-2 rounded-lg ${approval.type === 'upgrade' ? 'bg-blue-50 text-kai-blue' : 'bg-emerald-50 text-emerald-600'}`}>
-                                    {approval.type === 'upgrade' ? <Activity className="w-5 h-5"/> : <FileCheck className="w-5 h-5"/>}
-                                  </div>
-                                  <div>
-                                    <p className="font-bold text-sm text-slate-800 dark:text-white">{appInfo.name} {appInfo.block ? `(Blok ${appInfo.block})` : ''}</p>
-                                    <p className="text-[10px] text-slate-500">{approval.type === 'upgrade' ? `Request Upgrade ke ${getPackage(targetPkg).speed}` : `Kirim Bukti Bayar`}</p>
-                                    {proofUrl && (
-                                      <button type="button" onClick={() => setPreviewLightbox(proofUrl)} className="text-[10px] font-bold text-kai-blue mt-1 inline-flex items-center gap-1 hover:underline"><ImageIcon className="w-3 h-3"/> Lihat Bukti Transfer</button>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <button onClick={() => handleRejectApprove(approval.id)} className="px-3 py-1.5 bg-rose-50 text-rose-600 text-xs font-bold rounded-lg">Tolak</button>
-                                  <button onClick={() => handleApprove(approval)} className="px-3 py-1.5 bg-kai-blue text-white text-xs font-bold rounded-lg shadow-sm">Approve</button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* --- CHAT & LAYANAN (TIKET) --- */}
-                {activeTab === 'tickets' && (
-                  <div className="h-[calc(100vh-160px)] lg:h-[calc(100vh-110px)] flex flex-col md:flex-row gap-4 relative">
-                    {/* List Kiri */}
-                    <div className={`w-full md:w-1/3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col ${activeTicket ? 'hidden md:flex' : 'flex'}`}>
-                      <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-black text-lg text-kai-blue dark:text-white">Chat & Layanan</h3>
-                          <p className="text-[10px] text-slate-500">Pesan & Foto Pelanggan</p>
-                        </div>
-                        <button onClick={() => setIsNewChatModalOpen(true)} className="px-3 py-2 bg-kai-orange text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-sm">
-                          <Plus className="w-3.5 h-3.5"/> Chat Baru
-                        </button>
-                      </div>
-                      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                        {tickets.length === 0 ? (
-                          <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan. Klik "+ Chat Baru".</div>
-                        ) : (
-                          tickets.map(ticket => {
-                            const tInfo = getTicketInfo(ticket);
-                            const isSelected = activeTicket?.id === ticket.id;
-                            const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
-                            return (
-                              <button 
-                                key={ticket.id} 
-                                onClick={() => setActiveTicket(ticket)}
-                                className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100'}`}
-                              >
-                                <div className="flex justify-between items-start mb-1">
-                                  <div className="min-w-0 pr-2">
-                                    <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>👤 {tInfo.name}</span>
-                                    {tInfo.block && <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>Blok {tInfo.block}</span>}
-                                  </div>
-                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${ticket.status === 'Closed' ? 'bg-slate-200 text-slate-500' : 'bg-emerald-100 text-emerald-700'}`}>{ticket.status || 'Aktif'}</span>
-                                </div>
-                                <p className={`text-[10px] truncate ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>{hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}</p>
-                              </button>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Ruang Chat Kanan */}
-                    {activeTicket ? (() => {
-                      const activeInfo = getTicketInfo(activeTicket);
-                      return (
-                        <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
-                          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <button onClick={() => setActiveTicket(null)} className="md:hidden p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm"><ArrowLeft className="w-4 h-4"/></button>
-                              <div className="min-w-0">
-                                <h3 className="font-extrabold text-sm text-kai-blue dark:text-white truncate">{activeInfo.name} {activeInfo.block ? `(Blok ${activeInfo.block})` : ''}</h3>
-                                <p className="text-[10px] font-semibold text-slate-500 truncate">{activeInfo.subject} {activeInfo.phone ? `• WA: ${activeInfo.phone}` : ''}</p>
-                              </div>
-                            </div>
-                            {activeTicket.status !== 'Closed' && (
-                              <button onClick={() => closeTicket(activeTicket.id)} className="px-3 py-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-bold rounded-lg transition-colors">Selesai</button>
-                            )}
-                          </div>
-
-                          <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3">
-                            {(activeInfo.initialMsg || activeInfo.initialImg) && (
-                              <div className="flex justify-start">
-                                <div className="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none">
-                                  <p className="text-[10px] font-extrabold text-kai-orange mb-1">{activeInfo.name}</p>
-                                  {activeInfo.initialMsg && <p className="text-xs whitespace-pre-line">{activeInfo.initialMsg}</p>}
-                                  {activeInfo.initialImg && (
-                                    <img src={activeInfo.initialImg} onClick={() => setPreviewLightbox(activeInfo.initialImg)} className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200" />
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {chatMessages.map((msg, idx) => {
-                              const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender === currentUser.name;
-                              const senderLabel = isAdmin ? (msg.sender || currentUser.name) : activeInfo.name;
-                              const msgText = msg.text || msg.message || '';
-                              const imgAttachment = extractImageFromObj(msg);
-                              return (
-                                <div key={msg.id || idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-[80%] rounded-2xl p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 rounded-tl-none'}`}>
-                                    <p className={`text-[10px] font-extrabold mb-1 ${isAdmin ? 'text-blue-200' : 'text-kai-orange'}`}>{senderLabel}</p>
-                                    {msgText && <p className="text-xs whitespace-pre-line">{msgText}</p>}
-                                    {imgAttachment && (
-                                      <img src={imgAttachment} onClick={() => setPreviewLightbox(imgAttachment)} className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" />
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          {chatImagePreview && (
-                            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border-t flex items-center justify-between">
-                              <div className="flex items-center gap-2"><img src={chatImagePreview} className="w-12 h-12 rounded-lg object-cover border border-kai-blue" /><span className="text-xs font-bold">Foto siap dikirim</span></div>
-                              <button type="button" onClick={() => setChatImagePreview(null)} className="p-1 bg-rose-100 text-rose-600 rounded-full"><X className="w-4 h-4"/></button>
-                            </div>
-                          )}
-
-                          <form onSubmit={handleSendChat} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2">
-                            <input ref={chatCameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleSelectChatImage} className="hidden" />
-                            <input ref={chatGalleryInputRef} type="file" accept="image/*" onChange={handleSelectChatImage} className="hidden" />
-                            
-                            <button type="button" onClick={() => chatCameraInputRef.current?.click()} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl"><Camera className="w-5 h-5"/></button>
-                            <button type="button" onClick={() => chatGalleryInputRef.current?.click()} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl"><ImageIcon className="w-5 h-5"/></button>
-
-                            <input type="text" value={newChatInput} onChange={e => setNewChatInput(e.target.value)} placeholder={`Ketik pesan ke ${activeInfo.name}...`} className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
-                            <button type="submit" disabled={!newChatInput.trim() && !chatImagePreview} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 shadow-sm"><Send className="w-4 h-4"/></button>
-                          </form>
-                        </div>
-                      );
-                    })() : (
-                      <div className="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                        <div className="text-center text-slate-400"><MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Pilih chat di samping untuk mulai mengobrol.</p></div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* --- PORTAL & SETTINGS --- */}
-                {activeTab === 'portal' && (
-                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl text-center shadow-sm">
-                    <h3 className="text-lg font-black text-kai-blue dark:text-white mb-2">Portal Klien</h3>
-                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl flex items-center justify-between gap-3 mb-4">
-                      <span className="text-xs font-semibold select-all">{PORTAL_URL}</span>
-                      <button onClick={copyPortalLink} className="p-2 bg-kai-blue text-white rounded-lg"><Copy className="w-4 h-4"/></button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </main>
-
-            {/* Mobile Nav */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-md">
-              <button onClick={() => {setActiveTab('dashboard'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400'}`}><LayoutDashboard className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Beranda</span></button>
-              <button onClick={() => {setActiveTab('customers'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400'}`}><Users className="w-5 h-5 mb-1"/>{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Pelanggan</span></button>
-              <button onClick={() => {setActiveTab('tickets'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400'}`}><MessageCircle className="w-5 h-5 mb-1"/>{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Chat</span></button>
-              {currentUser?.id === 'admin1' && <button onClick={() => {setActiveTab('mikrotik'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400'}`}><Server className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">MikroTik</span></button>}
-              <button onClick={() => {setActiveTab('settings'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400'}`}><User className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Profil</span></button>
-            </nav>
-          </div>
-
-          {/* Modal Chat Baru */}
-          {isNewChatModalOpen && (
-            <div className="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col max-h-[80vh]">
-                <div className="flex justify-between items-center mb-4"><h3 className="text-base font-extrabold text-kai-blue dark:text-white">Mulai Chat Pelanggan</h3><button onClick={() => setIsNewChatModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button></div>
-                <input type="text" placeholder="Cari nama pelanggan..." value={chatCustomerSearch} onChange={e => setChatCustomerSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none" />
-                <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
-                  {customers.filter(c => (c.name || '').toLowerCase().includes(chatCustomerSearch.toLowerCase())).map(c => (
-                    <button key={c.id} onClick={() => handleStartNewChatWithCustomer(c)} className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-kai-blue hover:text-white transition-colors flex justify-between items-center">
-                      <div><p className="font-bold text-xs">{c.name}</p><p className="text-[10px] opacity-75">Blok {c.block} • {c.phone || '-'}</p></div>
-                      <MessageCircle className="w-4 h-4 shrink-0"/>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Lightbox Zoom Foto */}
-          {previewLightbox && (
-            <div className="fixed inset-0 z-[80] bg-black/85 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
-              <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full"><X className="w-6 h-6"/></button>
-              <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
-            </div>
-          )}
         </div>
-      );
-    }
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50"></div>
+        <form id="chatForm" class="p-3 bg-white border-t border-slate-200 flex gap-2">
+            <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik balasan..." required class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold outline-none focus:border-kai-blue">
+            <button type="submit" class="w-10 h-10 bg-kai-orange text-white rounded-full flex items-center justify-center shadow-md hover:bg-kai-orangedark transition-colors">
+                <svg class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- MODAL PENGAJUAN UPGRADE PAKET -->
+    <div id="upgradeModal" class="fixed inset-0 bg-black/80 z-[110] hidden flex-col justify-end">
+        <div class="bg-white w-full max-w-xl mx-auto rounded-t-[30px] shadow-2xl flex flex-col transform transition-transform translate-y-full duration-300" id="upgradeContent">
+            <div class="p-5 flex justify-between items-center border-b border-slate-100">
+                <h3 class="font-black text-kai-blue text-lg">Ganti Paket Internet</h3>
+                <button onclick="tutupUpgrade()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-rose-100 hover:text-rose-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <p class="text-[10px] font-semibold text-slate-500 mb-4">Pilih paket baru yang Anda inginkan. Pengajuan akan aktif setelah pembayaran diverifikasi admin.</p>
+                <form id="formUpgrade" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Baru</label>
+                        <select id="upgradeSelect" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
+                            <option value="">-- Pilih Paket Baru --</option>
+                            <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
+                            <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
+                            <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
+                            <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
+                            <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
+                            <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
+                        </select>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center mt-4">
+                        <p class="text-xs font-bold text-kai-blue mb-2">QRIS Pembayaran Upgrade</p>
+                        <img src="./qris.jpg" alt="QRIS" class="w-32 h-32 object-contain mx-auto mb-2 rounded-lg bg-white p-2 border">
+                        <p class="text-[9px] text-slate-600">Selesaikan pembayaran & kirim bukti untuk memproses paket baru Anda.</p>
+                    </div>
+                    
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 mt-4 text-center">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Upload Bukti Pembayaran</p>
+                        <input type="file" id="upgradeProofInput" accept="image/*" required class="hidden" onchange="previewUpgradeProof(event)">
+                        <label for="upgradeProofInput" class="inline-block w-full py-3 bg-white border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-kai-blue transition-colors text-xs font-bold text-slate-500">
+                            Pilih Gambar / Screenshot
+                        </label>
+                        <img id="upgradeProofPreview" class="hidden w-full h-32 object-contain mt-2 rounded-lg border border-slate-200">
+                    </div>
+
+                    <button type="submit" id="btnSubmitUpgrade" class="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">Ajukan & Kirim Bukti</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KIRIM BUKTI TAGIHAN BULANAN -->
+    <div id="paymentProofModal" class="fixed inset-0 bg-black/80 z-[110] hidden flex-col justify-end">
+        <div class="bg-white w-full max-w-xl mx-auto rounded-t-[30px] shadow-2xl flex flex-col transform transition-transform translate-y-full duration-300" id="paymentProofContent">
+            <div class="p-5 flex justify-between items-center border-b border-slate-100">
+                <h3 class="font-black text-kai-blue text-lg">Kirim Bukti Pembayaran</h3>
+                <button onclick="tutupPaymentProof()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-rose-100 hover:text-rose-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <p class="text-[10px] font-semibold text-slate-500 mb-4 text-center">Silakan upload bukti transfer Anda di bawah ini agar tagihan bulan ini segera diproses admin.</p>
+                <form id="formPaymentProof" class="space-y-4">
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center">
+                        <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Upload Bukti Transfer</p>
+                        <input type="file" id="billProofInput" accept="image/*" required class="hidden" onchange="previewBillProof(event)">
+                        <label for="billProofInput" class="inline-block w-full py-3 bg-white border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-kai-blue transition-colors text-xs font-bold text-slate-500">
+                            Pilih Gambar / Screenshot
+                        </label>
+                        <img id="billProofPreview" class="hidden w-full h-40 object-contain mt-2 rounded-lg border border-slate-200">
+                    </div>
+                    <button type="submit" id="btnSubmitBillProof" class="w-full py-4 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">Kirim Bukti ke Admin</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CROPPER FOTO -->
+    <div id="cropperModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-4 bg-kai-blue text-white flex justify-between items-center"><h3 class="font-bold text-sm">Ubah Foto</h3><button onclick="closeCropper()" class="text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+            <div class="w-full h-[60vh] bg-slate-100 flex items-center justify-center overflow-hidden"><img id="imageToCrop" src="" class="max-w-full max-h-full block"></div>
+            <div class="p-4 flex gap-3"><button onclick="closeCropper()" class="w-1/2 py-3 bg-slate-200 rounded-xl font-bold text-sm">Batal</button><button onclick="cropImage()" class="w-1/2 py-3 bg-kai-orange text-white rounded-xl font-bold text-sm">Simpan</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL PUSAT NOTIFIKASI -->
+    <div id="notifModal" class="fixed inset-0 bg-black/60 z-[100] hidden flex-col justify-end">
+        <div class="bg-white w-full max-w-xl mx-auto h-[80vh] rounded-t-[30px] flex flex-col shadow-2xl transform transition-transform translate-y-full duration-300" id="notifContent">
+            <div class="p-5 flex justify-between items-center border-b border-slate-100 bg-white rounded-t-[30px]">
+                <h3 class="font-black text-kai-blue text-lg flex items-center gap-2"><svg class="w-5 h-5 text-kai-orange" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>Pusat Informasi</h3>
+                <button onclick="tutupNotifikasi()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div id="listNotif" class="p-5 overflow-y-auto flex-1 space-y-3 bg-slate-50 pb-10"></div>
+        </div>
+    </div>
+    
+    <!-- HEADER TOP -->
+    <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
+        <div class="max-w-xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
+                <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Portal Pelanggan</p>
+            </div>
+            <div class="relative cursor-pointer" onclick="bukaNotifikasi()">
+                <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
+                <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-kai-blue animate-pulse"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. KONTEN: BERANDA -->
+    <div id="view-home" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-gradient-to-r from-kai-blue to-kai-bluedark p-5 rounded-3xl shadow-sm border border-slate-700 text-white mb-6 relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
+            <h2 class="text-lg font-black mb-1 relative z-10">Internet Tanpa Batas! 🚀</h2>
+            <p class="text-xs text-slate-300 relative z-10">Nikmati layanan internet fiber optik unlimited untuk keluarga Anda.</p>
+        </div>
+
+        <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
+            </div>
+            <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg></div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
+            </div>
+            <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer col-span-2">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
+                <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan & Lapor Kendala</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. KONTEN: REGISTRASI -->
+    <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200">
+            <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
+            <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
+
+            <form id="regForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
+                    <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
+                        <option value="">-- Pilih Paket --</option>
+                        <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
+                        <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
+                        <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
+                        <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
+                        <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
+                        <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
+                        <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
+                        <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No. HP / WhatsApp</label>
+                        <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Area</label>
+                        <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                            <option value="">-- Pilih Area --</option>
+                            <option value="Mabu">Mabu</option>
+                            <option value="Ranau">Ranau</option>
+                            <option value="RG">Rancagawe</option>
+                            <option value="Pesona">Pesona</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat</label>
+                        <input type="text" id="alamat" placeholder="Contoh: Mabu Park blok P no 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 mt-6">
+                    <h3 class="text-sm font-black text-kai-blue mb-1">Pengaturan WiFi</h3>
+                    <p class="text-[10px] font-semibold text-slate-500 mb-3">Tentukan nama dan sandi jaringan Anda.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Nama WiFi</label>
+                            <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Password</label>
+                            <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">
+                    Kirim Pendaftaran
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. KONTEN: PEMBAYARAN (QRIS) -->
+    <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center">
+            <h2 class="text-xl font-black text-kai-blue mb-1">Pembayaran Tagihan</h2>
+            <p class="text-xs font-semibold text-slate-500 mb-6">Scan QRIS di bawah ini untuk membayar langganan internet Anda.</p>
+            <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-3xl mx-auto mb-6 shadow-inner">
+                <div class="text-kai-blue font-black text-lg tracking-widest mb-4">QRIS MABUNET</div>
+                <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mx-auto mb-4 rounded-xl shadow-md border bg-white">
+            </div>
+            
+            <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                Upload Bukti Pembayaran
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. KONTEN: BANTUAN & TICKETING -->
+    <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
+        
+        <!-- TIKET SAYA -->
+        <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-2">Daftar Tiket & Pesan Anda</h2>
+        <div id="listTickets" class="space-y-3 mb-6">
+            <div class="text-center py-6 bg-white border border-slate-200 border-dashed rounded-2xl"><p class="text-[10px] font-bold text-slate-400">Belum ada laporan atau pesan masuk.</p></div>
+        </div>
+
+        <!-- FORM TICKETING -->
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6">
+            <h3 class="text-lg font-black text-kai-blue mb-1">Buat Laporan / Pertanyaan Baru</h3>
+            <p class="text-[10px] font-semibold text-slate-500 mb-5">Admin akan membalas pesan Anda langsung di aplikasi ini.</p>
+            
+            <form id="ticketForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Topik Kendala / Info</label>
+                    <select id="ticketType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
+                        <option value="">-- Pilih Topik --</option>
+                        <option value="Internet Mati (LOS Merah)">Internet Mati (LOS Merah)</option>
+                        <option value="Internet Lemot">Internet Lemot / Sering Putus</option>
+                        <option value="Kabel Fiber Putus">Kabel Fiber Putus</option>
+                        <option value="Lupa Password WiFi">Ganti / Lupa Password WiFi</option>
+                        <option value="Konfirmasi Pembayaran">Tanya Seputar Pembayaran / Tagihan</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Isi Pesan Detail</label>
+                    <textarea id="ticketDesc" rows="3" required placeholder="Jelaskan secara detail pesan atau kendala Anda..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-kai-blue"></textarea>
+                </div>
+                <button type="submit" id="btnSubmitTicket" class="w-full py-4 mt-2 bg-kai-blue hover:bg-kai-bluedark text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">Kirim Pesan</button>
+            </form>
+        </div>
+
+        <!-- FAQ PANDUAN MANDIRI -->
+        <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-6">Panduan Perbaikan Mandiri (FAQ)</h2>
+        <div class="space-y-3 mb-6">
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                    <span class="font-extrabold text-sm text-kai-blue">Arti Lampu Indikator Modem</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <ul class="list-disc pl-4 space-y-2">
+                            <li><strong class="text-kai-blue">POWER:</strong> Nyala (Normal) / Mati (Cek colokan listrik).</li>
+                            <li><strong class="text-emerald-500">PON:</strong> Nyala Hijau (Normal).</li>
+                            <li><strong class="text-rose-500">LOS:</strong> Kedip Merah (Kabel putus/tertekuk parah). <span class="bg-rose-100 text-rose-600 px-1 rounded font-black">Lapor admin!</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                    <span class="font-extrabold text-sm text-kai-blue">Internet Lemot & Solusinya</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <p>Matikan modem selama 10 menit, lalu nyalakan kembali. Pastikan tidak ada HP yang sedang mendownload update otomatis.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                    <span class="font-extrabold text-sm text-kai-blue">Cara Kirim Bukti Pembayaran</span>
+                    <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content bg-slate-50/50">
+                    <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
+                        <ol class="list-decimal pl-4 space-y-2">
+                            <li>Lakukan pembayaran melalui menu <strong>Bayar Tagihan</strong> menggunakan QRIS.</li>
+                            <li>Simpan/Screenshot bukti transfer dari aplikasi perbankan (BCA, DANA, GoPay, dll).</li>
+                            <li>Tekan tombol hijau <strong>"Upload Bukti Pembayaran"</strong> di halaman pembayaran, lalu lampirkan gambar bukti transfer Anda.</li>
+                            <li>Admin akan memverifikasi dan mengubah status pembayaran Anda.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENU NAVIGASI BAWAH -->
+    <nav id="bottomNav" class="hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <button id="nav-home" class="nav-item flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="text-[9px] font-black tracking-wide">Beranda</span></button>
+        <button id="nav-registrasi" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-registrasi', this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg><span class="text-[9px] font-black tracking-wide">Daftar</span></button>
+        <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span class="text-[9px] font-black tracking-wide">Bayar</span></button>
+        <button id="nav-bantuan" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-bantuan', this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="text-[9px] font-black tracking-wide">Bantuan</span></button>
+        <button id="nav-akun" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuAkun(this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="text-[9px] font-black tracking-wide">Akun</span></button>
+    </nav>
+
+    <!-- 5. KONTEN: LOGIN -->
+    <div id="view-login" class="view-section active max-w-xl mx-auto px-4 mt-10">
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-kai-blue rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
+                </div>
+                <h2 class="text-xl font-black text-kai-blue mb-1">Login Akun</h2>
+                <p class="text-[10px] font-semibold text-slate-500">Masuk untuk melihat Data Penagihan & Tiket Anda.</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nomor WhatsApp</label>
+                    <input type="tel" id="loginWA" required placeholder="Contoh: 08123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
+                </div>
+                <button type="submit" id="btnLogin" class="w-full py-4 mt-2 bg-kai-blue text-white rounded-xl font-black text-sm shadow-lg">Masuk ke Portal</button>
+            </form>
+
+            <div class="mt-8 text-center border-t border-slate-100 pt-5">
+                <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Belum berlangganan?</p>
+                <button type="button" onclick="masukSebagaiTamu()" class="w-full py-3 bg-slate-50 text-kai-blue border border-slate-200 hover:bg-slate-100 rounded-xl font-black text-sm transition-all shadow-sm">
+                    Daftar Pasang Baru
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. KONTEN: PROFIL (READONLY & UPGRADE IN-APP) -->
+    <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black text-kai-blue">Data Pelanggan</h2>
+                <button onclick="logoutAkun()" class="text-[10px] font-bold px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg">Keluar</button>
+            </div>
+            
+            <div class="flex flex-col items-center mb-6">
+                <div class="relative">
+                    <img id="profilImage" src="https://ui-avatars.com/api/?name=User&background=1A2C5B&color=fff" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md">
+                    <label for="uploadFoto" class="absolute bottom-0 right-0 w-8 h-8 bg-kai-orange text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></label>
+                    <input type="file" id="uploadFoto" accept="image/*" class="hidden" onchange="openCropper(event)">
+                </div>
+            </div>
+
+            <!-- Area Notifikasi Menunggu Pembayaran Upgrade -->
+            <div id="pendingUpgradeAlert" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-center">
+                <p class="text-[10px] font-bold text-orange-600 mb-1 uppercase tracking-wider">Pengajuan Upgrade Aktif</p>
+                <p class="text-sm font-black text-slate-800" id="pendingPackageName">-</p>
+                <p class="text-[10px] font-semibold text-slate-500 mt-2">Menunggu konfirmasi admin.</p>
+            </div>
+
+            <form id="profilForm" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
+                    <input type="text" id="profilNama" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No WhatsApp</label>
+                        <input type="tel" id="profilWA" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Status Internet</label>
+                        <input type="text" id="profilStatus" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-black outline-none cursor-not-allowed">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Blok Rumah</label>
+                        <input type="text" id="profilBlok" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Jatuh Tempo (Tgl)</label>
+                        <input type="text" id="profilTempo" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Paket Internet Aktif</label>
+                    <input type="text" id="profilPaket" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed">
+                </div>
+                
+                <button type="submit" id="btnSimpanProfil" class="w-full py-4 mt-2 bg-emerald-500 text-white rounded-xl font-black text-sm shadow-lg">Simpan Perubahan Foto</button>
+
+                <button type="button" id="btnBukaUpgrade" onclick="bukaUpgrade()" class="w-full py-4 mt-2 bg-kai-orange text-white rounded-xl font-black text-sm shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    Ajukan Ganti Paket Baru
+                </button>
+
+                <button type="button" onclick="bukaRiwayat()" class="w-full py-4 mt-2 bg-blue-50 text-kai-blue border border-blue-200 rounded-xl font-black text-sm flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                    Lihat Riwayat Pembayaran
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 7. KONTEN: RIWAYAT PEMBAYARAN -->
+    <div id="view-riwayat" class="view-section max-w-xl mx-auto px-4">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <button onclick="switchView('view-profil', document.getElementById('nav-akun'))" class="mb-4 flex items-center gap-1 text-[10px] font-bold text-slate-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Kembali
+            </button>
+            <h2 class="text-xl font-black text-kai-blue mb-1">Riwayat Tagihan</h2>
+            <div id="listRiwayat" class="space-y-3 mt-4"></div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC FULL -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
+            authDomain: "billing-mabunet.firebaseapp.com",
+            projectId: "billing-mabunet",
+            storageBucket: "billing-mabunet.firebasestorage.app",
+            messagingSenderId: "362703627315",
+            appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
+        };
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        
+        let currentUserDocId = null;
+        let cropperInstance = null;
+        let currentPackageName = ""; 
+        let globalName = ""; let globalBlock = ""; let globalPhone = ""; let globalDueDate = null;
+        
+        let profilListener = null;
+        let ticketsListener = null;
+        let chatListener = null;
+        let currentChatTicketId = null;
+
+        let tempUpgradeProofBase64 = null;
+        let tempBillProofBase64 = null;
+
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const item = this.parentElement; const content = item.querySelector('.accordion-content');
+                const isActive = item.classList.contains('active');
+                document.querySelectorAll('.accordion-item').forEach(otherItem => {
+                    otherItem.classList.remove('active'); otherItem.querySelector('.accordion-content').style.maxHeight = null;
+                });
+                if (!isActive) { item.classList.add('active'); content.style.maxHeight = content.scrollHeight + "px"; }
+            });
+        });
+
+        function switchView(viewId, btnElement) {
+            document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active', 'text-kai-orange', 'scale-110'); btn.classList.add('text-slate-400');
+            });
+            document.getElementById(viewId).classList.add('active');
+            if(btnElement) {
+                btnElement.classList.remove('text-slate-400'); btnElement.classList.add('active', 'text-kai-orange', 'scale-110');
+            }
+            window.scrollTo(0,0);
+        }
+
+        window.addEventListener('load', () => {
+            const savedUser = localStorage.getItem('mabunet_session');
+            if (savedUser) {
+                const data = JSON.parse(savedUser);
+                currentUserDocId = data.id;
+                if(data.foto) document.getElementById('profilImage').src = data.foto;
+                bukaAplikasiPenuh();
+                mulaiListenerRealtime(); 
+            }
+        });
+
+        function bukaAplikasiPenuh() {
+            document.getElementById('mainHeader').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
+            switchView('view-home', document.getElementById('nav-home'));
+        }
+
+        function tutupAplikasiPenuh() {
+            document.getElementById('mainHeader').classList.add('hidden');
+            document.getElementById('bottomNav').classList.add('hidden');
+            switchView('view-login', null);
+            if(profilListener) profilListener();
+            if(ticketsListener) ticketsListener();
+        }
+        
+        function masukSebagaiTamu() {
+            document.getElementById('mainHeader').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
+            switchView('view-registrasi', document.getElementById('nav-registrasi'));
+        }
+
+        function bukaMenuAkun(btn) {
+            if (currentUserDocId) { switchView('view-profil', btn); } else { switchView('view-login', btn); }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnLogin');
+            const wa = document.getElementById('loginWA').value.trim();
+            btn.innerText = "Memeriksa Data..."; btn.disabled = true;
+
+            try {
+                const snapshot = await db.collection('customers').where('phone', '==', wa).get();
+                if (snapshot.empty) { alert("Nomor WhatsApp Anda tidak terdaftar dalam sistem."); } 
+                else {
+                    currentUserDocId = snapshot.docs[0].id;
+                    const userData = snapshot.docs[0].data();
+                    localStorage.setItem('mabunet_session', JSON.stringify({id: currentUserDocId, foto: userData.foto_profil}));
+                    document.getElementById('loginForm').reset();
+                    
+                    bukaAplikasiPenuh(); 
+                    mulaiListenerRealtime();
+                }
+            } catch (err) { alert("Terjadi kesalahan jaringan."); } 
+            finally { btn.innerText = "Masuk ke Portal"; btn.disabled = false; }
+        });
+
+        document.getElementById('regForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerText = "Mengirim Data..."; btn.disabled = true;
+
+            const nama = document.getElementById('nama').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const paket = document.getElementById('paket').value; 
+            const area = document.getElementById('area').value; 
+            const alamat = document.getElementById('alamat').value;
+            const ssid = document.getElementById('ssid').value;
+            const password_wifi = document.getElementById('password_wifi').value;
+
+            let pppoe_secret = "";
+            const namaDepan = nama.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+            const regexBlok = /(?:blok\s+)?([a-zA-Z])\s*(\d*)\s*(?:no\.?|nomor|blk|\.|-|\/)?\s*(\d+)/i;
+            const match = alamat.match(regexBlok);
+
+            if (match) {
+                const hurufBlok = match[1].toLowerCase();
+                const angkaBlok = match[2];               
+                const noRumah = match[3];                 
+                if (angkaBlok) { pppoe_secret = `${hurufBlok}${angkaBlok}.${noRumah}@mabu.net`; } 
+                else { pppoe_secret = `${hurufBlok}${noRumah}@mabu.net`; }
+            } else { pppoe_secret = `${namaDepan}@mabu.net`; }
+
+            try {
+                await db.collection('customers').add({
+                    name: nama, block: area, phone: whatsapp, packageId: paket, dueDate: 1, 
+                    status: 'Non-Aktif', notes: `Alamat: ${alamat} | SSID: ${ssid} | Pass: ${password_wifi}`, 
+                    pppoe_user: pppoe_secret, payments: {} 
+                });
+                alert("Pendaftaran berhasil! Tim MabuNet akan segera menghubungi WhatsApp Anda.");
+                document.getElementById('regForm').reset();
+                switchView('view-home', document.getElementById('nav-home'));
+            } catch (error) { alert("Terjadi kesalahan jaringan."); } 
+            finally { btn.innerText = "Kirim Pendaftaran"; btn.disabled = false; }
+        });
+
+        // 2. PERBAIKAN LISTENER TIKET
+        function mulaiListenerRealtime() {
+            if(!currentUserDocId) return;
+
+            profilListener = db.collection('customers').doc(currentUserDocId).onSnapshot(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    globalName = data.name || '-'; globalPhone = data.phone || '-'; globalBlock = data.block || '-';
+                    globalDueDate = data.dueDate || null;
+                    
+                    if(document.getElementById('profilNama')) {
+                        document.getElementById('profilNama').value = globalName;
+                        document.getElementById('profilWA').value = globalPhone;
+                        document.getElementById('profilBlok').value = globalBlock;
+                        document.getElementById('profilTempo').value = data.dueDate ? `Tanggal ${data.dueDate}` : '-';
+                        
+                        currentPackageName = data.packageId || 'Belum Ada Paket';
+                        document.getElementById('profilPaket').value = currentPackageName.replace(/_/g, ' ').toUpperCase();
+
+                        const statEl = document.getElementById('profilStatus');
+                        statEl.value = data.status || '-';
+                        if(data.status === 'Aktif') { statEl.classList.add('text-emerald-600'); statEl.classList.remove('text-rose-600'); } 
+                        else { statEl.classList.add('text-rose-600'); statEl.classList.remove('text-emerald-600'); }
+                        if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
+
+                        if (data.pendingUpgrade) {
+                            document.getElementById('pendingUpgradeAlert').classList.remove('hidden');
+                            document.getElementById('pendingPackageName').innerText = data.pendingUpgrade.packageId.replace(/_/g, ' ').toUpperCase();
+                            document.getElementById('btnBukaUpgrade').classList.add('hidden');
+                        } else {
+                            document.getElementById('pendingUpgradeAlert').classList.add('hidden');
+                            document.getElementById('btnBukaUpgrade').classList.remove('hidden');
+                        }
+                    }
+                }
+            });
+
+            // Perbaikan agar tiket memuat isi pesan walau dari array yang kompleks
+            ticketsListener = db.collection('tickets').where('customerId', '==', currentUserDocId)
+                .onSnapshot(snapshot => {
+                    const listDiv = document.getElementById('listTickets');
+                    if(snapshot.empty) {
+                        listDiv.innerHTML = `<div class="text-center py-6 bg-white border border-slate-200 border-dashed rounded-2xl"><p class="text-[10px] font-bold text-slate-400">Belum ada laporan atau pesan masuk.</p></div>`;
+                        return;
+                    }
+
+                    let html = '';
+                    snapshot.docs.forEach(doc => {
+                        const t = doc.data();
+                        const tId = doc.id;
+                        let statusColor = t.status === 'Selesai' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
+                        
+                        // Cek pesan terakhir untuk snippet
+                        let lastMessageText = "Ketuk untuk melihat percakapan...";
+                        if (t.messages && Array.isArray(t.messages) && t.messages.length > 0) {
+                            let lastMsg = t.messages[t.messages.length - 1];
+                            lastMessageText = lastMsg.text || (lastMsg.attachmentUrl ? "Menerima Gambar" : "Pesan...");
+                        }
+
+                        html += `
+                            <div onclick="bukaChat('${tId}', '${t.issueType}', '${t.status}')" class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:border-kai-blue transition-colors shadow-sm">
+                                <div class="flex-1 overflow-hidden pr-2">
+                                    <h4 class="font-black text-sm text-kai-blue">${t.issueType}</h4>
+                                    <p class="text-[10px] font-semibold text-slate-500 mt-1 truncate">${lastMessageText}</p>
+                                    <p class="text-[8px] font-bold text-slate-400 mt-1">${t.dateStr}</p>
+                                </div>
+                                <div class="flex flex-col items-end gap-2">
+                                    <span class="px-2 py-1 rounded text-[9px] font-black ${statusColor}">${t.status}</span>
+                                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    listDiv.innerHTML = html;
+                });
+            
+            muatNotifikasi();
+        }
+
+        document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if(!currentUserDocId) { alert("Login dahulu."); return; }
+
+            const btn = document.getElementById('btnSubmitTicket');
+            btn.innerHTML = `Mengirim...`; btn.disabled = true;
+
+            const type = document.getElementById('ticketType').value;
+            const desc = document.getElementById('ticketDesc').value;
+
+            try {
+                // Pastikan format messages menggunakan key yang aman saat insert
+                await db.collection('tickets').add({
+                    customerId: currentUserDocId,
+                    name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: type, status: 'Open', 
+                    timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
+                    messages: [{ sender: 'client', text: desc, time: new Date().getTime() }]
+                });
+
+                document.getElementById('ticketForm').reset();
+                alert("Pesan/Laporan berhasil dikirim! Silakan pantau di 'Daftar Tiket & Pesan Anda' di atas.");
+            } catch (err) { alert("Gagal mengirim."); } 
+            finally { btn.innerHTML = `Kirim Pesan`; btn.disabled = false; }
+        });
+
+        // 3. BUKA MODAL CHAT (PERBAIKAN PEMBACAAN ARRAY)
+        function bukaChat(ticketId, type, status) {
+            currentChatTicketId = ticketId;
+            document.getElementById('chatTicketType').innerText = type;
+            document.getElementById('chatTicketStatus').innerText = `Status: ${status}`;
+            document.getElementById('chatModal').classList.remove('hidden');
+            document.getElementById('chatModal').classList.add('flex');
+
+            chatListener = db.collection('tickets').doc(ticketId).onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    // Fallback jika 'messages' tidak ada, buat array kosong
+                    const messages = (data.messages && Array.isArray(data.messages)) ? data.messages : [];
+                    const chatBox = document.getElementById('chatMessages');
+                    let html = '';
+                    
+                    if (messages.length === 0) {
+                        html = '<p class="text-center text-[10px] text-slate-400 py-4">Belum ada percakapan.</p>';
+                    } else {
+                        messages.forEach(msg => {
+                            const dateObj = msg.time ? new Date(msg.time) : new Date();
+                            const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
+                            
+                            // Pastikan key yang dicari benar: msg.sender
+                            if(msg.sender === 'client') {
+                                html += `<div class="chat-bubble-client max-w-[80%] px-4 py-2 shadow-sm text-sm break-words"><p>${msg.text || ''}</p><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
+                                if(msg.attachmentUrl) {
+                                    html += `<div class="chat-bubble-client max-w-[80%] px-2 py-2 shadow-sm"><img src="${msg.attachmentUrl}" class="w-full rounded-lg" onclick="window.open('${msg.attachmentUrl}', '_blank')"><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
+                                }
+                            } else {
+                                html += `<div class="chat-bubble-admin max-w-[80%] px-4 py-2 shadow-sm text-sm break-words"><p class="text-[9px] font-black text-kai-orange mb-0.5">Admin MABUNET</p><p>${msg.text || ''}</p><p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div>`;
+                            }
+                        });
+                    }
+                    
+                    chatBox.innerHTML = html;
+                    setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+                }
+            });
+        }
+
+        function tutupChat() {
+            document.getElementById('chatModal').classList.add('hidden');
+            document.getElementById('chatModal').classList.remove('flex');
+            if(chatListener) { chatListener(); chatListener = null; }
+            currentChatTicketId = null;
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const teks = input.value.trim();
+            if(!teks || !currentChatTicketId) return;
+            
+            input.value = ''; 
+            try {
+                await db.collection('tickets').doc(currentChatTicketId).update({
+                    messages: firebase.firestore.FieldValue.arrayUnion({
+                        sender: 'client', text: teks, time: new Date().getTime()
+                    })
+                });
+            } catch(e) { alert("Gagal mengirim pesan."); }
+        });
+
+        // 4A. FUNGSI KIRIM BUKTI TAGIHAN BULANAN
+        function bukaPaymentProof() {
+            if(!currentUserDocId) {
+                alert("Anda harus login untuk mengirim bukti pembayaran lewat aplikasi.");
+                switchView('view-login', document.getElementById('nav-akun'));
+                return;
+            }
+            document.getElementById('paymentProofModal').classList.remove('hidden');
+            document.getElementById('paymentProofModal').classList.add('flex');
+            setTimeout(() => { document.getElementById('paymentProofContent').classList.remove('translate-y-full'); }, 10);
+        }
+
+        function tutupPaymentProof() {
+            document.getElementById('paymentProofContent').classList.add('translate-y-full');
+            setTimeout(() => { document.getElementById('paymentProofModal').classList.add('hidden'); document.getElementById('paymentProofModal').classList.remove('flex'); }, 300);
+            tempBillProofBase64 = null;
+            document.getElementById('billProofInput').value = "";
+            document.getElementById('billProofPreview').classList.add('hidden');
+            document.getElementById('billProofPreview').src = "";
+        }
+
+        function previewBillProof(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempBillProofBase64 = e.target.result;
+                    document.getElementById('billProofPreview').src = tempBillProofBase64;
+                    document.getElementById('billProofPreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('formPaymentProof').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if(!tempBillProofBase64) { alert("Harap lampirkan gambar bukti transfer!"); return; }
+
+            const btn = document.getElementById('btnSubmitBillProof');
+            btn.innerText = "Mengupload Bukti..."; btn.disabled = true;
+
+            try {
+                await db.collection('tickets').add({
+                    customerId: currentUserDocId,
+                    name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: "Konfirmasi Pembayaran", status: 'Open', 
+                    timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
+                    messages: [
+                        { sender: 'client', text: "Berikut ini bukti transfer tagihan bulan ini.", time: new Date().getTime() },
+                        { sender: 'client', text: "Bukti Transfer Terlampir", attachmentUrl: tempBillProofBase64, time: new Date().getTime() + 100 } 
+                    ]
+                });
+                
+                tutupPaymentProof();
+                alert("Bukti pembayaran telah terkirim! Admin akan segera memproses tagihan Anda.");
+                switchView('view-bantuan', document.getElementById('nav-bantuan'));
+            } catch (err) { alert("Gagal mengupload bukti pembayaran. Coba perkecil ukuran gambar."); } 
+            finally { btn.innerText = "Kirim Bukti ke Admin"; btn.disabled = false; }
+        });
+
+
+        // 4B. FUNGSI PENGAJUAN UPGRADE PAKET (IN-APP)
+        function previewUpgradeProof(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    tempUpgradeProofBase64 = e.target.result;
+                    document.getElementById('upgradeProofPreview').src = tempUpgradeProofBase64;
+                    document.getElementById('upgradeProofPreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function bukaUpgrade() {
+            document.getElementById('upgradeModal').classList.remove('hidden');
+            document.getElementById('upgradeModal').classList.add('flex');
+            setTimeout(() => { document.getElementById('upgradeContent').classList.remove('translate-y-full'); }, 10);
+        }
+
+        function tutupUpgrade() {
+            document.getElementById('upgradeContent').classList.add('translate-y-full');
+            setTimeout(() => { document.getElementById('upgradeModal').classList.add('hidden'); document.getElementById('upgradeModal').classList.remove('flex'); }, 300);
+            tempUpgradeProofBase64 = null;
+            document.getElementById('upgradeProofInput').value = "";
+            document.getElementById('upgradeProofPreview').classList.add('hidden');
+        }
+
+        document.getElementById('formUpgrade').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if(!currentUserDocId) return;
+            if(!tempUpgradeProofBase64) { alert("Anda harus melampirkan bukti transfer terlebih dahulu!"); return; }
+            
+            const btn = document.getElementById('btnSubmitUpgrade');
+            btn.innerText = "Mengirim..."; btn.disabled = true;
+            
+            const paketBaru = document.getElementById('upgradeSelect').value;
+
+            try {
+                await db.collection('customers').doc(currentUserDocId).update({
+                    pendingUpgrade: { packageId: paketBaru, status: 'Menunggu Pembayaran', timestamp: new Date().getTime() }
+                });
+
+                await db.collection('tickets').add({
+                    customerId: currentUserDocId,
+                    name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: "Pengajuan Ganti Paket", status: 'Open', 
+                    timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
+                    messages: [
+                        { sender: 'client', text: `Saya ingin ganti ke paket: ${paketBaru}. Ini bukti transfernya.`, time: new Date().getTime() },
+                        { sender: 'client', text: "Bukti Transfer Upgrade", attachmentUrl: tempUpgradeProofBase64, time: new Date().getTime() + 100 }
+                    ]
+                });
+                
+                tutupUpgrade();
+                alert("Pengajuan Upgrade berhasil dikirim! Silakan tunggu konfirmasi Admin (bisa dicek di menu Tiket).");
+            } catch (err) { alert("Gagal mengajukan. Coba kurangi ukuran gambar."); } 
+            finally { btn.innerText = "Ajukan & Kirim Bukti"; btn.disabled = false; }
+        });
+
+        // 5. FUNGSI NOTIFIKASI
+        function bukaNotifikasi() {
+            document.getElementById('notifModal').classList.remove('hidden'); document.getElementById('notifModal').classList.add('flex');
+            setTimeout(() => { document.getElementById('notifContent').classList.remove('translate-y-full'); }, 10);
+            document.getElementById('notifBadge').classList.add('hidden');
+        }
+        function tutupNotifikasi() {
+            document.getElementById('notifContent').classList.add('translate-y-full');
+            setTimeout(() => { document.getElementById('notifModal').classList.add('hidden'); document.getElementById('notifModal').classList.remove('flex'); }, 300);
+        }
+        async function muatNotifikasi() {
+            if(!currentUserDocId) return;
+            const listDiv = document.getElementById('listNotif'); let hasNotif = false; let htmlContent = '';
+            
+            if(globalDueDate) {
+                const dueDay = parseInt(globalDueDate); const currentDay = new Date().getDate();
+                if (currentDay >= dueDay - 3 && currentDay <= dueDay) {
+                    hasNotif = true;
+                    htmlContent += `<div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-slate-800">Jatuh Tempo Tgl ${dueDay}</h4><p class="text-[10px] text-slate-600 mb-2">Segera bayar tagihan Anda.</p></div>`;
+                }
+            }
+            try {
+                const snap = await db.collection('announcements').orderBy('time', 'desc').limit(5).get();
+                if(!snap.empty) {
+                    hasNotif = true;
+                    snap.forEach(doc => {
+                        htmlContent += `<div class="bg-white border border-slate-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-kai-blue">${doc.data().title}</h4><p class="text-[10px] text-slate-600">${doc.data().body}</p></div>`;
+                    });
+                }
+            } catch(e) {}
+
+            listDiv.innerHTML = hasNotif ? htmlContent : `<div class="text-center py-10"><p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman.</p></div>`;
+            if(hasNotif) document.getElementById('notifBadge').classList.remove('hidden'); 
+        }
+
+        async function bukaRiwayat() {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-riwayat').classList.add('active');
+            window.scrollTo(0,0);
+            
+            const listDiv = document.getElementById('listRiwayat');
+            listDiv.innerHTML = `<div class="flex justify-center py-8"><svg class="animate-spin h-6 w-6 text-kai-blue" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></div>`;
+
+            try {
+                const doc = await db.collection('customers').doc(currentUserDocId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    const payments = data.payments || {};
+                    listDiv.innerHTML = '';
+                    
+                    const keys = Object.keys(payments);
+                    if (keys.length === 0) {
+                        listDiv.innerHTML = `<div class="text-center py-10"><p class="text-xs font-bold text-slate-400">Belum ada riwayat tagihan.</p></div>`;
+                        return;
+                    }
+
+                    keys.sort().reverse().forEach(bulan => {
+                        const status = payments[bulan];
+                        const isLunas = status.toLowerCase() === 'lunas';
+                        
+                        listDiv.innerHTML += `
+                            <div class="flex justify-between items-center p-4 rounded-xl border shadow-sm ${isLunas ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50 border-rose-100'}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${isLunas ? 'bg-emerald-100 text-emerald-500' : 'bg-rose-100 text-rose-500'}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            ${isLunas ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-black text-sm ${isLunas ? 'text-emerald-800' : 'text-rose-800'}">${bulan}</h4>
+                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">${currentPackageName.replace(/_/g, ' ')}</p>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-1 rounded-md ${isLunas ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'} text-[9px] font-black uppercase tracking-wider shadow-sm">
+                                    ${status}
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+            } catch(e) { listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data.</p>'; }
+        }
+
+        document.getElementById('profilForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSimpanProfil');
+            btn.innerText = "Menyimpan..."; btn.disabled = true;
+
+            const fotoBaru = document.getElementById('profilImage').src;
+            try {
+                await db.collection('customers').doc(currentUserDocId).update({ foto_profil: fotoBaru });
+                const ls = JSON.parse(localStorage.getItem('mabunet_session'));
+                ls.foto = fotoBaru;
+                localStorage.setItem('mabunet_session', JSON.stringify(ls));
+                alert("Foto profil berhasil diperbarui!");
+            } catch(err) {
+                alert("Gagal menyimpan foto.");
+            } finally {
+                btn.innerText = "Simpan Perubahan Foto"; btn.disabled = false;
+            }
+        });
+
+        function logoutAkun() {
+            if(confirm("Yakin ingin keluar dari portal?")) {
+                currentUserDocId = null;
+                localStorage.removeItem('mabunet_session');
+                tutupAplikasiPenuh();
+            }
+        }
+
+        function openCropper(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imageToCrop').src = e.target.result;
+                    document.getElementById('cropperModal').classList.remove('hidden');
+                    document.getElementById('cropperModal').classList.add('flex');
+                    if (cropperInstance) cropperInstance.destroy();
+                    cropperInstance = new Cropper(document.getElementById('imageToCrop'), { aspectRatio: 1, viewMode: 1, autoCropArea: 1 });
+                };
+                reader.readAsDataURL(file);
+            }
+            event.target.value = ''; 
+        }
+
+        function closeCropper() {
+            document.getElementById('cropperModal').classList.add('hidden');
+            document.getElementById('cropperModal').classList.remove('flex');
+            if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+        }
+
+        function cropImage() {
+            if (!cropperInstance) return;
+            const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
+            document.getElementById('profilImage').src = canvas.toDataURL('image/jpeg');
+            closeCropper();
+        }
+    </script>
 </body>
 </html>
