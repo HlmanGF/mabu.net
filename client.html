@@ -39,6 +39,7 @@
         .chat-bubble-client { background-color: #1A2C5B; color: white; border-radius: 16px 16px 0 16px; align-self: flex-end; }
         .chat-bubble-admin { background-color: #F1F5F9; color: #334155; border-radius: 16px 16px 16px 0; align-self: flex-start; }
     </style>
+    <!-- Library Cropper JS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
@@ -89,7 +90,7 @@
                     <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center mt-4">
                         <p class="text-xs font-bold text-kai-blue mb-2">QRIS Pembayaran Upgrade</p>
                         <img src="./qris.jpg" alt="QRIS" class="w-32 h-32 object-contain mx-auto mb-2 rounded-lg bg-white p-2 border">
-                        <p class="text-[9px] text-slate-600">Scan QRIS ini untuk membayar biaya tagihan paket baru Anda.</p>
+                        <p class="text-[9px] text-slate-600">Selesaikan pembayaran & kirim bukti untuk memproses paket baru Anda.</p>
                     </div>
                     
                     <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 mt-4 text-center">
@@ -175,97 +176,27 @@
 
         <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
         <div class="grid grid-cols-2 gap-4 mb-6">
-            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-blue transition-colors group">
-                <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
+            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
-                <p class="text-[9px] font-semibold text-slate-400 mt-1">Daftar Internet</p>
             </div>
-            <!-- Fitur lainnya -->
-            <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-red-500 transition-colors group">
-                <div class="w-14 h-14 bg-rose-50 text-red-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M21.593 7.203a2.506 2.506 0 00-1.762-1.766C18.265 5.007 12 5 12 5s-6.264-.007-7.831.43a2.508 2.508 0 00-1.762 1.767C2 8.784 2 12 2 12s0 3.216.407 4.797a2.505 2.505 0 001.762 1.766C5.736 18.993 12 19 12 19s6.265.007 7.831-.437a2.508 2.508 0 001.762-1.766C22 15.216 22 12 22 12s0-3.216-.407-4.797zM9.545 14.83V8.898L15.3 11.86l-5.755 2.97z"/></svg></div>
-                <h4 class="font-extrabold text-xs text-slate-800">Paket Netflix</h4>
-                <p class="text-[9px] font-semibold text-slate-400 mt-1">Internet + Hiburan</p>
-            </div>
-            <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer hover:border-kai-orange transition-colors group">
-                <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg></div>
+            <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
+                <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg></div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
-                <p class="text-[9px] font-semibold text-slate-400 mt-1">Via QRIS Otomatis</p>
             </div>
-            <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer col-span-2 hover:border-emerald-500 transition-colors group">
-                <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
+            <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer col-span-2">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
                 <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan & Lapor Kendala</h4>
             </div>
         </div>
     </div>
 
-    <!-- 2. KONTEN: REGISTRASI (DIKEMBALIKAN PENUH) -->
+    <!-- 2. KONTEN: REGISTRASI -->
     <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
-        <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200">
-            <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
-            <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
-
-            <form id="regForm" class="space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
-                    <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
-                        <option value="">-- Pilih Paket --</option>
-                        <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
-                        <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
-                        <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
-                        <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
-                        <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
-                        <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
-                        <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
-                        <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No. HP / WhatsApp</label>
-                        <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Area</label>
-                        <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                            <option value="">-- Pilih Area --</option>
-                            <option value="Mabu">Mabu</option>
-                            <option value="Ranau">Ranau</option>
-                            <option value="RG">Rancagawe</option>
-                            <option value="Pesona">Pesona</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat</label>
-                        <input type="text" id="alamat" placeholder="Contoh: Mabu Park blok P no 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-100 mt-6">
-                    <h3 class="text-sm font-black text-kai-blue mb-1">Pengaturan WiFi</h3>
-                    <p class="text-[10px] font-semibold text-slate-500 mb-3">Tentukan nama dan sandi jaringan Anda.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Nama WiFi</label>
-                            <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Password</label>
-                            <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">
-                    Kirim Pendaftaran
-                </button>
-            </form>
+        <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200 text-center py-10">
+            <h2 class="text-lg font-black text-kai-blue mb-2">Formulir Pendaftaran</h2>
+            <p class="text-xs font-semibold text-slate-500 mb-6">Untuk pendaftaran pasang baru, silakan hubungi WhatsApp Admin MABUNET.</p>
+            <a href="https://wa.me/62811122699?text=Halo%20Admin,%20saya%20ingin%20pasang%20internet%20baru." target="_blank" class="inline-block w-full py-4 bg-kai-orange text-white rounded-xl font-black text-sm shadow-lg">Chat Admin Sekarang</a>
         </div>
     </div>
 
@@ -279,7 +210,8 @@
                 <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mx-auto mb-4 rounded-xl shadow-md border bg-white">
             </div>
             
-            <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">
+            <!-- TOMBOL BARU KIRIM BUKTI IN-APP -->
+            <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 Upload Bukti Pembayaran
             </button>
@@ -396,14 +328,6 @@
                 </div>
                 <button type="submit" id="btnLogin" class="w-full py-4 mt-2 bg-kai-blue text-white rounded-xl font-black text-sm shadow-lg">Masuk ke Portal</button>
             </form>
-
-            <!-- TOMBOL MENUJU REGISTRASI / PASANG BARU JIKA BELUM ADA AKUN -->
-            <div class="mt-8 text-center border-t border-slate-100 pt-5">
-                <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Belum berlangganan?</p>
-                <button type="button" onclick="masukSebagaiTamu()" class="w-full py-3 bg-slate-50 text-kai-blue border border-slate-200 hover:bg-slate-100 rounded-xl font-black text-sm transition-all shadow-sm">
-                    Daftar Pasang Baru
-                </button>
-            </div>
         </div>
     </div>
 
@@ -506,14 +430,17 @@
         let currentPackageName = ""; 
         let globalName = ""; let globalBlock = ""; let globalPhone = ""; let globalDueDate = null;
         
+        // Listener References
         let profilListener = null;
         let ticketsListener = null;
         let chatListener = null;
         let currentChatTicketId = null;
 
+        // Base 64 Images temp
         let tempUpgradeProofBase64 = null;
         let tempBillProofBase64 = null;
 
+        // FUNGSI AKORDEON
         document.querySelectorAll('.accordion-header').forEach(header => {
             header.addEventListener('click', function() {
                 const item = this.parentElement; const content = item.querySelector('.accordion-content');
