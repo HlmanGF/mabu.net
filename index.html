@@ -79,10 +79,10 @@
       MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
     
+    // PERBAIKAN: Penambahan deleteField untuk mencegah error layar blank
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak",
       authDomain: "billing-mabunet.firebaseapp.com",
@@ -122,12 +122,10 @@
 
     const PPPOE_PROFILES = ['default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'];
     const HOTSPOT_PROFILES = ['default', 'CLIENT', 'FREE', 'MABU ALL', 'VIP'];
-    
     const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
     const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
-    
     const PORTAL_URL = "https://mabunet.site/client"; 
 
     function formatIDR(val) {
@@ -197,7 +195,6 @@
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
 
-      // STATE CHAT & TIKET UNIK (1 KLIEN 1 THREAD)
       const [tickets, setTickets] = useState([]);
       const [activeTicket, setActiveTicket] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
@@ -223,9 +220,9 @@
       const [alarmEnabled, setAlarmEnabled] = useState(false);
       const [isBroadcasting, setIsBroadcasting] = useState(false); 
       
-      // AUDIO NOTIFIKASI KHUSUS PESAN MASUK
+      // AUDIO NOTIFIKASI
       const notificationAudioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
-      const prevTicketsLengthRef = useRef(0);
+      const lastTicketUpdateRef = useRef(0);
 
       const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
       const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -233,17 +230,14 @@
       const [mikrotikFormType, setMikrotikFormType] = useState('secret'); 
       const [editingMikrotikData, setEditingMikrotikData] = useState(null);
       const [mikrotikForm, setMikrotikForm] = useState({ name: '', password: '', profile: 'default', comment: '', server: 'all', macAddress: '', address: '', type: 'bypassed' });
-
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
       const [editingExpense, setEditingExpense] = useState(null);
-
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
       const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-      const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
       const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
@@ -253,10 +247,10 @@
         return customers.find(c => 
           (item.customerId && c.id === item.customerId) ||
           (item.userId && c.id === item.userId) ||
-          (item.pppoe_user && c.pppoe_user && c.pppoe_user.toLowerCase() === item.pppoe_user.toLowerCase()) ||
+          (item.pppoe_user && c.pppoe_user && String(c.pppoe_user).toLowerCase() === String(item.pppoe_user).toLowerCase()) ||
           (item.phone && c.phone && cleanPhone(c.phone) === cleanPhone(item.phone)) ||
-          (item.name && c.name && c.name.toLowerCase() === item.name.toLowerCase()) ||
-          (item.customerName && c.name && c.name.toLowerCase() === item.customerName.toLowerCase())
+          (item.name && c.name && String(c.name).toLowerCase() === String(item.name).toLowerCase()) ||
+          (item.customerName && c.name && String(c.name).toLowerCase() === String(item.customerName).toLowerCase())
         );
       };
 
@@ -295,7 +289,45 @@
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
 
-      // --- FIRESTORE LISTENERS ---
+      useEffect(() => {
+        if (activeTab !== 'dashboard') { window.history.pushState({ page: activeTab }, ''); }
+      }, [activeTab]);
+
+      useEffect(() => {
+        const handleBackButton = (e) => {
+          if (previewLightbox) { e.preventDefault(); setPreviewLightbox(null); return; }
+          if (activeTicket) { e.preventDefault(); setActiveTicket(null); return; }
+          if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen || isMikrotikModalOpen || isNewChatModalOpen) {
+            e.preventDefault();
+            setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
+            setIsEditingProfile(false); setShowAdminManagement(false); setCropState(prev => ({...prev, isOpen: false}));
+            setIsMikrotikModalOpen(false); setIsNewChatModalOpen(false);
+            window.history.pushState({ page: activeTab }, ''); 
+            return;
+          }
+          if (activeTab !== 'dashboard') {
+            e.preventDefault();
+            setActiveTab('dashboard');
+            window.history.pushState({ page: 'dashboard' }, '', `#dashboard`);
+          }
+        };
+        window.addEventListener('popstate', handleBackButton);
+        return () => window.removeEventListener('popstate', handleBackButton);
+      }, [activeTab, activeTicket, previewLightbox, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen, isNewChatModalOpen]);
+
+      useEffect(() => {
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }, [currentUser]);
+
+      const writeLog = async (actionDesc) => {
+        if(!db || !currentUser) return;
+        try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
+      };
+
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
@@ -315,19 +347,16 @@
               });
             }
           });
-
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
             setCustomers(data); setIsDbLoading(false);
           });
-
           const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => new Date(b.date) - new Date(a.date));
             setExpenses(data);
           });
-
           const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => b.time - a.time); setAuditLogs(data);
@@ -362,15 +391,14 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // PENGELOMPOKAN TIKET MENJADI 1 THREAD UNIK PER PELANGGAN
+          // PERBAIKAN: Pengelompokan 1 Thread (Aman dari null error)
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              
-             // Gabungkan dokumen tiket yang memiliki pelanggan sama (1 Nama 1 Baris)
              const uniqueMap = new Map();
              allDocs.forEach(t => {
                 const tInfo = getTicketInfo(t);
-                const uniqueKey = (t.customerId || tInfo.name).toLowerCase().trim();
+                const uniqueKey = String(t.customerId || tInfo.name || t.id).toLowerCase().trim();
                 
                 if (!uniqueMap.has(uniqueKey)) {
                    uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
@@ -387,11 +415,17 @@
              const mergedList = Array.from(uniqueMap.values());
              mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
              
-             // BUNYIKAN NADA DERING JIKA ADA PESAN/TIKET BARU MASUK
-             if (prevTicketsLengthRef.current > 0 && mergedList.length > prevTicketsLengthRef.current) {
-                 notificationAudioRef.current.play().catch(e => console.log(e));
+             // PERBAIKAN: Deteksi pesan baru (Notifikasi Nada Dering)
+             let latestTime = 0;
+             mergedList.forEach(t => {
+                 const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+                 if (tTime > latestTime) latestTime = tTime;
+             });
+             
+             if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
+                 notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
              }
-             prevTicketsLengthRef.current = mergedList.length;
+             lastTicketUpdateRef.current = latestTime;
 
              setTickets(mergedList);
              setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
@@ -411,7 +445,7 @@
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
-      // LISTENER CHAT UNTUK TIKET AKTIF
+      // LISTENER CHAT UNTUK RUANG AKTIF
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
@@ -505,9 +539,11 @@
               isAdmin: true,
               text: textVal,
               message: textVal,
+              pesan: textVal,
               attachmentUrl: imgVal,
               imageUrl: imgVal,
               image: imgVal,
+              photo: imgVal,
               time: Date.now(),
               dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           };
@@ -551,7 +587,8 @@
                       pppoeUser: custDoc.pppoe_user,
                       packageId: targetPkg
                   });
-                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: firebase.firestore.FieldValue.delete() });
+                  // PERBAIKAN: Hapus pendingUpgrade dengan aman menggunakan deleteField()
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: deleteField() });
               } else {
                   const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
                   await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
@@ -572,7 +609,6 @@
           }
       };
 
-      // FUNGSI LAINNYA (Customer, Expense, Mikrotik)
       const handleSaveMikrotikData = async (e) => {
           e.preventDefault();
           try {
@@ -648,7 +684,10 @@
 
       const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
+      const actualPaidRevenue = customers.filter(c => c.status === 'Aktif' && c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
       const netProfit = actualPaidRevenue - displayedExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+      
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
@@ -656,16 +695,52 @@
       });
       const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
 
+      const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
+        <button 
+          onClick={() => { setActiveTab(id); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null); }} 
+          className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 relative ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
+        >
+          <Icon className="w-5 h-5 shrink-0" /> 
+          {!isSidebarCollapsed && <span className="text-sm truncate">{label}</span>}
+          {badgeCount > 0 && (
+            <span className={`absolute ${isSidebarCollapsed ? 'top-1 right-1' : 'top-3 right-3'} bg-rose-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-bounce`}>{badgeCount}</span>
+          )}
+        </button>
+      );
+
+      // ========== LAYAR LOGIN ==========
+      if (!currentUser) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-kai-blue rounded-b-[40px]"></div>
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
+              <div className="text-center mb-8">
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 mx-auto mb-3 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
+                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
+              </div>
+              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg flex items-center gap-2 font-bold"><ShieldAlert className="w-4 h-4"/> {loginError}</div>}
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="relative border-b-2 border-slate-200 dark:border-slate-600 pb-1">
+                  <Lock className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                  <input type={showPassword ? "text" : "password"} placeholder="Masukkan Password..." required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-transparent pl-8 pr-8 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-0 text-slate-400">{showPassword ? <EyeOff className="w-5 h-5"/> : <Eye className="w-5 h-5"/>}</button>
+                </div>
+                <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg">Masuk</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
           
-          {/* SIDEBAR DESKTOP */}
+          {/* === SIDEBAR (DESKTOP) === */}
           <aside className={`hidden lg:flex flex-col h-full bg-kai-blue text-white shadow-xl z-40 relative transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
             <div className={`p-5 flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}>
-              <img src="./mabunetlogo.png" className="w-8 h-8 object-contain shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
-              {!isSidebarCollapsed && (
-                <div><h2 className="font-black text-lg tracking-tight">MABUNET</h2><p className="text-[9px] font-bold text-kai-orange uppercase tracking-widest">Admin Panel</p></div>
-              )}
+              <img src="./mabunetlogo.png" className="w-8 h-8 object-contain shrink-0" />
+              {!isSidebarCollapsed && (<div><h2 className="font-black text-lg tracking-tight">MABUNET</h2><p className="text-[9px] font-bold text-kai-orange uppercase tracking-widest">Admin Panel</p></div>)}
             </div>
 
             {!isSidebarCollapsed && (
@@ -701,7 +776,7 @@
             </div>
           </aside>
 
-          {/* MAIN CONTENT AREA */}
+          {/* === MAIN CONTENT === */}
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
             <div className="hidden lg:flex items-center justify-end p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 gap-3">
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-1.5 gap-2">
@@ -730,7 +805,7 @@
                 {activeTab === 'dashboard' && (
                   <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
                     <h2 className="text-lg font-black text-kai-blue dark:text-white mb-2">Selamat Datang di MABUNET Admin</h2>
-                    <p className="text-xs text-slate-500">Gunakan menu **Chat & Layanan** di samping untuk membalas pesan klien secara terpusat dalam aplikasi.</p>
+                    <p className="text-xs text-slate-500">Gunakan menu <b>Chat & Layanan</b> di samping untuk membalas pesan klien secara terpusat dalam aplikasi.</p>
                   </div>
                 )}
 
@@ -804,7 +879,7 @@
                                 onClick={() => setActiveTicket(ticket)}
                                 className={`w-full text-left p-3 rounded-2xl transition-all border flex items-center gap-3 ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100'}`}
                               >
-                                {/* FOTO PROFIL KLIEN */}
+                                {/* FOTO PROFIL KLIEN DI DAFTAR CHAT */}
                                 <img src={tInfo.photo} className="w-11 h-11 rounded-full object-cover border-2 border-white/20 shrink-0 shadow-sm" />
                                 
                                 <div className="flex-1 min-w-0">
@@ -830,7 +905,10 @@
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
                               <button onClick={() => setActiveTicket(null)} className="md:hidden p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm shrink-0"><ArrowLeft className="w-4 h-4"/></button>
+                              
+                              {/* FOTO PROFIL KLIEN DI HEADER CHAT */}
                               <img src={activeInfo.photo} className="w-10 h-10 rounded-full object-cover border shrink-0" />
+                              
                               <div className="min-w-0">
                                 <h3 className="font-extrabold text-sm text-kai-blue dark:text-white truncate">{activeInfo.name} {activeInfo.block ? `(Blok ${activeInfo.block})` : ''}</h3>
                                 <p className="text-[10px] font-semibold text-slate-500 truncate">{activeInfo.subject} {activeInfo.phone ? `• WA: ${activeInfo.phone}` : ''}</p>
@@ -842,25 +920,15 @@
                           </div>
 
                           <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3">
-                            {(activeInfo.initialMsg || activeInfo.initialImg) && (
-                              <div className="flex justify-start">
-                                <div className="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none">
-                                  <p className="text-[10px] font-extrabold text-kai-orange mb-1">{activeInfo.name}</p>
-                                  {activeInfo.initialMsg && <p className="text-xs whitespace-pre-line">{activeInfo.initialMsg}</p>}
-                                  {activeInfo.initialImg && (
-                                    <img src={activeInfo.initialImg} onClick={() => setPreviewLightbox(activeInfo.initialImg)} className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200" />
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
+                            {/* Pesan Klien dari Web */}
                             {chatMessages.map((msg, idx) => {
                               const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender === currentUser.name;
-                              const msgText = msg.text || msg.message || '';
+                              const msgText = msg.text || msg.message || msg.pesan || '';
                               const imgAttachment = extractImageFromObj(msg);
                               return (
                                 <div key={msg.id || idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-[80%] rounded-2xl p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 rounded-tl-none'}`}>
+                                  {/* BUBBLE CHAT WHATSAPP STYLE (Rounded Tails) */}
+                                  <div className={`max-w-[80%] p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm'}`}>
                                     <p className={`text-[10px] font-extrabold mb-1 ${isAdmin ? 'text-blue-200' : 'text-kai-orange'}`}>{isAdmin ? (msg.sender || currentUser.name) : activeInfo.name}</p>
                                     {msgText && <p className="text-xs whitespace-pre-line">{msgText}</p>}
                                     {imgAttachment && (
@@ -883,8 +951,8 @@
                             <input ref={chatCameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleSelectChatImage} className="hidden" />
                             <input ref={chatGalleryInputRef} type="file" accept="image/*" onChange={handleSelectChatImage} className="hidden" />
                             
-                            <button type="button" onClick={() => chatCameraInputRef.current?.click()} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl"><Camera className="w-5 h-5"/></button>
-                            <button type="button" onClick={() => chatGalleryInputRef.current?.click()} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl"><ImageIcon className="w-5 h-5"/></button>
+                            <button type="button" onClick={() => { if(chatCameraInputRef.current) chatCameraInputRef.current.click() }} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl"><Camera className="w-5 h-5"/></button>
+                            <button type="button" onClick={() => { if(chatGalleryInputRef.current) chatGalleryInputRef.current.click() }} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl"><ImageIcon className="w-5 h-5"/></button>
 
                             <input type="text" value={newChatInput} onChange={e => setNewChatInput(e.target.value)} placeholder={`Ketik pesan ke ${activeInfo.name}...`} className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none" />
                             <button type="submit" disabled={!newChatInput.trim() && !chatImagePreview} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 shadow-sm"><Send className="w-4 h-4"/></button>
@@ -913,7 +981,7 @@
             </main>
 
             {/* Mobile Nav */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-md">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               <button onClick={() => {setActiveTab('dashboard'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400'}`}><LayoutDashboard className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Beranda</span></button>
               <button onClick={() => {setActiveTab('customers'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400'}`}><Users className="w-5 h-5 mb-1"/>{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold">Pelanggan</span></button>
               <button onClick={() => {setActiveTab('tickets'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400'}`}><MessageCircle className="w-5 h-5 mb-1"/>{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Chat</span></button>
@@ -945,7 +1013,7 @@
 
           {/* Lightbox Zoom Foto */}
           {previewLightbox && (
-            <div className="fixed inset-0 z-[80] bg-black/85 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
+            <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
               <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full"><X className="w-6 h-6"/></button>
               <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
             </div>
