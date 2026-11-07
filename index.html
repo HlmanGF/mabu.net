@@ -41,7 +41,8 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
-    .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+    .custom-scrollbar::-webkit-scrollbar { display: none; width: 0px; }
+    .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
     /* Efek Tiket Sobek */
     .ticket-divider {
@@ -76,11 +77,12 @@
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
-      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link
+      TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
     const firebaseConfig = {
@@ -177,6 +179,14 @@
       const [auditLogs, setAuditLogs] = useState([]); 
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
+
+      // STATE TIKET, CHAT & APPROVE
+      const [tickets, setTickets] = useState([]);
+      const [activeTicket, setActiveTicket] = useState(null);
+      const [chatMessages, setChatMessages] = useState([]);
+      const [newChatInput, setNewChatInput] = useState('');
+      const chatScrollRef = useRef(null);
+      const [pendingApprovals, setPendingApprovals] = useState([]);
       
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       const [mikrotikTab, setMikrotikTab] = useState('secret');
@@ -232,6 +242,11 @@
 
       useEffect(() => {
         const handleBackButton = (e) => {
+          if (activeTicket) {
+            e.preventDefault();
+            setActiveTicket(null);
+            return;
+          }
           if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen || isMikrotikModalOpen) {
             e.preventDefault();
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
@@ -248,7 +263,7 @@
         };
         window.addEventListener('popstate', handleBackButton);
         return () => window.removeEventListener('popstate', handleBackButton);
-      }, [activeTab, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen]);
+      }, [activeTab, activeTicket, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen]);
 
       useEffect(() => {
         const handleVisibilityChange = () => {
@@ -326,14 +341,110 @@
           const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (docSnap) => {
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
+
+          // --- LISTENERS TIKET & APPROVAL ---
+          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
+             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+             data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0));
+             setTickets(data);
+          });
+
+          const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
+             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+             data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0));
+             setPendingApprovals(data.filter(a => a.status === 'pending'));
+          });
           
           return () => { 
               unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
               unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
               unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings();
+              unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
+
+      // --- LISTENER CHAT UNTUK TIKET YANG SEDANG DIBUKA ---
+      useEffect(() => {
+          if (!activeTicket || !db) return;
+          const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
+              const msgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+              msgs.sort((a, b) => (a.timestamp?.seconds || a.time || 0) - (b.timestamp?.seconds || b.time || 0));
+              setChatMessages(msgs);
+              setTimeout(() => {
+                  if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+              }, 100);
+          });
+          return () => unsubChats();
+      }, [activeTicket]);
+
+      const handleSendChat = async (e) => {
+          e.preventDefault();
+          if (!newChatInput.trim() || !activeTicket) return;
+          try {
+              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
+                  sender: currentUser.name,
+                  senderType: 'admin',
+                  text: newChatInput,
+                  timestamp: serverTimestamp(),
+                  time: Date.now()
+              });
+              if (activeTicket.status === 'New' || activeTicket.status === 'Open') {
+                  await updateDoc(doc(db, 'tickets', activeTicket.id), { status: 'In Progress' });
+                  setActiveTicket(prev => prev ? { ...prev, status: 'In Progress' } : null);
+              }
+              setNewChatInput('');
+          } catch (err) { alert("Gagal kirim pesan: " + err.message); }
+      };
+
+      const closeTicket = async (ticketId) => {
+          if (confirm("Tutup tiket ini? Pelanggan tidak akan bisa membalas lagi.")) {
+              await updateDoc(doc(db, 'tickets', ticketId), { status: 'Closed' });
+              setActiveTicket(null);
+              writeLog(`Menutup tiket ID: ${ticketId}`);
+          }
+      };
+
+      const handleApprove = async (approvalData) => {
+          if (!confirm(`Yakin menyetujui (Approve) permohonan ${approvalData.type === 'upgrade' ? 'Upgrade Paket' : 'Pembayaran'} dari ${approvalData.customerName}?`)) return;
+          try {
+              const custDoc = customers.find(c => c.id === approvalData.customerId);
+              if (!custDoc) throw new Error("Data pelanggan tidak ditemukan!");
+
+              if (approvalData.type === 'upgrade') {
+                  await addDoc(collection(db, 'mikrotik_commands'), {
+                      action: 'UPGRADE_PACKAGE',
+                      pppoeUser: custDoc.pppoe_user,
+                      packageId: approvalData.targetPackageId
+                  });
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: approvalData.targetPackageId });
+                  writeLog(`Approve Upgrade: ${custDoc.name} ke ${getPackage(approvalData.targetPackageId).speed}`);
+              } else if (approvalData.type === 'payment') {
+                  const monthKey = approvalData.monthKey || currentPeriodKey;
+                  await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
+                  writeLog(`Approve Bayar: ${custDoc.name} LUNAS (${monthKey})`);
+              }
+
+              await updateDoc(doc(db, 'approvals', approvalData.id), {
+                  status: 'approved',
+                  approvedBy: currentUser.name,
+                  approvedAt: serverTimestamp()
+              });
+              alert("Proses Approve Berhasil!");
+          } catch (err) {
+              alert("Gagal memproses approval: " + err.message);
+          }
+      };
+
+      const handleRejectApprove = async (approvalId) => {
+          if (confirm("Tolak permohonan ini?")) {
+              await updateDoc(doc(db, 'approvals', approvalId), {
+                  status: 'rejected',
+                  rejectedBy: currentUser.name,
+                  rejectedAt: serverTimestamp()
+              });
+          }
+      };
 
       const handleSaveMikrotikData = async (e) => {
           e.preventDefault();
@@ -639,12 +750,14 @@
         return matchSearch && matchBlock && matchCat;
       });
 
+      const unreadTicketsCount = tickets.filter(t => t.status === 'New' || t.status === 'Open').length;
+
       useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
 
-      const SidebarItem = ({ id, icon: Icon, label }) => (
+      const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
         <button 
-          onClick={() => { setActiveTab(id); setIsEditingProfile(false); setShowAdminManagement(false); }} 
-          className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
+          onClick={() => { setActiveTab(id); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null); }} 
+          className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 relative ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
         >
           <Icon className="w-5 h-5 shrink-0" /> 
           {!isSidebarCollapsed && (
@@ -652,6 +765,9 @@
               <span className="text-sm truncate">{label}</span>
               {id === 'customers' && isDbLoading && <span className="w-2 h-2 ml-auto bg-kai-orange rounded-full animate-pulse"></span>}
             </>
+          )}
+          {badgeCount > 0 && (
+            <span className={`absolute ${isSidebarCollapsed ? 'top-1 right-1' : 'top-3 right-3'} bg-rose-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-bounce`}>{badgeCount}</span>
           )}
         </button>
       );
@@ -779,7 +895,8 @@
 
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
+              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" badgeCount={pendingApprovals.length} />
+              <SidebarItem id="tickets" icon={MessageCircle} label="Tiket & Pesan" badgeCount={unreadTicketsCount} />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               
               {/* Menu MikroTik - HANYA UNTUK SUPER ADMIN */}
@@ -995,6 +1112,37 @@
                       <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Data Pelanggan</h2>
                     </div>
 
+                    {/* DAFTAR PERSETUJUAN (APPROVE BUKTI BAYAR / UPGRADE PAKET) */}
+                    {pendingApprovals.length > 0 && (
+                      <div className="bg-orange-50 dark:bg-orange-900/20 border border-kai-orange/30 rounded-2xl p-4 shadow-sm mb-4">
+                        <h3 className="font-bold text-sm text-kai-orangedark dark:text-orange-400 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Menunggu Persetujuan ({pendingApprovals.length})</h3>
+                        <div className="space-y-2">
+                          {pendingApprovals.map(approval => (
+                            <div key={approval.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className={`p-2 rounded-lg ${approval.type === 'upgrade' ? 'bg-blue-50 text-kai-blue' : 'bg-emerald-50 text-emerald-600'}`}>
+                                  {approval.type === 'upgrade' ? <Activity className="w-5 h-5"/> : <FileCheck className="w-5 h-5"/>}
+                                </div>
+                                <div>
+                                  <p className="font-bold text-sm text-slate-800 dark:text-white">{approval.customerName}</p>
+                                  <p className="text-[10px] text-slate-500">
+                                    {approval.type === 'upgrade' ? `Request Upgrade ke ${getPackage(approval.targetPackageId).speed}` : `Kirim Bukti Bayar (Bulan ${approval.monthKey || currentPeriodKey})`}
+                                  </p>
+                                  {approval.proofImage && (
+                                    <a href={approval.proofImage} target="_blank" className="text-[10px] font-bold text-kai-blue mt-1 inline-flex items-center gap-1 hover:underline"><ImageIcon className="w-3 h-3"/> Lihat Bukti Transfer</a>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button onClick={() => handleRejectApprove(approval.id)} className="flex-1 md:flex-none px-3 py-1.5 bg-rose-50 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors">Tolak</button>
+                                <button onClick={() => handleApprove(approval)} className="flex-1 md:flex-none px-3 py-1.5 bg-kai-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-kai-bluedark transition-colors">Approve</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
                     <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
                       
@@ -1004,7 +1152,7 @@
                         <div className="flex flex-col gap-2 w-full flex-1">
                           
                           <div className="flex items-center gap-2">
-                             {/* Filter Status (Satu Baris Sebelah Judul di Desktop, Atau Grid di Mobile) */}
+                             {/* Filter Status */}
                              <div className="flex items-center gap-2 flex-1">
                                <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 min-w-max">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
                                <div className="flex gap-1.5 overflow-x-auto custom-scrollbar flex-1">
@@ -1082,6 +1230,95 @@
                   </div>
                 )}
 
+                {/* --- TICKETS & CHAT ROUTE --- */}
+                {activeTab === 'tickets' && (
+                  <div className="h-[calc(100vh-160px)] lg:h-[calc(100vh-110px)] flex flex-col md:flex-row gap-4 relative">
+                    {/* Daftar Tiket (Kiri) */}
+                    <div className={`w-full md:w-1/3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col ${activeTicket ? 'hidden md:flex' : 'flex'}`}>
+                      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                        <h3 className="font-black text-lg text-kai-blue dark:text-white">Tiket Masuk</h3>
+                        <p className="text-[10px] text-slate-500">Pesan & Keluhan Pelanggan</p>
+                      </div>
+                      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                        {tickets.length === 0 ? (
+                          <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada tiket masuk.</div>
+                        ) : (
+                          tickets.map(ticket => (
+                            <button 
+                              key={ticket.id} 
+                              onClick={() => setActiveTicket(ticket)}
+                              className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${activeTicket?.id === ticket.id ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            >
+                              <div className="flex justify-between items-start mb-1">
+                                <span className={`font-bold text-sm truncate pr-2 ${activeTicket?.id === ticket.id ? 'text-white' : 'text-slate-800 dark:text-white'}`}>{ticket.customerName}</span>
+                                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${ticket.status === 'New' || ticket.status === 'Open' ? 'bg-rose-500 text-white' : ticket.status === 'In Progress' ? 'bg-orange-100 text-orange-600' : 'bg-slate-200 text-slate-500'}`}>{ticket.status}</span>
+                              </div>
+                              <p className={`text-[10px] truncate ${activeTicket?.id === ticket.id ? 'text-blue-200' : 'text-slate-500'}`}>{ticket.subject}</p>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Area Chat (Kanan) */}
+                    {activeTicket ? (
+                      <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full">
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-t-2xl">
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => setActiveTicket(null)} className="md:hidden p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm"><ArrowLeft className="w-4 h-4"/></button>
+                            <div>
+                              <h3 className="font-bold text-sm text-kai-blue dark:text-white">{activeTicket.customerName}</h3>
+                              <p className="text-[10px] text-slate-500">Tiket: {activeTicket.subject}</p>
+                            </div>
+                          </div>
+                          {activeTicket.status !== 'Closed' && (
+                            <button onClick={() => closeTicket(activeTicket.id)} className="px-3 py-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 text-xs font-bold rounded-lg transition-colors">Tutup Tiket</button>
+                          )}
+                        </div>
+
+                        <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3">
+                          {chatMessages.length === 0 ? (
+                            <div className="text-center text-slate-400 text-xs py-10">Mulai percakapan dengan {activeTicket.customerName}...</div>
+                          ) : (
+                            chatMessages.map(msg => {
+                              const isAdmin = msg.senderType === 'admin';
+                              return (
+                                <div key={msg.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                                  <div className={`max-w-[80%] rounded-2xl p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'}`}>
+                                    <p className="text-[10px] font-bold mb-1 opacity-70">{msg.sender}</p>
+                                    <p className="text-xs">{msg.text}</p>
+                                    {msg.imageUrl && (
+                                      <img src={msg.imageUrl} alt="Lampiran" className="mt-2 rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90" onClick={() => window.open(msg.imageUrl, '_blank')} />
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+
+                        {activeTicket.status !== 'Closed' ? (
+                          <form onSubmit={handleSendChat} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex gap-2 rounded-b-2xl">
+                            <input type="text" value={newChatInput} onChange={e => setNewChatInput(e.target.value)} placeholder="Ketik balasan untuk klien..." className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm outline-none focus:border-kai-blue" />
+                            <button type="submit" disabled={!newChatInput.trim()} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 hover:bg-kai-orangedark transition-colors shadow-sm"><Send className="w-4 h-4"/></button>
+                          </form>
+                        ) : (
+                          <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-center text-xs font-bold text-slate-400 rounded-b-2xl">
+                            Tiket ini sudah ditutup. Percakapan diakhiri.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
+                        <div className="text-center text-slate-400">
+                          <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/>
+                          <p className="text-xs font-bold">Pilih tiket di samping untuk mulai membalas.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* --- LEDGER ROUTE --- */}
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
@@ -1151,19 +1388,19 @@
                     
                     {/* Inner Tabs / Submenu Navigasi */}
                     <div className="flex gap-2 overflow-x-auto custom-scrollbar mb-2 px-1 lg:px-0 pb-1">
-                        <button onClick={() => setMikrotikTab('secret')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'secret' ? 'bg-kai-blue text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                        <button onClick={() => setMikrotikTab('secret')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'secret' ? 'bg-kai-blue text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
                             <Key className="w-3.5 h-3.5"/> PPPoE Secret
                         </button>
-                        <button onClick={() => setMikrotikTab('hotspot-users')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-users' ? 'bg-kai-orange text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                        <button onClick={() => setMikrotikTab('hotspot-users')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-users' ? 'bg-kai-orange text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
                             <Users className="w-3.5 h-3.5"/> Hotspot Users
                         </button>
-                        <button onClick={() => setMikrotikTab('hotspot-active')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-active' ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                        <button onClick={() => setMikrotikTab('hotspot-active')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-active' ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
                             <Activity className="w-3.5 h-3.5"/> Active
                         </button>
-                        <button onClick={() => setMikrotikTab('hotspot-hosts')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-hosts' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                        <button onClick={() => setMikrotikTab('hotspot-hosts')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-hosts' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
                             <Server className="w-3.5 h-3.5"/> Hosts
                         </button>
-                        <button onClick={() => setMikrotikTab('hotspot-bindings')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 ${mikrotikTab === 'hotspot-bindings' ? 'bg-rose-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                        <button onClick={() => setMikrotikTab('hotspot-bindings')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-bindings' ? 'bg-rose-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
                             <Link className="w-3.5 h-3.5"/> IP Bindings
                         </button>
                     </div>
@@ -1611,38 +1848,45 @@
               </div>
             </main>
 
-            {/* Mobile Nav - KAI Access Minimalist (Hanya Ikon Murni dengan Teks Label Bawah) */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] overflow-x-auto">
+            {/* Mobile Nav - KAI Access Minimalist */}
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] overflow-x-auto custom-scrollbar">
               
-              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <LayoutDashboard className="w-5 h-5 mb-1" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Beranda</span>
               </button>
               
-              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+                {pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}
                 <span className="text-[9px] font-bold tracking-wide">Pelanggan</span>
+              </button>
+
+              <button onClick={() => {setActiveTab('tickets'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <MessageCircle className="w-5 h-5 mb-1" strokeWidth={activeTab === 'tickets' ? 2.5 : 1.5} />
+                {unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}
+                <span className="text-[9px] font-bold tracking-wide">Tiket</span>
               </button>
               
               {/* Menu MikroTik Mobile - HANYA UNTUK SUPER ADMIN */}
               {currentUser?.id === 'admin1' && (
-                <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                   <Server className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
                   <span className="text-[9px] font-bold tracking-wide">MikroTik</span>
                 </button>
               )}
 
-              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Keuangan</span>
               </button>
               
-              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Portal</span>
               </button>
               
-              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false);}} className={`flex flex-col items-center justify-center p-2 min-w-[60px] flex-1 transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
                 <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
                 <span className="text-[9px] font-bold tracking-wide">Profil</span>
               </button>
@@ -1786,12 +2030,60 @@
             </div>
           )}
 
+          {isTargetAdminModalOpen && targetAdmin && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
+                <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
+                  <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="relative w-16 h-16 rounded-full border-2 border-kai-blue overflow-hidden bg-slate-100 flex items-center justify-center group shrink-0">
+                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400" />}
+                      <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                        <Camera className="w-5 h-5 text-white" />
+                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
+                      </label>
+                    </div>
+                    <div><p className="text-sm font-bold">Foto Staff</p><p className="text-[10px] text-slate-500 mt-1">Tap untuk ganti.</p></div>
+                  </div>
+                  
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME LOGIN</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD AKSES</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">EMAIL STAFF</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
+                    <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
+                    {!targetAdmin.credentialId ? (
+                      <button type="button" onClick={registerFingerprintTarget} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
+                        <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
+                      </button>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
+                          <input type="checkbox" checked={targetAdmin.fingerprintEnabled} onChange={(e) => setTargetAdmin({...targetAdmin, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 rounded-xl bg-kai-blue text-white font-bold text-sm shadow-lg">Simpan Data</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {cropState.isOpen && (
             <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-in zoom-in-95 duration-200">
                 <h3 className="text-base font-extrabold mb-4 text-center">Atur Foto</h3>
                 <div className="flex justify-center mb-4">
-                  <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-dashed border-kai-blue bg-slate-100 relative cursor-move touch-none" onMouseDown={handleCropDragStart} onMouseMove={handleCropDragMove} onMouseUp={handleCropDragEnd} onMouseLeave={handleCropDragEnd} onTouchStart={handleCropDragStart} onTouchMove={handleCropDragEnd} onTouchEnd={handleCropDragEnd}>
+                  <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-dashed border-kai-blue bg-slate-100 relative cursor-move touch-none" onMouseDown={handleCropDragStart} onMouseMove={handleCropDragMove} onMouseUp={handleCropDragEnd} onMouseLeave={handleCropDragEnd} onTouchStart={handleCropDragStart} onTouchMove={handleCropDragMove} onTouchEnd={handleCropDragEnd}>
                     <img src={cropState.src} draggable="false" style={{ transform: `translate(calc(-50% + ${cropState.x}px), calc(-50% + ${cropState.y}px)) scale(${cropState.zoom})`, minWidth: '100%', minHeight: '100%', objectFit: 'cover', pointerEvents: 'none' }} className="absolute top-1/2 left-1/2 origin-center" />
                   </div>
                 </div>
