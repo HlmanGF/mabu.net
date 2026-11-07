@@ -30,8 +30,7 @@
       } 
     }
   </script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -70,17 +69,20 @@
   <div id="root" class="h-full w-full"></div>
 
   <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    
     import { 
       Users, LayoutDashboard, LogOut, Check, BookOpen, Fingerprint,
       Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X, RefreshCw
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
     const firebaseConfig = {
@@ -161,100 +163,79 @@
       return null;
     };
 
-    class ErrorBoundary extends React.Component {
-      constructor(props) { super(props); this.state = { hasError: false, error: null }; }
-      static getDerivedStateFromError(error) { return { hasError: true, error }; }
-      componentDidCatch(error, errorInfo) { console.error("Crash Terdeteksi:", error, errorInfo); }
-      render() {
-        if (this.state.hasError) {
-          return (
-            <div className="flex flex-col items-center justify-center h-screen bg-slate-100 p-6 text-center">
-              <ShieldAlert className="w-16 h-16 text-rose-500 mb-4" />
-              <h2 className="text-xl font-black text-slate-800 mb-2">Aplikasi Memulihkan Diri</h2>
-              <p className="text-sm text-slate-500 mb-6">Sistem mendeteksi adanya data riwayat yang tidak sesuai format.</p>
-              <button onClick={() => window.location.reload()} className="px-6 py-3 bg-kai-blue text-white rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-kai-bluedark">
-                <RefreshCw className="w-4 h-4"/> Muat Ulang Sekarang
-              </button>
-            </div>
-          );
-        }
-        return this.props.children;
-      }
-    }
-
     function App() {
-      const [admins, setAdmins] = React.useState(INITIAL_ADMINS);
-      const [currentUser, setCurrentUser] = React.useState(null);
-      const [loginForm, setLoginForm] = React.useState({ password: '' });
-      const [loginError, setLoginError] = React.useState('');
-      const [showPassword, setShowPassword] = React.useState(false); 
-      const [forgotMode, setForgotMode] = React.useState(false);
-      const [forgotEmail, setForgotEmail] = React.useState('');
-      const [forgotMessage, setForgotMessage] = React.useState({ text: '', type: '' });
-      const [isDarkMode, setIsDarkMode] = React.useState(false); 
+      const [admins, setAdmins] = useState(INITIAL_ADMINS);
+      const [currentUser, setCurrentUser] = useState(null);
+      const [loginForm, setLoginForm] = useState({ password: '' });
+      const [loginError, setLoginError] = useState('');
+      const [showPassword, setShowPassword] = useState(false); 
+      const [forgotMode, setForgotMode] = useState(false);
+      const [forgotEmail, setForgotEmail] = useState('');
+      const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
+      const [isDarkMode, setIsDarkMode] = useState(false); 
       
-      const [activeTab, setActiveTab] = React.useState('dashboard');
-      const [editProfile, setEditProfile] = React.useState({});
-      const [isEditingProfile, setIsEditingProfile] = React.useState(false); 
-      const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
-      const [targetAdmin, setTargetAdmin] = React.useState(null);
-      const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = React.useState(false);
-      const [showAdminManagement, setShowAdminManagement] = React.useState(false);
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [editProfile, setEditProfile] = useState({});
+      const [isEditingProfile, setIsEditingProfile] = useState(false); 
+      const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+      const [targetAdmin, setTargetAdmin] = useState(null);
+      const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
+      const [showAdminManagement, setShowAdminManagement] = useState(false);
       
-      const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
-      const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
-      const [searchTerm, setSearchTerm] = React.useState('');
-      const [filterBlock, setFilterBlock] = React.useState('Semua Blok');
-      const [filterCategory, setFilterCategory] = React.useState('Semua'); 
-      const [dueSearchTerm, setDueSearchTerm] = React.useState(''); 
+      const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+      const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+      const [searchTerm, setSearchTerm] = useState('');
+      const [filterBlock, setFilterBlock] = useState('Semua Blok');
+      const [filterCategory, setFilterCategory] = useState('Semua'); 
+      const [dueSearchTerm, setDueSearchTerm] = useState(''); 
 
-      const [customers, setCustomers] = React.useState([]);
-      const [expenses, setExpenses] = React.useState([]);
-      const [auditLogs, setAuditLogs] = React.useState([]); 
-      const [settingsData, setSettingsData] = React.useState({ waGatewayPhone: '62811122699' }); 
-      const [isDbLoading, setIsDbLoading] = React.useState(true);
+      const [customers, setCustomers] = useState([]);
+      const [expenses, setExpenses] = useState([]);
+      const [auditLogs, setAuditLogs] = useState([]); 
+      const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
+      const [isDbLoading, setIsDbLoading] = useState(true);
 
-      const [tickets, setTickets] = React.useState([]);
-      const [activeTicket, setActiveTicket] = React.useState(null);
-      const [chatMessages, setChatMessages] = React.useState([]);
-      const [newChatInput, setNewChatInput] = React.useState('');
-      const [chatImagePreview, setChatImagePreview] = React.useState(null);
-      const [previewLightbox, setPreviewLightbox] = React.useState(null);
-      const [isNewChatModalOpen, setIsNewChatModalOpen] = React.useState(false);
-      const [chatCustomerSearch, setChatCustomerSearch] = React.useState('');
-      const chatScrollRef = React.useRef(null);
-      const chatCameraInputRef = React.useRef(null);
-      const chatGalleryInputRef = React.useRef(null);
-      const [pendingApprovals, setPendingApprovals] = React.useState([]);
+      const [tickets, setTickets] = useState([]);
+      const [activeTicket, setActiveTicket] = useState(null);
+      const [chatMessages, setChatMessages] = useState([]);
+      const [newChatInput, setNewChatInput] = useState('');
+      const [chatImagePreview, setChatImagePreview] = useState(null);
+      const [previewLightbox, setPreviewLightbox] = useState(null);
+      const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+      const [chatCustomerSearch, setChatCustomerSearch] = useState('');
+      const chatScrollRef = useRef(null);
+      const chatCameraInputRef = useRef(null);
+      const chatGalleryInputRef = useRef(null);
+      const [pendingApprovals, setPendingApprovals] = useState([]);
       
-      const [mikrotikStatus, setMikrotikStatus] = React.useState(null);
-      const [mikrotikTab, setMikrotikTab] = React.useState('secret');
-      const [mikrotikUsers, setMikrotikUsers] = React.useState([]);
-      const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = React.useState([]);
-      const [mikrotikHotspotActive, setMikrotikHotspotActive] = React.useState([]);
-      const [mikrotikHotspotHosts, setMikrotikHotspotHosts] = React.useState([]);
-      const [mikrotikIpBindings, setMikrotikIpBindings] = React.useState([]);
+      const [mikrotikStatus, setMikrotikStatus] = useState(null);
+      const [mikrotikTab, setMikrotikTab] = useState('secret');
+      const [mikrotikUsers, setMikrotikUsers] = useState([]);
+      const [mikrotikHotspotUsers, setMikrotikHotspotUsers] = useState([]);
+      const [mikrotikHotspotActive, setMikrotikHotspotActive] = useState([]);
+      const [mikrotikHotspotHosts, setMikrotikHotspotHosts] = useState([]);
+      const [mikrotikIpBindings, setMikrotikIpBindings] = useState([]);
       
-      const [printData, setPrintData] = React.useState(null);
-      const [alarmEnabled, setAlarmEnabled] = React.useState(false);
-      const [isBroadcasting, setIsBroadcasting] = React.useState(false); 
+      const [printData, setPrintData] = useState(null);
+      const [alarmEnabled, setAlarmEnabled] = useState(false);
+      const [isBroadcasting, setIsBroadcasting] = useState(false); 
       
-      const notificationAudioRef = React.useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
-      const lastTicketUpdateRef = React.useRef(0);
+      const notificationAudioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+      const lastTicketUpdateRef = useRef(0);
 
-      const [isCustomerModalOpen, setIsCustomerModalOpen] = React.useState(false);
-      const [isExpenseModalOpen, setIsExpenseModalOpen] = React.useState(false);
-      const [isMikrotikModalOpen, setIsMikrotikModalOpen] = React.useState(false);
-      const [mikrotikFormType, setMikrotikFormType] = React.useState('secret'); 
-      const [editingMikrotikData, setEditingMikrotikData] = React.useState(null);
-      const [mikrotikForm, setMikrotikForm] = React.useState({ name: '', password: '', profile: 'default', comment: '', server: 'all', macAddress: '', address: '', type: 'bypassed' });
-      const [formData, setFormData] = React.useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
-      const [expenseForm, setExpenseForm] = React.useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' });
-      const [editingCustomer, setEditingCustomer] = React.useState(null);
-      const [editingExpense, setEditingExpense] = React.useState(null);
-      const [cropState, setCropState] = React.useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
-      const [isDragging, setIsDragging] = React.useState(false);
-      const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+      const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+      const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+      const [isMikrotikModalOpen, setIsMikrotikModalOpen] = useState(false);
+      const [mikrotikFormType, setMikrotikFormType] = useState('secret'); 
+      const [editingMikrotikData, setEditingMikrotikData] = useState(null);
+      const [mikrotikForm, setMikrotikForm] = useState({ name: '', password: '', profile: 'default', comment: '', server: 'all', macAddress: '', address: '', type: 'bypassed' });
+      const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
+      const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' });
+      const [editingCustomer, setEditingCustomer] = useState(null);
+      const [editingExpense, setEditingExpense] = useState(null);
+      const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
       const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
@@ -310,16 +291,16 @@
         return { name, block, matched };
       };
 
-      React.useEffect(() => {
+      useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
       }, [isDarkMode]);
 
-      React.useEffect(() => {
+      useEffect(() => {
         if (activeTab !== 'dashboard') { window.history.pushState({ page: activeTab }, ''); }
       }, [activeTab]);
 
-      React.useEffect(() => {
+      useEffect(() => {
         const handleBackButton = (e) => {
           if (previewLightbox) { e.preventDefault(); setPreviewLightbox(null); return; }
           if (activeTicket) { e.preventDefault(); setActiveTicket(null); return; }
@@ -341,12 +322,20 @@
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, activeTicket, previewLightbox, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen, isNewChatModalOpen]);
 
+      useEffect(() => {
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }, [currentUser]);
+
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
         try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
       };
 
-      React.useEffect(() => {
+      useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
           const unsubAdmins = onSnapshot(collection(db, 'admins'), (snapshot) => {
@@ -407,10 +396,11 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
+          // PENGELOMPOKAN 1 THREAD
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             const uniqueMap = new Map();
              
+             const uniqueMap = new Map();
              allDocs.forEach(t => {
                 const tInfo = getTicketInfo(t);
                 const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
@@ -430,6 +420,7 @@
              const mergedList = Array.from(uniqueMap.values());
              mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
              
+             // BUNYIKAN NOTIFIKASI
              let latestTime = 0;
              mergedList.forEach(t => {
                  const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
@@ -459,7 +450,8 @@
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
-      React.useEffect(() => {
+      // LISTENER CHAT UNTUK TIKET AKTIF
+      useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
               const subMsgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -558,10 +550,16 @@
               setNewChatInput('');
               setChatImagePreview(null);
 
-              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), { ...msgObj, timestamp: serverTimestamp() });
+              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
+                  ...msgObj,
+                  timestamp: serverTimestamp()
+              });
               await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: 'In Progress', lastReply: textVal, lastImage: imgVal || null,
-                  updatedAt: serverTimestamp(), messages: arrayUnion(msgObj), chats: arrayUnion(msgObj)
+                  status: 'In Progress',
+                  lastReply: textVal,
+                  lastImage: imgVal || null,
+                  updatedAt: serverTimestamp(),
+                  messages: arrayUnion(msgObj)
               });
           } catch (err) { alert("Gagal kirim pesan: " + err.message); }
       };
@@ -583,7 +581,7 @@
               const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
               if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
                   await addDoc(collection(db, 'mikrotik_commands'), { action: 'UPGRADE_PACKAGE', pppoeUser: custDoc.pppoe_user, packageId: targetPkg });
-                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: deleteField() });
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: null });
               } else {
                   const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
                   await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
@@ -672,7 +670,7 @@
 
       const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
-      // Kumpulan Variabel Render UI
+      // VARIABLES
       const actualPaidRevenue = customers.filter(c => c.status === 'Aktif' && c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const totalPotentialRevenue = customers.filter(c => c.status === 'Aktif' && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
@@ -878,7 +876,7 @@
                       </div>
                       <div className="relative w-full shadow-sm">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                        <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-3 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
+                        <input type="text" placeholder="Cari Nama / Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-3 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
                       </div>
                     </div>
 
@@ -1025,6 +1023,8 @@
                                <div className="flex justify-end gap-1.5 pt-1 flex-wrap">
                                   <button onClick={() => { setActiveTab('tickets'); handleStartNewChatWithCustomer(cust); }} className="px-2.5 py-1.5 bg-blue-50 dark:bg-slate-700 text-kai-blue dark:text-blue-300 rounded-lg text-[10px] font-bold flex items-center gap-1" title="Chat Pelanggan"><MessageCircle className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => toggleIsolirManual(cust)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => triggerPrint(cust)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-kai-blue"><Printer className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-emerald-500"><FileText className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => handleDeleteCustomer(cust.id)} className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                                </div>
@@ -1636,6 +1636,7 @@
                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{admin.role}</p>
                                   </div>
                                 </div>
+                                
                                 <div className="flex items-center gap-2 border-t border-slate-200 dark:border-slate-700/50 pt-3">
                                   <button onClick={() => { setTargetAdmin(admin); setIsTargetAdminModalOpen(true); }} className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5"><UserCog className="w-3.5 h-3.5"/> Edit</button>
                                   <button onClick={() => toggleAdminStatus(admin.id, admin.status)} className={`flex-1 py-1.5 rounded-lg text-xs font-bold flex justify-center items-center gap-1.5 ${admin.status === 'Aktif' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400' : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'}`}>
@@ -1672,7 +1673,7 @@
             </main>
 
             {/* Mobile Nav */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-md">
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
               <button onClick={() => {setActiveTab('dashboard'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400'}`}><LayoutDashboard className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Beranda</span></button>
               <button onClick={() => {setActiveTab('customers'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400'}`}><Users className="w-5 h-5 mb-1"/>{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold">Pelanggan</span></button>
               <button onClick={() => {setActiveTab('tickets'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400'}`}><MessageCircle className="w-5 h-5 mb-1"/>{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Chat</span></button>
@@ -1686,7 +1687,7 @@
             <div className="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-900 border rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col max-h-[80vh]">
                 <div className="flex justify-between items-center mb-4"><h3 className="text-base font-extrabold text-kai-blue dark:text-white">Mulai Chat Pelanggan</h3><button onClick={() => setIsNewChatModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button></div>
-                <input type="text" placeholder="Cari nama pelanggan..." value={chatCustomerSearch} onChange={e => setChatCustomerSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none" />
+                <input type="text" placeholder="Cari nama pelanggan..." value={chatCustomerSearch} onChange={e => setChatCustomerSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none focus:border-kai-blue" />
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
                   {customers.filter(c => (c.name || '').toLowerCase().includes(chatCustomerSearch.toLowerCase())).map(c => (
                     <button key={c.id} onClick={() => handleStartNewChatWithCustomer(c)} className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-kai-blue hover:text-white transition-colors flex justify-between items-center border border-slate-100">
