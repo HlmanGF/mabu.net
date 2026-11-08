@@ -41,7 +41,8 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
-    .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+    .custom-scrollbar::-webkit-scrollbar { display: none; width: 0px; }
+    .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
     /* Efek Tiket Sobek */
     .ticket-divider {
@@ -77,7 +78,7 @@
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, Image as ImageIcon, X
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -121,7 +122,9 @@
       { id: 'ntf_30', speed: 'Netflix 30 Mbps', price: 400000, label: 'Netflix 30 Mbps - Rp 400.000' }
     ];
 
-    const PPPOE_PROFILES = ['default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'];
+    const PPPOE_PROFILES = [
+        'default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'
+    ];
     const HOTSPOT_PROFILES = ['default', 'CLIENT', 'FREE', 'MABU ALL', 'VIP'];
     
     const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
@@ -139,6 +142,51 @@
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
     }
+
+    // FUNGSI KOMPRESI GAMBAR OTOMATIS AGAR RINGAN DI FIREBASE
+    const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    };
+
+    // FUNGSI PENDETEKSI GAMBAR UNIVERSAL DARI BERBAGAI NAMA FIELD CLIENT
+    const extractImageFromObj = (obj) => {
+      if (!obj || typeof obj !== 'object') return null;
+      const direct = obj.imageUrl || obj.image || obj.photo || obj.img || obj.foto || obj.gambar || obj.bukti || obj.proofImage || obj.attachment || obj.file || obj.fileUrl || obj.lampiran || obj.media || obj.base64 || obj.imageData || obj.url;
+      if (typeof direct === 'string' && (direct.startsWith('data:image') || direct.startsWith('http') || direct.startsWith('blob:'))) {
+        return direct;
+      }
+      // Pindai seluruh nilai properti jika client menyimpan Base64 di nama variabel lain
+      for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        if (typeof val === 'string' && val.startsWith('data:image/')) {
+          return val;
+        }
+      }
+      return null;
+    };
 
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
@@ -177,7 +225,7 @@
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
 
-      // --- STATE BARU: TIKET DAN CHAT ---
+      // STATE CHAT, TIKET, KAMERA & APPROVE
       const [tickets, setTickets] = useState([]);
       const [activeTicket, setActiveTicket] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
@@ -186,12 +234,10 @@
       const [previewLightbox, setPreviewLightbox] = useState(null);
       const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
       const [chatCustomerSearch, setChatCustomerSearch] = useState('');
-      
       const chatScrollRef = useRef(null);
       const chatCameraInputRef = useRef(null);
       const chatGalleryInputRef = useRef(null);
-      const lastChatTimeRef = useRef(0);
-      // --- END STATE CHAT ---
+      const [pendingApprovals, setPendingApprovals] = useState([]);
       
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       const [mikrotikTab, setMikrotikTab] = useState('secret');
@@ -236,6 +282,44 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
+      // FUNGSI PINTAR DETEKSI IDENTITAS PENGIRIM TIKET / CHAT & APPROVAL
+      const findMatchedCustomer = (item) => {
+        if (!item) return null;
+        return customers.find(c => 
+          (item.customerId && c.id === item.customerId) ||
+          (item.userId && c.id === item.userId) ||
+          (item.uid && c.id === item.uid) ||
+          (item.clientId && c.id === item.clientId) ||
+          (item.pppoe_user && c.pppoe_user && c.pppoe_user.toLowerCase() === item.pppoe_user.toLowerCase()) ||
+          (item.pppoe && c.pppoe_user && c.pppoe_user.toLowerCase() === item.pppoe.toLowerCase()) ||
+          (item.phone && c.phone && cleanPhone(c.phone) === cleanPhone(item.phone)) ||
+          (item.userPhone && c.phone && cleanPhone(c.phone) === cleanPhone(item.userPhone)) ||
+          (item.name && c.name && c.name.toLowerCase() === item.name.toLowerCase()) ||
+          (item.customerName && c.name && c.name.toLowerCase() === item.customerName.toLowerCase())
+        );
+      };
+
+      const getTicketInfo = (ticket) => {
+        if (!ticket) return { name: 'Pelanggan', block: '', phone: '', subject: 'Obrolan Pelanggan', initialMsg: '', initialImg: null };
+        const matched = findMatchedCustomer(ticket);
+        const name = ticket.customerName || ticket.name || ticket.nama || ticket.userName || ticket.clientName || ticket.senderName || ticket.sender || ticket.user || matched?.name || ticket.pppoe_user || ticket.phone || `Pelanggan #${(ticket.id || '').substring(0, 5)}`;
+        const block = ticket.block || ticket.blok || ticket.customerBlock || matched?.block || '';
+        const phone = ticket.phone || ticket.userPhone || ticket.noHp || ticket.wa || matched?.phone || '';
+        const subject = ticket.subject || ticket.title || ticket.judul || ticket.category || ticket.kategori || ticket.topic || ticket.type || 'Obrolan & Layanan';
+        const rawMsg = ticket.message || ticket.pesan || ticket.description || ticket.keluhan || ticket.content || ticket.text || ticket.issue || '';
+        const initialMsg = (typeof rawMsg === 'string' && !rawMsg.startsWith('data:image')) ? rawMsg : '';
+        const initialImg = extractImageFromObj(ticket);
+        return { name, block, phone, subject, initialMsg, initialImg, matched };
+      };
+
+      const getApprovalInfo = (approval) => {
+        if (!approval) return { name: 'Pelanggan', block: '', matched: null };
+        const matched = findMatchedCustomer(approval);
+        const name = approval.customerName || approval.name || approval.nama || approval.userName || approval.sender || matched?.name || approval.pppoe_user || 'Pelanggan';
+        const block = approval.block || approval.blok || matched?.block || '';
+        return { name, block, matched };
+      };
+
       useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
         else document.documentElement.classList.remove('dark');
@@ -247,8 +331,16 @@
 
       useEffect(() => {
         const handleBackButton = (e) => {
-          if (previewLightbox) { e.preventDefault(); setPreviewLightbox(null); return; }
-          if (activeTicket) { e.preventDefault(); setActiveTicket(null); return; }
+          if (previewLightbox) {
+            e.preventDefault();
+            setPreviewLightbox(null);
+            return;
+          }
+          if (activeTicket) {
+            e.preventDefault();
+            setActiveTicket(null);
+            return;
+          }
           if (isCustomerModalOpen || isExpenseModalOpen || isTargetAdminModalOpen || isEditingProfile || showAdminManagement || cropState.isOpen || isMikrotikModalOpen || isNewChatModalOpen) {
             e.preventDefault();
             setIsCustomerModalOpen(false); setIsExpenseModalOpen(false); setIsTargetAdminModalOpen(false);
@@ -280,7 +372,6 @@
         try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
       };
 
-      // --- FETCH UTAMA FIREBASE ---
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
@@ -314,10 +405,13 @@
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             data.sort((a,b) => b.time - a.time); setAuditLogs(data);
           });
+          
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
             if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
             else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
           });
+          
+          // --- LISTENERS MIKROTIK ---
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => {
              if (docSnap.exists()) {
                  const data = docSnap.data();
@@ -325,6 +419,7 @@
                  else { setMikrotikStatus(data); }
              } else { setMikrotikStatus(null); }
           });
+          
           const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (docSnap) => {
              if (docSnap.exists()) setMikrotikUsers(docSnap.data().users || []);
           });
@@ -341,100 +436,77 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // --- FETCH TIKET (LOGIKA 1 BARIS) ---
+          // --- LISTENERS TIKET, CHAT & APPROVAL ---
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
-             const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             
-             const uniqueTickets = {};
-             allDocs.forEach(t => {
-                 let key = t.customerId || t.phone || t.customerName || t.id;
-                 if (!key) return;
-                 const cleanKey = String(key).toLowerCase().replace(/\s/g, '');
-                 
-                 if (!uniqueTickets[cleanKey]) {
-                     uniqueTickets[cleanKey] = t;
-                 } else {
-                     const existingTime = uniqueTickets[cleanKey].updatedAt?.seconds || uniqueTickets[cleanKey].time || 0;
-                     const newTime = t.updatedAt?.seconds || t.time || 0;
-                     if (newTime > existingTime) {
-                         uniqueTickets[cleanKey] = t;
-                     }
-                 }
-             });
+             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+             data.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.timestamp?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.timestamp?.seconds || a.time || 0));
+             setTickets(data);
+             setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
+          });
 
-             const finalTickets = Object.values(uniqueTickets);
-             finalTickets.sort((a, b) => (b.updatedAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.time || 0));
-             
-             // Audio Notifikasi jika ada pesan baru
-             let maxTime = 0;
-             finalTickets.forEach(t => {
-                 const tTime = t.updatedAt?.seconds || t.time || 0;
-                 if (tTime > maxTime) maxTime = tTime;
-             });
-             if (lastChatTimeRef.current > 0 && maxTime > lastChatTimeRef.current) {
-                 audioRef.current.play().catch(e => console.log('Audio autoplay diblokir browser.'));
-             }
-             lastChatTimeRef.current = maxTime;
-
-             setTickets(finalTickets);
-             setActiveTicket(prev => prev ? (finalTickets.find(t => t.id === prev.id) || prev) : null);
+          const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
+             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+             data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0));
+             setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
           });
           
           return () => { 
               unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
               unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
               unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings();
-              unsubTickets();
+              unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
 
-      // --- FETCH PESAN CHAT ---
+      // --- LISTENER CHAT UNTUK RUANG OBROLAN YANG SEDANG DIBUKA ---
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
               const subMsgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-              const arrayMsgs = Array.isArray(activeTicket.messages) ? activeTicket.messages : [];
+              const arrayMsgs = [
+                ...(Array.isArray(activeTicket.messages) ? activeTicket.messages : []),
+                ...(Array.isArray(activeTicket.chats) ? activeTicket.chats : []),
+                ...(Array.isArray(activeTicket.replies) ? activeTicket.replies : [])
+              ];
+              
               const combined = [...arrayMsgs, ...subMsgs];
+              const uniqueMsgs = combined.filter((v, i, a) => a.findIndex(t => 
+                (t.id && v.id && t.id === v.id) || 
+                (t.time && v.time && Math.abs(t.time - v.time) < 2000 && (t.text || t.message) === (v.text || v.message) && extractImageFromObj(t) === extractImageFromObj(v))
+              ) === i);
               
-              const uniqueMsgs = [];
-              const seen = new Set();
-              combined.forEach(m => {
-                  const key = m.id || (String(m.time) + String(m.text || ''));
-                  if (!seen.has(key)) {
-                      seen.add(key);
-                      uniqueMsgs.push(m);
-                  }
-              });
-              
-              uniqueMsgs.sort((a, b) => (a.time || 0) - (b.time || 0));
+              uniqueMsgs.sort((a, b) => (a.timestamp?.seconds * 1000 || a.time || 0) - (b.timestamp?.seconds * 1000 || b.time || 0));
               setChatMessages(uniqueMsgs);
               setTimeout(() => {
                   if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-              }, 100);
+              }, 120);
           });
           return () => unsubChats();
       }, [activeTicket]);
 
-      // --- FUNGSI CHAT BUTTON ---
+      // FUNGSI PILIH / POTRET FOTO DI CHAT ADMIN
       const handleSelectChatImage = async (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = (event) => {
-              setChatImagePreview(event.target.result); // Menggunakan base64 mentah sementara waktu demi kecepatan dan keamanan dari crash.
-          };
-          reader.readAsDataURL(file);
-          e.target.value = null;
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+          const compressed = await compressImageFile(file, 900, 0.75);
+          setChatImagePreview(compressed);
+        } catch (err) {
+          alert("Gagal memproses gambar: " + err.message);
+        }
+        e.target.value = null;
       };
 
+      // FUNGSI MULAI CHAT BARU DENGAN PELANGGAN MANA SAJA
       const handleStartNewChatWithCustomer = async (cust) => {
         if (!cust || !db) return;
+        // Cek apakah sudah ada ruang chat aktif untuk pelanggan ini
         const existing = tickets.find(t => 
           t.status !== 'Closed' && (
             t.customerId === cust.id || 
             (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
-            (t.customerName && String(t.customerName).toLowerCase() === String(cust.name).toLowerCase())
+            (t.customerName && t.customerName.toLowerCase() === cust.name.toLowerCase())
           )
         );
         if (existing) {
@@ -444,44 +516,132 @@
         }
         try {
           const newDoc = await addDoc(collection(db, 'tickets'), {
-            customerId: cust.id, customerName: cust.name, name: cust.name, block: cust.block,
-            phone: cust.phone || '', pppoe_user: cust.pppoe_user || '', issueType: 'Obrolan Layanan MABUNET',
-            subject: 'Obrolan Layanan MABUNET', status: 'In Progress', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-            time: Date.now(), messages: []
+            customerId: cust.id,
+            customerName: cust.name,
+            name: cust.name,
+            block: cust.block,
+            phone: cust.phone || '',
+            pppoe_user: cust.pppoe_user || '',
+            subject: 'Obrolan Layanan MABUNET',
+            category: 'Chat Umum',
+            status: 'In Progress',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            time: Date.now(),
+            messages: []
           });
-          setActiveTicket({ id: newDoc.id, customerId: cust.id, customerName: cust.name, name: cust.name, block: cust.block, phone: cust.phone || '', status: 'In Progress' });
+          setActiveTicket({
+            id: newDoc.id,
+            customerId: cust.id,
+            customerName: cust.name,
+            name: cust.name,
+            block: cust.block,
+            phone: cust.phone || '',
+            subject: 'Obrolan Layanan MABUNET',
+            status: 'In Progress'
+          });
           setIsNewChatModalOpen(false);
-        } catch (err) { alert("Gagal membuat ruang obrolan."); }
+        } catch (err) {
+          alert("Gagal membuat ruang obrolan: " + err.message);
+        }
       };
 
       const handleSendChat = async (e) => {
           e.preventDefault();
           if ((!newChatInput.trim() && !chatImagePreview) || !activeTicket) return;
-          
           const textVal = newChatInput.trim() || (chatImagePreview ? '📷 Mengirim Foto' : '');
           const imgVal = chatImagePreview || null;
-          
+
           const msgObj = {
               id: 'msg_' + Date.now(),
-              sender: currentUser.name, senderType: 'admin', role: 'admin', isAdmin: true,
-              text: textVal, imageUrl: imgVal, time: Date.now()
+              sender: currentUser.name,
+              senderName: currentUser.name,
+              senderType: 'admin',
+              role: 'admin',
+              isAdmin: true,
+              text: textVal,
+              message: textVal,
+              pesan: textVal,
+              imageUrl: imgVal,
+              image: imgVal,
+              photo: imgVal,
+              img: imgVal,
+              foto: imgVal,
+              attachment: imgVal,
+              time: Date.now(),
+              createdAt: new Date().toISOString(),
+              dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           };
-          
-          setNewChatInput(''); setChatImagePreview(null);
-          
           try {
-              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), { ...msgObj, timestamp: serverTimestamp() });
+              setNewChatInput('');
+              setChatImagePreview(null);
+
+              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
+                  ...msgObj,
+                  timestamp: serverTimestamp()
+              });
               await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: 'In Progress', lastReply: textVal, lastImage: imgVal || null,
-                  updatedAt: serverTimestamp(), messages: arrayUnion(msgObj)
+                  status: activeTicket.status === 'Closed' ? 'In Progress' : 'In Progress',
+                  lastReply: textVal,
+                  reply: textVal,
+                  adminReply: textVal,
+                  balasan: textVal,
+                  lastImage: imgVal || null,
+                  updatedAt: serverTimestamp(),
+                  messages: arrayUnion(msgObj),
+                  chats: arrayUnion(msgObj)
               });
           } catch (err) { alert("Gagal kirim pesan: " + err.message); }
       };
 
       const closeTicket = async (ticketId) => {
-          if (confirm("Tandai obrolan ini sebagai Selesai?")) {
+          if (confirm("Akhiri sesi obrolan/tiket ini?")) {
               await updateDoc(doc(db, 'tickets', ticketId), { status: 'Closed' });
               setActiveTicket(null);
+              writeLog(`Menutup obrolan/tiket ID: ${ticketId}`);
+          }
+      };
+
+      const handleApprove = async (approvalData) => {
+          const info = getApprovalInfo(approvalData);
+          if (!confirm(`Yakin menyetujui (Approve) permohonan ${approvalData.type === 'upgrade' ? 'Upgrade Paket' : 'Pembayaran'} dari ${info.name}?`)) return;
+          try {
+              const custDoc = info.matched || customers.find(c => c.id === approvalData.customerId);
+              if (!custDoc) throw new Error("Data pelanggan tidak ditemukan di database!");
+
+              const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
+              if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
+                  await addDoc(collection(db, 'mikrotik_commands'), {
+                      action: 'UPGRADE_PACKAGE',
+                      pppoeUser: custDoc.pppoe_user,
+                      packageId: targetPkg
+                  });
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg });
+                  writeLog(`Approve Upgrade: ${custDoc.name} ke ${getPackage(targetPkg).speed}`);
+              } else {
+                  const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
+                  await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
+                  writeLog(`Approve Bayar: ${custDoc.name} LUNAS (${monthKey})`);
+              }
+
+              await updateDoc(doc(db, 'approvals', approvalData.id), {
+                  status: 'approved',
+                  approvedBy: currentUser.name,
+                  approvedAt: serverTimestamp()
+              });
+              alert("Proses Approve Berhasil!");
+          } catch (err) {
+              alert("Gagal memproses approval: " + err.message);
+          }
+      };
+
+      const handleRejectApprove = async (approvalId) => {
+          if (confirm("Tolak permohonan ini?")) {
+              await updateDoc(doc(db, 'approvals', approvalId), {
+                  status: 'rejected',
+                  rejectedBy: currentUser.name,
+                  rejectedAt: serverTimestamp()
+              });
           }
       };
 
@@ -493,17 +653,28 @@
               
               if (mikrotikFormType === 'secret') {
                   actionName = editingMikrotikData ? 'EDIT_SECRET' : 'ADD_SECRET';
-                  payload = { name: mikrotikForm.name, password: mikrotikForm.password, profile: mikrotikForm.profile, comment: mikrotikForm.comment };
+                  payload = {
+                      name: mikrotikForm.name, password: mikrotikForm.password, 
+                      profile: mikrotikForm.profile, comment: mikrotikForm.comment
+                  };
               } else if (mikrotikFormType === 'hotspot_user') {
                   actionName = editingMikrotikData ? 'EDIT_HOTSPOT_USER' : 'ADD_HOTSPOT_USER';
-                  payload = { name: mikrotikForm.name, password: mikrotikForm.password, profile: mikrotikForm.profile, server: mikrotikForm.server, comment: mikrotikForm.comment };
+                  payload = {
+                      name: mikrotikForm.name, password: mikrotikForm.password, 
+                      profile: mikrotikForm.profile, server: mikrotikForm.server, comment: mikrotikForm.comment
+                  };
               } else if (mikrotikFormType === 'ip_binding') {
                   actionName = editingMikrotikData ? 'EDIT_IP_BINDING' : 'ADD_IP_BINDING';
-                  payload = { macAddress: mikrotikForm.macAddress, address: mikrotikForm.address, type: mikrotikForm.type, server: mikrotikForm.server, comment: mikrotikForm.comment };
+                  payload = {
+                      macAddress: mikrotikForm.macAddress, address: mikrotikForm.address, 
+                      type: mikrotikForm.type, server: mikrotikForm.server, comment: mikrotikForm.comment
+                  };
               }
               
               if (editingMikrotikData) payload.targetId = editingMikrotikData.id;
+
               await addDoc(collection(db, 'mikrotik_commands'), { action: actionName, ...payload });
+              
               setIsMikrotikModalOpen(false);
               writeLog(`${actionName} MikroTik: ${payload.name || payload.macAddress}`);
           } catch(err) { alert("Gagal mengirim perintah: " + err.message); }
@@ -511,7 +682,10 @@
       
       const runMikrotikCommand = async (action, id, itemName, alertMessage) => {
           if(confirm(alertMessage || `Jalankan aksi pada ${itemName}?`)){
-              try { await addDoc(collection(db, 'mikrotik_commands'), { action: action, targetId: id }); writeLog(`${action} MikroTik: ${itemName}`); } catch(err) { alert("Gagal: " + err.message); }
+              try {
+                  await addDoc(collection(db, 'mikrotik_commands'), { action: action, targetId: id });
+                  writeLog(`${action} MikroTik: ${itemName}`);
+              } catch(err) { alert("Gagal: " + err.message); }
           }
       }
 
@@ -543,7 +717,8 @@
       const handleDeleteCustomer = async (id) => {
         const cust = customers.find(c => c.id === id);
         if(confirm(`Yakin ingin menghapus data pelanggan ${cust.name}? Data yang dihapus tidak bisa dikembalikan.`)) { 
-          await deleteDoc(doc(db, 'customers', id)); writeLog(`Menghapus pelanggan: ${cust.name}`); 
+          await deleteDoc(doc(db, 'customers', id)); 
+          writeLog(`Menghapus pelanggan: ${cust.name}`); 
         }
       };
 
@@ -554,7 +729,8 @@
       const toggleIsolirManual = async (cust) => {
         if(confirm(`Yakin ${cust.status === 'Aktif' ? 'ISOLIR' : 'AKTIFKAN'} internet pelanggan ${cust.name}?`)) {
           const newStatus = cust.status === 'Aktif' ? 'Non-Aktif' : 'Aktif';
-          await updateDoc(doc(db, 'customers', cust.id), { status: newStatus }); writeLog(`${newStatus} manual: ${cust.name}`);
+          await updateDoc(doc(db, 'customers', cust.id), { status: newStatus });
+          writeLog(`${newStatus} manual: ${cust.name}`);
         }
       };
 
@@ -564,7 +740,8 @@
         if (user) {
           if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
           setCurrentUser(user); setEditProfile(user);
-          localStorage.setItem('mabunet_session', user.id); localStorage.setItem('mabunet_device_user', user.id); 
+          localStorage.setItem('mabunet_session', user.id); 
+          localStorage.setItem('mabunet_device_user', user.id); 
         } else { setLoginError('Password salah!'); }
       };
 
@@ -573,7 +750,13 @@
           if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
           const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-          const pubKey = { challenge, rp: { name: "MABUNET", id: window.location.hostname }, user: { id: userId, name: editProfile.username, displayName: editProfile.name }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000, attestation: "none" };
+          const pubKey = {
+            challenge, rp: { name: "MABUNET", id: window.location.hostname },
+            user: { id: userId, name: editProfile.username, displayName: editProfile.name },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000, attestation: "none"
+          };
           const credential = await navigator.credentials.create({ publicKey: pubKey });
           const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
           setEditProfile({...editProfile, credentialId: credentialId, fingerprintEnabled: true});
@@ -586,7 +769,13 @@
           if (!window.PublicKeyCredential) throw new Error("Perangkat tidak mendukung Fingerprint.");
           const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           const userId = new Uint8Array(16); window.crypto.getRandomValues(userId);
-          const pubKey = { challenge, rp: { name: "MABUNET", id: window.location.hostname }, user: { id: userId, name: targetAdmin.username, displayName: targetAdmin.name }, pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }], authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" }, timeout: 60000, attestation: "none" };
+          const pubKey = {
+            challenge, rp: { name: "MABUNET", id: window.location.hostname },
+            user: { id: userId, name: targetAdmin.username, displayName: targetAdmin.name },
+            pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000, attestation: "none"
+          };
           const credential = await navigator.credentials.create({ publicKey: pubKey });
           const credentialId = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.rawId)));
           setTargetAdmin({...targetAdmin, credentialId: credentialId, fingerprintEnabled: true});
@@ -605,7 +794,9 @@
           
           const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           const rawId = Uint8Array.from(atob(savedUser.credentialId), c => c.charCodeAt(0));
-          const assertion = await navigator.credentials.get({ publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" } });
+          const assertion = await navigator.credentials.get({
+            publicKey: { challenge, rpId: window.location.hostname, allowCredentials: [{ type: "public-key", id: rawId }], userVerification: "required" }
+          });
           if (assertion) { setCurrentUser(savedUser); setEditProfile(savedUser); localStorage.setItem('mabunet_session', savedUser.id); }
         } catch (err) { setLoginError(err.message || 'Verifikasi Sidik Jari gagal.'); } finally { setIsScanning(false); }
       };
@@ -637,8 +828,16 @@
         e.target.value = null; 
       };
 
-      const handleCropDragStart = (e) => { setIsDragging(true); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; setDragStart({ x: clientX - cropState.x, y: clientY - cropState.y }); };
-      const handleCropDragMove = (e) => { if (!isDragging) return; const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY; setCropState(prev => ({ ...prev, x: clientX - dragStart.x, y: clientY - dragStart.y })); };
+      const handleCropDragStart = (e) => {
+        setIsDragging(true);
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        setDragStart({ x: clientX - cropState.x, y: clientY - cropState.y });
+      };
+      const handleCropDragMove = (e) => {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        setCropState(prev => ({ ...prev, x: clientX - dragStart.x, y: clientY - dragStart.y }));
+      };
       const handleCropDragEnd = () => setIsDragging(false);
 
       const applyCrop = () => {
@@ -646,8 +845,9 @@
         img.onload = () => {
           const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400; const ctx = canvas.getContext('2d');
           const scale = (400 / Math.min(img.width, img.height)) * cropState.zoom;
+          const scaledW = img.width * scale; const scaledH = img.height * scale;
           const dx = (400 - scaledW) / 2 + (cropState.x * 2); const dy = (400 - scaledH) / 2 + (cropState.y * 2);
-          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 400, 400); ctx.drawImage(img, dx, dy, img.width * scale, img.height * scale);
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 400, 400); ctx.drawImage(img, dx, dy, scaledW, scaledH);
           const finalDataUrl = canvas.toDataURL('image/jpeg', 0.8);
           if (cropState.isTarget) { setTargetAdmin({ ...targetAdmin, photo: finalDataUrl }); } else { setEditProfile({ ...editProfile, photo: finalDataUrl }); }
           setCropState({ ...cropState, isOpen: false });
@@ -661,7 +861,11 @@
           const updateData = { name: editProfile.name, username: editProfile.username, password: editProfile.password, email: editProfile.email || '', fingerprintEnabled: editProfile.fingerprintEnabled || false, credentialId: editProfile.credentialId || '', photo: editProfile.photo || '' };
           if (currentUser.id === 'admin1') { updateData.phone = editProfile.phone; }
           await updateDoc(doc(db, 'admins', currentUser.id), updateData);
-          if (currentUser.id === 'admin1') { await updateDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: settingsData.waGatewayPhone }); }
+          
+          if (currentUser.id === 'admin1') {
+             await updateDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: settingsData.waGatewayPhone });
+          }
+          
           alert('Profil berhasil diperbarui!'); setIsEditingProfile(false); 
         } catch (error) { alert('Gagal menyimpan profil.'); }
       };
@@ -674,7 +878,10 @@
         } catch (error) { alert('Gagal menyimpan data admin.'); }
       };
 
-      const toggleAdminStatus = async (adminId, currentStatus) => { await updateDoc(doc(db, 'admins', adminId), { status: currentStatus === 'Aktif' ? 'Tidak Aktif' : 'Aktif' }); };
+      const toggleAdminStatus = async (adminId, currentStatus) => {
+        const newStatus = currentStatus === 'Aktif' ? 'Tidak Aktif' : 'Aktif';
+        await updateDoc(doc(db, 'admins', adminId), { status: newStatus });
+      };
 
       const exportCSV = (type) => {
         let csv = '';
@@ -699,10 +906,22 @@
         window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
       };
 
-      const copyPortalLink = () => { navigator.clipboard.writeText(PORTAL_URL).then(() => { alert("Tautan Portal Pelanggan berhasil disalin!"); }); };
-      const sendPortalWA = () => { window.open(`https://wa.me/?text=${encodeURIComponent(`Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar.`)}`, '_blank'); };
+      const copyPortalLink = () => {
+        navigator.clipboard.writeText(PORTAL_URL).then(() => {
+          alert("Tautan Portal Pelanggan berhasil disalin!");
+        }).catch(err => {
+          alert("Gagal menyalin tautan: " + err);
+        });
+      };
+      
+      const sendPortalWA = () => {
+        const text = `Untuk Pendaftaran Baru dan Informasi Gangguan MABUNET silahkan akses link berikut:\n${PORTAL_URL}\nPastikan seluruh data yang diisi sudah benar dan lengkap agar proses registrasi dapat berjalan dengan lancar.`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      };
       
       const activeCustomersList = customers.filter(c => c.status === 'Aktif');
+      const inactiveCustomersList = customers.filter(c => c.status === 'Non-Aktif');
+      
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
@@ -720,41 +939,19 @@
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchBlock = filterBlock === 'Semua Blok' ? true : (c.notes || '').includes(filterBlock) || c.block.includes(filterBlock);
+        
         let matchCat = true;
         if (filterCategory === 'Semua') matchCat = c.packageId !== 'free_0'; 
         if (filterCategory === 'Aktif') matchCat = c.status === 'Aktif' && c.packageId !== 'free_0';
         if (filterCategory === 'Non-Aktif') matchCat = c.status === 'Non-Aktif' && c.packageId !== 'free_0';
         if (filterCategory === 'Gratis') matchCat = c.packageId === 'free_0'; 
+
         return matchSearch && matchBlock && matchCat;
       });
 
-      useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
-
-      // Helper Variables for Chat Rendering
       const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
-      let activeInfo = null;
-      if (activeTicket) {
-         let aName = activeTicket.customerName || activeTicket.name || activeTicket.phone || 'Pelanggan';
-         let aBlock = activeTicket.block || activeTicket.blok || '';
-         
-         let aPhoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(aName)}&background=1A2C5B&color=fff`;
-         if (customers && customers.length > 0) {
-            const matched = customers.find(c => c.id === activeTicket.customerId || (activeTicket.phone && c.phone && cleanPhone(c.phone) === cleanPhone(activeTicket.phone)) || (String(c.name).toLowerCase() === String(aName).toLowerCase()));
-            if (matched && matched.foto_profil) aPhoto = matched.foto_profil;
-         }
 
-         let aSubject = activeTicket.issueType || activeTicket.subject || 'Obrolan Pelanggan';
-         let aPhone = activeTicket.phone || activeTicket.userPhone || '';
-         let aInitialMsg = '';
-         if (activeTicket.messages && activeTicket.messages.length > 0) {
-             aInitialMsg = activeTicket.messages[0].text || activeTicket.messages[0].message || '';
-         } else {
-             aInitialMsg = activeTicket.message || activeTicket.pesan || '';
-         }
-         let aInitialImg = activeTicket.attachmentUrl || activeTicket.imageUrl || activeTicket.image || activeTicket.photo || null;
-         
-         activeInfo = { name: aName, block: aBlock, photo: aPhoto, subject: aSubject, phone: aPhone, initialMsg: aInitialMsg, initialImg: aInitialImg };
-      }
+      useEffect(() => { if (alarmEnabled && customersDueToday.length > 0) audioRef.current.play().catch(e => console.log(e)); }, [alarmEnabled, customersDueToday.length]);
 
       const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
         <button 
@@ -762,8 +959,15 @@
           className={`w-full flex items-center px-4 py-3 rounded-xl font-bold transition-all mb-1 relative ${activeTab === id ? 'bg-kai-orange text-white' : 'text-slate-400 hover:bg-kai-bluedark hover:text-white'} ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}
         >
           <Icon className="w-5 h-5 shrink-0" /> 
-          {!isSidebarCollapsed && <span className="text-sm truncate">{label}</span>}
-          {badgeCount > 0 && <span className={`absolute ${isSidebarCollapsed ? 'top-1 right-1' : 'top-3 right-3'} bg-rose-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-bounce`}>{badgeCount}</span>}
+          {!isSidebarCollapsed && (
+            <>
+              <span className="text-sm truncate">{label}</span>
+              {id === 'customers' && isDbLoading && <span className="w-2 h-2 ml-auto bg-kai-orange rounded-full animate-pulse"></span>}
+            </>
+          )}
+          {badgeCount > 0 && (
+            <span className={`absolute ${isSidebarCollapsed ? 'top-1 right-1' : 'top-3 right-3'} bg-rose-500 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-bounce`}>{badgeCount}</span>
+          )}
         </button>
       );
 
@@ -890,7 +1094,7 @@
 
             <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
-              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" />
+              <SidebarItem id="customers" icon={Users} label="Data Pelanggan" badgeCount={pendingApprovals.length} />
               <SidebarItem id="tickets" icon={MessageCircle} label="Chat & Layanan" badgeCount={unreadTicketsCount} />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               
@@ -931,7 +1135,7 @@
             {/* Scrollable Main Content */}
             <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
               
-              {/* MOBILE KAI HEADER (Juntaian Biru Navy) - TAMPIL DI SEMUA MENU MOBILE */}
+              {/* MOBILE KAI HEADER (Juntaian Biru Navy) */}
               <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all">
                 <div className="flex justify-between items-center mb-6">
                   <div>
@@ -1054,7 +1258,7 @@
                       </div>
                     </div>
 
-                    {/* Daftar Tagihan Belum Lunas (Desain Tiket Kereta) */}
+                    {/* Daftar Tagihan Belum Lunas */}
                     <div>
                       {filteredDueCustomers.length === 0 ? (
                         <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
@@ -1065,7 +1269,6 @@
                             const isToday = cust.dueDate === todayDay;
                             return (
                               <div key={cust.id} className={`flex bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${isToday ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-700'} relative overflow-hidden`}>
-                                {/* Bagian Kiri Tiket */}
                                 <div className="flex-1 p-3 md:p-4">
                                   <div className="flex justify-between items-start">
                                     <h4 className="font-extrabold text-sm md:text-base text-kai-blue dark:text-white truncate pr-2">{cust.name}</h4>
@@ -1075,24 +1278,18 @@
                                   <div className={`text-[10px] font-bold mt-3 inline-block px-2 py-1 rounded-md ${isToday ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30' : 'bg-slate-50 dark:bg-slate-700 text-slate-500'}`}>Jatuh Tempo TGL {cust.dueDate}</div>
                                 </div>
                                 
-                                {/* Pemisah Tiket (Garis Putus-putus) */}
                                 <div className="w-1.5 ticket-divider relative flex flex-col justify-between">
                                   <div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -top-1.5 -left-1"></div>
                                   <div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -bottom-1.5 -left-1"></div>
                                 </div>
 
-                                {/* Bagian Kanan Tiket */}
                                 <div className="w-28 md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-center p-3 gap-2">
                                   <div className="text-right">
                                     <p className="text-[8px] font-bold text-slate-400 uppercase">Total Tagihan</p>
                                     <p className="font-black text-[13px] md:text-sm text-kai-blue dark:text-white">{formatIDR(pkg.price)}</p>
                                   </div>
-                                  <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar Manual</button>
-                                  <button onClick={() => {
-                                        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '0811122699');
-                                        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/${targetPhone}`;
-                                        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
-                                  }} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA Tagihan</button>
+                                  <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar</button>
+                                  <button onClick={() => sendWAInvoice(cust)} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA</button>
                                 </div>
                               </div>
                             )
@@ -1111,13 +1308,48 @@
                       <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Data Pelanggan</h2>
                     </div>
 
+                    {/* DAFTAR PERSETUJUAN (APPROVE BUKTI BAYAR / UPGRADE PAKET) */}
+                    {pendingApprovals.length > 0 && (
+                      <div className="bg-orange-50 dark:bg-orange-900/20 border border-kai-orange/30 rounded-2xl p-4 shadow-sm mb-4">
+                        <h3 className="font-bold text-sm text-kai-orangedark dark:text-orange-400 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Menunggu Persetujuan ({pendingApprovals.length})</h3>
+                        <div className="space-y-2">
+                          {pendingApprovals.map(approval => {
+                            const appInfo = getApprovalInfo(approval);
+                            const targetPkg = approval.targetPackageId || approval.newPackageId || approval.packageId;
+                            const proofUrl = extractImageFromObj(approval);
+                            return (
+                              <div key={approval.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="flex items-start gap-3">
+                                  <div className={`p-2 rounded-lg ${approval.type === 'upgrade' ? 'bg-blue-50 text-kai-blue' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    {approval.type === 'upgrade' ? <Activity className="w-5 h-5"/> : <FileCheck className="w-5 h-5"/>}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-800 dark:text-white">
+                                      {appInfo.name} {appInfo.block ? `(Blok ${appInfo.block})` : ''}
+                                    </p>
+                                    <p className="text-[10px] text-slate-500">
+                                      {approval.type === 'upgrade' ? `Request Upgrade ke ${getPackage(targetPkg).speed}` : `Kirim Bukti Bayar (Bulan ${approval.monthKey || approval.period || currentPeriodKey})`}
+                                    </p>
+                                    {proofUrl && (
+                                      <button type="button" onClick={() => setPreviewLightbox(proofUrl)} className="text-[10px] font-bold text-kai-blue mt-1 inline-flex items-center gap-1 hover:underline"><ImageIcon className="w-3 h-3"/> Lihat Foto Bukti Transfer</button>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleRejectApprove(approval.id)} className="flex-1 md:flex-none px-3 py-1.5 bg-rose-50 text-rose-600 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors">Tolak</button>
+                                  <button onClick={() => handleApprove(approval)} className="flex-1 md:flex-none px-3 py-1.5 bg-kai-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-kai-bluedark transition-colors">Approve</button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* STICKY SEARCH & FILTER BAR TERINTEGRASI */}
                     <div className="sticky top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-2 pb-3 transition-colors -mx-2 px-2 sm:mx-0 sm:px-0">
-                      
                       <div className="bg-white dark:bg-slate-800 p-2 md:p-3 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-3 shadow-md shadow-slate-200/50 dark:shadow-none">
-                        
                         <div className="flex flex-col gap-2 w-full flex-1">
-                          
                           <div className="flex items-center gap-2">
                              <div className="flex items-center gap-2 flex-1">
                                <select value={filterBlock} onChange={e => setFilterBlock(e.target.value)} className="bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-2 py-2 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 min-w-max">{BLOCKS.map(b => <option key={b}>{b}</option>)}</select>
@@ -1133,7 +1365,6 @@
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
                             <input type="text" placeholder="Cari Nama / Blok (Contoh: Ahmad, B2.1)..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-300"/>
                           </div>
-                          
                         </div>
                         
                         <div className="flex md:flex-col gap-2 w-full md:w-32 shrink-0 justify-end mt-1 md:mt-0">
@@ -1143,7 +1374,6 @@
                            </div>
                            <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="w-full flex items-center justify-center gap-1 p-2 bg-kai-blue text-white rounded-xl text-xs font-bold shadow-sm"><Plus className="w-4 h-4"/> Tambah</button>
                         </div>
-                        
                       </div>
                     </div>
 
@@ -1180,8 +1410,10 @@
                                </div>
                                
                                <div className="flex justify-end gap-1.5 pt-1 flex-wrap">
+                                  <button onClick={() => { setActiveTab('tickets'); handleStartNewChatWithCustomer(cust); }} className="px-2.5 py-1.5 bg-blue-50 dark:bg-slate-700 text-kai-blue dark:text-blue-300 rounded-lg text-[10px] font-bold flex items-center gap-1" title="Chat Pelanggan"><MessageCircle className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => toggleIsolirManual(cust)} className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${cust.status === 'Aktif' ? 'bg-slate-100 text-slate-500 hover:bg-rose-100 hover:text-rose-600' : 'bg-rose-500 text-white'}`}><Power className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => triggerPrint(cust)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-kai-blue"><Printer className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => sendWAReceipt(cust, currentPeriodKey)} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-500 hover:text-emerald-500"><FileText className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => { setEditingCustomer(cust); setFormData({ ...cust, pppoe_user: cust.pppoe_user || '' }); setIsCustomerModalOpen(true); }} className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => handleDeleteCustomer(cust.id)} className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                                </div>
@@ -1193,61 +1425,51 @@
                   </div>
                 )}
 
-                {/* --- TICKETS & CHAT ROUTE (1 KLIEN 1 PINTU) --- */}
+                {/* --- CHAT & LAYANAN KLIEN ROUTE (MENDUKUNG KIRIM GAMBAR & KAMERA LANGSUNG) --- */}
                 {activeTab === 'tickets' && (
                   <div className="h-[calc(100vh-160px)] lg:h-[calc(100vh-110px)] flex flex-col md:flex-row gap-4 relative">
-                    
-                    {/* Daftar Tiket Kiri */}
+                    {/* Daftar Obrolan & Tiket (Kiri) */}
                     <div className={`w-full md:w-1/3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col ${activeTicket ? 'hidden md:flex' : 'flex'}`}>
                       <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                         <div>
-                          <h3 className="font-black text-lg text-kai-blue dark:text-white">Chat Klien</h3>
-                          <p className="text-[10px] text-slate-500">Daftar Obrolan 1 Pintu</p>
+                          <h3 className="font-black text-lg text-kai-blue dark:text-white">Chat & Layanan</h3>
+                          <p className="text-[10px] text-slate-500">Obrolan, Kirim Foto & Tiket Klien</p>
                         </div>
-                        <button onClick={() => setIsNewChatModalOpen(true)} className="px-3 py-2 bg-kai-orange text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-sm hover:bg-kai-orangedark transition-colors">
+                        <button onClick={() => setIsNewChatModalOpen(true)} className="px-3 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-sm">
                           <Plus className="w-3.5 h-3.5"/> Chat Baru
                         </button>
                       </div>
-                      
-                      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
                         {tickets.length === 0 ? (
-                          <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan.</div>
+                          <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan masuk. Klik "+ Chat Baru" untuk menghubungi pelanggan.</div>
                         ) : (
                           tickets.map(ticket => {
-                            // Render list 1 klien 1 baris dengan aman
-                            let name = ticket.customerName || ticket.name || ticket.phone || 'Pelanggan';
-                            let block = ticket.block || '';
-                            let photo = ticket.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1A2C5B&color=fff`;
-                            
-                            if (customers && customers.length > 0) {
-                                const matched = customers.find(c => c.id === ticket.customerId || (ticket.phone && c.phone && c.phone.includes(ticket.phone.replace(/\D/g, '').slice(-6))) || (c.name && String(c.name).toLowerCase() === String(name).toLowerCase()));
-                                if (matched && matched.foto_profil) photo = matched.foto_profil;
-                                if (matched && matched.name) name = matched.name;
-                                if (matched && matched.block) block = matched.block;
-                            }
-
+                            const tInfo = getTicketInfo(ticket);
+                            const tStatus = ticket.status || 'New';
                             const isSelected = activeTicket?.id === ticket.id;
-                            let lastMsgText = ticket.lastReply || ticket.subject || 'Obrolan...';
-                            if (ticket.messages && ticket.messages.length > 0) {
-                                lastMsgText = ticket.messages[0].text || ticket.messages[0].message || lastMsgText;
-                            }
-                            const hasPhoto = extractImageFromObj(ticket) || (ticket.messages && ticket.messages.length > 0 && extractImageFromObj(ticket.messages[0]));
-
+                            const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
                             return (
                               <button 
                                 key={ticket.id} 
                                 onClick={() => setActiveTicket(ticket)}
-                                className={`w-full text-left p-3 rounded-2xl transition-all border flex items-center gap-3 ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100'}`}
+                                className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                               >
-                                <img src={photo} className="w-11 h-11 rounded-full object-cover border-2 border-white/20 shrink-0 shadow-sm bg-white" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex justify-between items-center mb-0.5">
-                                    <span className={`font-extrabold text-xs truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{name}</span>
-                                    <span className={`text-[7px] font-bold px-1.5 py-0.5 rounded shrink-0 ${ticket.status === 'Closed' ? 'bg-slate-200 text-slate-500' : 'bg-emerald-100 text-emerald-700'}`}>{ticket.status || 'Aktif'}</span>
+                                <div className="flex justify-between items-start mb-1">
+                                  <div className="min-w-0 pr-2">
+                                    <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
+                                      👤 {tInfo.name}
+                                    </span>
+                                    {(tInfo.block || tInfo.phone) && (
+                                      <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>
+                                        {tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}
+                                      </span>
+                                    )}
                                   </div>
-                                  {block && <span className={`text-[9px] font-bold block mb-1 ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>Blok {block}</span>}
-                                  <p className={`text-[10px] truncate ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>{hasPhoto ? '📷 Mengirim Foto' : lastMsgText}</p>
+                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 ${tStatus === 'New' || tStatus === 'Open' || tStatus === 'Baru' ? 'bg-rose-500 text-white' : tStatus === 'In Progress' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{tStatus}</span>
                                 </div>
+                                <p className={`text-[10px] font-semibold truncate mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>
+                                  {hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}
+                                </p>
                               </button>
                             );
                           })
@@ -1255,35 +1477,21 @@
                       </div>
                     </div>
 
-                    {/* Area Chat Kanan */}
+                    {/* Area Ruang Obrolan (Kanan) */}
                     {activeTicket ? (() => {
-                        let aName = activeTicket.customerName || activeTicket.name || activeTicket.phone || 'Pelanggan';
-                        let aBlock = activeTicket.block || '';
-                        let aPhoto = activeTicket.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(aName)}&background=1A2C5B&color=fff`;
-                        
-                        if (customers && customers.length > 0) {
-                            const matched = customers.find(c => c.id === activeTicket.customerId || (activeTicket.phone && c.phone && c.phone.includes(activeTicket.phone.replace(/\D/g, '').slice(-6))) || (c.name && String(c.name).toLowerCase() === String(aName).toLowerCase()));
-                            if (matched && matched.foto_profil) aPhoto = matched.foto_profil;
-                            if (matched && matched.name) aName = matched.name;
-                            if (matched && matched.block) aBlock = matched.block;
-                        }
-
-                        let aSubject = activeTicket.issueType || activeTicket.subject || 'Obrolan Pelanggan';
-                        let aInitialMsg = activeTicket.message || activeTicket.pesan || '';
-                        if (activeTicket.messages && activeTicket.messages.length > 0) {
-                            aInitialMsg = activeTicket.messages[0].text || activeTicket.messages[0].message || aInitialMsg;
-                        }
-                        let aInitialImg = extractImageFromObj(activeTicket);
-
+                      const activeInfo = getTicketInfo(activeTicket);
                       return (
                         <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
                               <button onClick={() => setActiveTicket(null)} className="md:hidden p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm shrink-0"><ArrowLeft className="w-4 h-4"/></button>
-                              <img src={aPhoto} className="w-10 h-10 rounded-full object-cover border shrink-0 bg-white shadow-sm" />
                               <div className="min-w-0">
-                                <h3 className="font-extrabold text-sm text-kai-blue dark:text-white truncate">{aName} {aBlock ? `(Blok ${aBlock})` : ''}</h3>
-                                <p className="text-[10px] font-semibold text-slate-500 truncate">{aSubject}</p>
+                                <h3 className="font-extrabold text-sm text-kai-blue dark:text-white truncate">
+                                  {activeInfo.name} {activeInfo.block ? `(Blok ${activeInfo.block})` : ''}
+                                </h3>
+                                <p className="text-[10px] font-semibold text-slate-500 truncate">
+                                  {activeInfo.subject} {activeInfo.phone ? `• WA: ${activeInfo.phone}` : ''}
+                                </p>
                               </div>
                             </div>
                             {activeTicket.status !== 'Closed' && (
@@ -1292,57 +1500,116 @@
                           </div>
 
                           <div ref={chatScrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3">
-                            {(aInitialMsg || aInitialImg) && (
+                            {/* Tampilkan pesan/foto awal pada dokumen tiket jika ada */}
+                            {(activeInfo.initialMsg || activeInfo.initialImg) && (
                               <div className="flex justify-start">
-                                <div className="max-w-[80%] p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm">
-                                  <p className="text-[10px] font-extrabold text-kai-orange mb-1">{aName}</p>
-                                  {aInitialMsg && <p className="text-xs whitespace-pre-line">{aInitialMsg}</p>}
-                                  {aInitialImg && (
-                                    <img src={aInitialImg} onClick={() => setPreviewLightbox(aInitialImg)} className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200" />
+                                <div className="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none">
+                                  <p className="text-[10px] font-extrabold text-kai-orange mb-1">
+                                    {activeInfo.name} {activeInfo.block ? `(Blok ${activeInfo.block})` : ''}
+                                  </p>
+                                  {activeInfo.initialMsg && <p className="text-xs whitespace-pre-line">{activeInfo.initialMsg}</p>}
+                                  {activeInfo.initialImg && (
+                                    <img 
+                                      src={activeInfo.initialImg} 
+                                      alt="Foto Klien" 
+                                      onClick={() => setPreviewLightbox(activeInfo.initialImg)}
+                                      className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700 hover:opacity-90 transition-opacity" 
+                                    />
                                   )}
                                 </div>
                               </div>
                             )}
 
-                            {chatMessages.map((msg, idx) => {
-                              const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender === currentUser.name;
-                              const msgText = msg.text || msg.message || msg.pesan || '';
-                              const imgAttachment = extractImageFromObj(msg);
-                              return (
-                                <div key={msg.id || idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
-                                  <div className={`max-w-[80%] p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm'}`}>
-                                    <p className={`text-[10px] font-extrabold mb-1 ${isAdmin ? 'text-blue-200' : 'text-kai-orange'}`}>{isAdmin ? (msg.sender || currentUser.name) : aName}</p>
-                                    {msgText && <p className="text-xs whitespace-pre-line">{msgText}</p>}
-                                    {imgAttachment && (
-                                      <img src={imgAttachment} onClick={() => setPreviewLightbox(imgAttachment)} className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" />
-                                    )}
+                            {chatMessages.length === 0 && !activeInfo.initialMsg && !activeInfo.initialImg ? (
+                              <div className="text-center text-slate-400 text-xs py-10">Mulai obrolan atau kirim foto ke {activeInfo.name}...</div>
+                            ) : (
+                              chatMessages.map((msg, idx) => {
+                                const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender === currentUser.name;
+                                const senderLabel = isAdmin 
+                                  ? (msg.sender || msg.senderName || currentUser.name) 
+                                  : (msg.sender || msg.senderName || msg.name || `${activeInfo.name}${activeInfo.block ? ` (Blok ${activeInfo.block})` : ''}`);
+                                const rawText = msg.text || msg.message || msg.pesan || msg.content || '';
+                                const msgText = (typeof rawText === 'string' && !rawText.startsWith('data:image')) ? rawText : '';
+                                const imgAttachment = extractImageFromObj(msg);
+                                return (
+                                  <div key={msg.id || idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] rounded-2xl p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none'}`}>
+                                      <p className={`text-[10px] font-extrabold mb-1 ${isAdmin ? 'text-blue-200' : 'text-kai-orange'}`}>{senderLabel}</p>
+                                      {msgText && <p className="text-xs whitespace-pre-line">{msgText}</p>}
+                                      {imgAttachment && (
+                                        <img 
+                                          src={imgAttachment} 
+                                          alt="Lampiran Foto" 
+                                          onClick={() => setPreviewLightbox(imgAttachment)}
+                                          className="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20 hover:opacity-90 transition-opacity" 
+                                        />
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })
+                            )}
                           </div>
 
+                          {/* Preview Gambar Sebelum Dikirim */}
                           {chatImagePreview && (
-                            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border-t flex items-center justify-between">
-                              <div className="flex items-center gap-2"><img src={chatImagePreview} className="w-12 h-12 rounded-lg object-cover border border-kai-blue" /><span className="text-xs font-bold">Foto siap dikirim</span></div>
-                              <button type="button" onClick={() => setChatImagePreview(null)} className="p-1 bg-rose-100 text-rose-600 rounded-full"><X className="w-4 h-4"/></button>
+                            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <img src={chatImagePreview} className="w-12 h-12 rounded-lg object-cover border border-kai-blue" />
+                                <span className="text-xs font-bold text-kai-blue dark:text-white">Foto siap dikirim</span>
+                              </div>
+                              <button type="button" onClick={() => setChatImagePreview(null)} className="p-1.5 bg-rose-100 text-rose-600 rounded-full hover:bg-rose-200">
+                                <X className="w-4 h-4"/>
+                              </button>
                             </div>
                           )}
 
+                          {/* Bar Input Chat + Ikon Kamera Real */}
                           <form onSubmit={handleSendChat} className="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2">
+                            {/* Input Kamera Langsung & Galeri */}
                             <input ref={chatCameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleSelectChatImage} className="hidden" />
                             <input ref={chatGalleryInputRef} type="file" accept="image/*" onChange={handleSelectChatImage} className="hidden" />
                             
-                            <button type="button" onClick={() => { if(chatCameraInputRef.current) chatCameraInputRef.current.click() }} className="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl hover:bg-slate-200 transition-colors"><Camera className="w-5 h-5"/></button>
-                            
-                            <input type="text" value={newChatInput} onChange={e => setNewChatInput(e.target.value)} placeholder={`Ketik pesan...`} className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-kai-blue" />
-                            <button type="submit" disabled={!newChatInput.trim() && !chatImagePreview} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 shadow-sm hover:bg-kai-orangedark transition-colors"><Send className="w-4 h-4"/></button>
+                            <button 
+                              type="button" 
+                              onClick={() => chatCameraInputRef.current?.click()} 
+                              title="Ambil Foto Kamera"
+                              className="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0"
+                            >
+                              <Camera className="w-5 h-5"/>
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => chatGalleryInputRef.current?.click()} 
+                              title="Pilih Gambar Galeri"
+                              className="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0"
+                            >
+                              <ImageIcon className="w-5 h-5"/>
+                            </button>
+
+                            <input 
+                              type="text" 
+                              value={newChatInput} 
+                              onChange={e => setNewChatInput(e.target.value)} 
+                              placeholder={`Ketik pesan untuk ${activeInfo.name}...`} 
+                              className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-kai-blue" 
+                            />
+                            <button 
+                              type="submit" 
+                              disabled={!newChatInput.trim() && !chatImagePreview} 
+                              className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 hover:bg-kai-orangedark transition-colors shadow-sm shrink-0"
+                            >
+                              <Send className="w-4 h-4"/>
+                            </button>
                           </form>
                         </div>
                       );
                     })() : (
                       <div className="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
-                        <div className="text-center text-slate-400"><MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Pilih klien di samping untuk mulai mengobrol.</p></div>
+                        <div className="text-center text-slate-400">
+                          <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/>
+                          <p className="text-xs font-bold">Pilih pelanggan di samping untuk mulai mengobrol atau berkirim foto.</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1434,8 +1701,6 @@
                     </div>
                     
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 md:p-6 shadow-sm">
-                        
-                        {/* TAB: PPPoE SECRET */}
                         {mikrotikTab === 'secret' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
@@ -1492,7 +1757,6 @@
                             </>
                         )}
                         
-                        {/* TAB: HOTSPOT USERS */}
                         {mikrotikTab === 'hotspot-users' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg border border-orange-100 dark:border-orange-800/30">Menampilkan daftar user/voucher Hotspot.</p>
@@ -1545,7 +1809,6 @@
                             </>
                         )}
                         
-                        {/* TAB: HOTSPOT ACTIVE */}
                         {mikrotikTab === 'hotspot-active' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg border border-emerald-100 dark:border-emerald-800/30">Menampilkan daftar pengguna Hotspot yang sedang terhubung dan menggunakan internet saat ini.</p>
@@ -1582,7 +1845,6 @@
                             </>
                         )}
                         
-                        {/* TAB: HOTSPOT HOSTS */}
                         {mikrotikTab === 'hotspot-hosts' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg border border-purple-100 dark:border-purple-800/30">Menampilkan daftar seluruh perangkat (Hosts) yang terdeteksi di jaringan Hotspot (baik sudah login maupun belum).</p>
@@ -1627,7 +1889,6 @@
                             </>
                         )}
                         
-                        {/* TAB: IP BINDINGS */}
                         {mikrotikTab === 'hotspot-bindings' && (
                             <>
                                 <p className="text-[10px] text-slate-500 mb-4 bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-800/30">Menampilkan daftar Bypass atau Blokir MAC/IP akses tanpa login Hotspot.</p>
@@ -1687,18 +1948,35 @@
                   </div>
                 )}
                 
-                {/* --- PORTAL & SETTINGS --- */}
+                {/* --- PORTAL ROUTE --- */}
                 {activeTab === 'portal' && (
-                  <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl text-center shadow-sm">
-                    <h3 className="text-lg font-black text-kai-blue dark:text-white mb-2">Portal Klien</h3>
-                    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl flex items-center justify-between gap-3 mb-4">
-                      <span className="text-xs font-semibold select-all">{PORTAL_URL}</span>
-                      <button onClick={() => navigator.clipboard.writeText(PORTAL_URL).then(() => alert("Tautan disalin!"))} className="p-2 bg-kai-blue text-white rounded-lg"><Copy className="w-4 h-4"/></button>
+                  <div className="space-y-4 pb-6">
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Portal Pelanggan</h2>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm text-center flex flex-col items-center">
+                        <div className="w-20 h-20 bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4">
+                            <Globe className="w-10 h-10 text-kai-blue dark:text-white"/>
+                        </div>
+                        <h3 className="text-lg font-black text-kai-blue dark:text-white mb-2">Tautan Registrasi Mandiri</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Bagikan link ini kepada calon pelanggan untuk melakukan pendaftaran secara mandiri.</p>
+                        
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full p-4 rounded-xl flex items-center justify-between gap-3 mb-6">
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate select-all">{PORTAL_URL}</span>
+                            <button onClick={copyPortalLink} className="p-2 bg-kai-blue text-white rounded-lg hover:bg-kai-bluedark transition-colors shrink-0" title="Salin Tautan">
+                                <Copy className="w-4 h-4"/>
+                            </button>
+                        </div>
+                        
+                        <button onClick={sendPortalWA} className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all">
+                            <Share2 className="w-5 h-5"/> Kirim Via WhatsApp
+                        </button>
                     </div>
                   </div>
                 )}
 
-                {/* --- SETTINGS --- */}
+                {/* --- SETTINGS ROUTE --- */}
                 {activeTab === 'settings' && (
                   <div className="space-y-4 pb-6">
                     {!isEditingProfile && !showAdminManagement ? (
@@ -1726,12 +2004,10 @@
                             </div>
                           </div>
                           
-                          {currentUser.id === 'admin1' && (
-                            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                              <span className="text-[9px] uppercase font-bold text-slate-400 block">Nomor Gateway Bot WA</span>
-                              <span className="text-xs font-bold">{settingsData.waGatewayPhone || 'Belum Disetel'}</span>
-                            </div>
-                          )}
+                          <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                            <span className="text-[9px] uppercase font-bold text-slate-400 block">Nomor Gateway Bot WA</span>
+                            <span className="text-xs font-bold">{settingsData.waGatewayPhone || 'Belum Disetel'}</span>
+                          </div>
                         </div>
                         
                         <div className="lg:hidden mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -1762,7 +2038,7 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
 
                           <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik</label>
+                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
                             {!editProfile.credentialId ? (
                               <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
                                 <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
@@ -1782,6 +2058,7 @@
                             <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
                                <label className="block text-[9px] font-bold text-slate-500 mb-1 mt-2 uppercase">Nomor Gateway Bot WA</label>
                                <input type="text" required value={settingsData.waGatewayPhone} onChange={e => setSettingsData({...settingsData, waGatewayPhone: e.target.value})} placeholder="62811122699" className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" />
+                               <p className="text-[9px] text-slate-400 mt-1">Gunakan format 62 tanpa spasi (+)</p>
                             </div>
                           )}
 
@@ -1857,27 +2134,76 @@
             </main>
 
             {/* Mobile Nav */}
-            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-              <button onClick={() => {setActiveTab('dashboard'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400'}`}><LayoutDashboard className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Beranda</span></button>
-              <button onClick={() => {setActiveTab('customers'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400'}`}><Users className="w-5 h-5 mb-1"/>{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold">Pelanggan</span></button>
-              <button onClick={() => {setActiveTab('tickets'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400'}`}><MessageCircle className="w-5 h-5 mb-1"/>{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold">Chat</span></button>
-              {currentUser?.id === 'admin1' && <button onClick={() => {setActiveTab('mikrotik'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400'}`}><Server className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">MikroTik</span></button>}
-              <button onClick={() => {setActiveTab('settings'); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 flex-1 ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400'}`}><User className="w-5 h-5 mb-1"/><span className="text-[9px] font-bold">Profil</span></button>
+            <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex items-center justify-between px-1 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)] overflow-x-auto custom-scrollbar">
+              
+              <button onClick={() => {setActiveTab('dashboard'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'dashboard' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <LayoutDashboard className="w-5 h-5 mb-1" strokeWidth={activeTab === 'dashboard' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Beranda</span>
+              </button>
+              
+              <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />
+                {pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}
+                <span className="text-[9px] font-bold tracking-wide">Pelanggan</span>
+              </button>
+
+              <button onClick={() => {setActiveTab('tickets'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <MessageCircle className="w-5 h-5 mb-1" strokeWidth={activeTab === 'tickets' ? 2.5 : 1.5} />
+                {unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}
+                <span className="text-[9px] font-bold tracking-wide">Chat</span>
+              </button>
+              
+              {currentUser?.id === 'admin1' && (
+                <button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                  <Server className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} />
+                  <span className="text-[9px] font-bold tracking-wide">MikroTik</span>
+                </button>
+              )}
+
+              <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Keuangan</span>
+              </button>
+              
+              <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Portal</span>
+              </button>
+              
+              <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}>
+                <User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} />
+                <span className="text-[9px] font-bold tracking-wide">Profil</span>
+              </button>
             </nav>
           </div>
 
-          {/* Modal Chat Baru */}
+          {/* === MODALS === */}
+
+          {/* Modal Pilih Pelanggan Untuk Mulai Chat Baru */}
           {isNewChatModalOpen && (
             <div className="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-900 border rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col max-h-[80vh]">
-                <div className="flex justify-between items-center mb-4"><h3 className="text-base font-extrabold text-kai-blue dark:text-white">Mulai Chat Pelanggan</h3><button onClick={() => setIsNewChatModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button></div>
-                <input type="text" placeholder="Cari nama pelanggan..." value={chatCustomerSearch} onChange={e => setChatCustomerSearch(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none focus:border-kai-blue" />
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl flex flex-col max-h-[80vh]">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-base font-extrabold text-kai-blue dark:text-white">Mulai Chat Pelanggan</h3>
+                  <button onClick={() => setIsNewChatModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button>
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Cari nama atau blok pelanggan..." 
+                  value={chatCustomerSearch} 
+                  onChange={e => setChatCustomerSearch(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold mb-3 outline-none focus:border-kai-blue"
+                />
                 <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
-                  {customers.filter(c => (c.name || '').toLowerCase().includes(chatCustomerSearch.toLowerCase())).map(c => (
-                    <button key={c.id} onClick={() => handleStartNewChatWithCustomer(c)} className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-kai-blue hover:text-white transition-colors flex justify-between items-center border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <img src={c.foto_profil || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=1A2C5B&color=fff`} className="w-8 h-8 rounded-full object-cover border bg-white" />
-                        <div><p className="font-bold text-xs">{c.name}</p><p className="text-[10px] opacity-75">Blok {c.block} • {c.phone || '-'}</p></div>
+                  {customers.filter(c => (c.name || '').toLowerCase().includes(chatCustomerSearch.toLowerCase()) || (c.block || '').toLowerCase().includes(chatCustomerSearch.toLowerCase())).map(c => (
+                    <button 
+                      key={c.id} 
+                      onClick={() => handleStartNewChatWithCustomer(c)}
+                      className="w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-kai-blue hover:text-white transition-colors flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="font-bold text-xs">{c.name}</p>
+                        <p className="text-[10px] opacity-75">Blok {c.block} • {c.phone || '-'}</p>
                       </div>
                       <MessageCircle className="w-4 h-4 shrink-0"/>
                     </button>
@@ -1887,21 +2213,216 @@
             </div>
           )}
 
-          {/* Lightbox Zoom Foto */}
+          {/* Modal Zoom Gambar (Lightbox) */}
           {previewLightbox && (
-            <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
+            <div className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
               <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full hover:bg-white/30"><X className="w-6 h-6"/></button>
               <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
             </div>
           )}
+          
+          {/* Modal Form MikroTik Terpusat */}
+          {isMikrotikModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2 text-kai-blue dark:text-white">
+                    <Server className="w-5 h-5"/> {editingMikrotikData ? 'Edit Data MikroTik' : 'Buat Baru MikroTik'}
+                </h3>
+                <form onSubmit={handleSaveMikrotikData} className="space-y-4">
+                  {(mikrotikFormType === 'secret' || mikrotikFormType === 'hotspot_user') && (
+                      <>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME (NAME)</label>
+                              <input type="text" required value={mikrotikForm.name} onChange={e => setMikrotikForm({...mikrotikForm, name: e.target.value})} disabled={!!editingMikrotikData} placeholder="b4.9@mabu.net / voucher01" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue disabled:opacity-60" />
+                          </div>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD {editingMikrotikData && '(Opsional)'}</label>
+                              <input type="text" value={mikrotikForm.password} onChange={e => setMikrotikForm({...mikrotikForm, password: e.target.value})} required={!editingMikrotikData} placeholder={editingMikrotikData ? 'Kosongkan jika tidak diubah' : 'Password Login'} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                          </div>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PROFILE</label>
+                              <select value={mikrotikForm.profile} onChange={e => setMikrotikForm({...mikrotikForm, profile: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue">
+                                  {mikrotikFormType === 'secret' 
+                                      ? PPPOE_PROFILES.map(p => <option key={p} value={p}>{p}</option>)
+                                      : HOTSPOT_PROFILES.map(p => <option key={p} value={p}>{p}</option>)
+                                  }
+                              </select>
+                          </div>
+                      </>
+                  )}
+                  
+                  {mikrotikFormType === 'ip_binding' && (
+                      <>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">MAC ADDRESS</label>
+                              <input type="text" required value={mikrotikForm.macAddress} onChange={e => setMikrotikForm({...mikrotikForm, macAddress: e.target.value})} placeholder="AA:BB:CC:DD:EE:FF" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold font-mono outline-none focus:border-kai-blue uppercase" />
+                          </div>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">IP ADDRESS (OPSIONAL)</label>
+                              <input type="text" value={mikrotikForm.address} onChange={e => setMikrotikForm({...mikrotikForm, address: e.target.value})} placeholder="192.168.x.x" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                          </div>
+                          <div>
+                              <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TYPE BINDING</label>
+                              <select value={mikrotikForm.type} onChange={e => setMikrotikForm({...mikrotikForm, type: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue">
+                                  <option value="bypassed">bypassed (Tanpa Login)</option>
+                                  <option value="blocked">blocked (Blokir Total)</option>
+                                  <option value="regular">regular (Normal)</option>
+                              </select>
+                          </div>
+                      </>
+                  )}
+                  
+                  {(mikrotikFormType === 'hotspot_user' || mikrotikFormType === 'ip_binding') && (
+                      <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">SERVER</label>
+                          <input type="text" value={mikrotikForm.server} onChange={e => setMikrotikForm({...mikrotikForm, server: e.target.value})} placeholder="all / hotspot1" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                      </div>
+                  )}
+
+                  <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KOMENTAR / KETERANGAN</label>
+                      <input type="text" value={mikrotikForm.comment} onChange={e => setMikrotikForm({...mikrotikForm, comment: e.target.value})} placeholder="Keterangan / Nama Pemilik" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
+                  </div>
+                  
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsMikrotikModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Execute</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isCustomerModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 text-kai-blue dark:text-white">{editingCustomer ? 'Edit Data Pelanggan' : 'Pelanggan Baru'}</h3>
+                <form onSubmit={handleSaveCustomer} className="space-y-4">
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div className="flex gap-3">
+                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">BLOK RUMAH</label><select value={formData.block} onChange={e => setFormData({...formData, block: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue">{BLOCKS.filter(b=>b!=='Semua Blok').map(b=><option key={b}>{b}</option>)}</select></div>
+                     <div className="w-24"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TEMPO TGL</label><input type="number" min="1" max="31" required value={formData.dueDate} onChange={e => setFormData({...formData, dueDate: Number(e.target.value)})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-center outline-none focus:border-kai-blue" /></div>
+                  </div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="Contoh: 0812345678" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USER PPPOE (MIKROTIK)</label><input type="text" required value={formData.pppoe_user || ''} onChange={e => setFormData({...formData, pppoe_user: e.target.value})} placeholder="b4.9@mabu.net" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PAKET INTERNET</label><select value={formData.packageId} onChange={e => setFormData({...formData, packageId: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors">{PACKAGES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">STATUS</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors"><option>Aktif</option><option>Non-Aktif</option></select></div>
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsCustomerModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-blue text-white rounded-xl font-bold text-sm shadow-lg">Simpan Data</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isExpenseModalOpen && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 text-kai-orange">{editingExpense ? 'Edit Jurnal Kas' : 'Catat Kas Keluar'}</h3>
+                <form onSubmit={handleSaveExpense} className="space-y-4">
+                  <div className="flex gap-3">
+                     <div className="flex-1"><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">TGL</label><input type="date" required value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange" /></div>
+                     <div className="flex-1">
+                        <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">KATEGORI</label>
+                        <select value={expenseForm.category} onChange={e => setExpenseForm({...expenseForm, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-3 text-xs font-bold outline-none focus:border-kai-orange">
+                          <option>Belanja</option><option>Perbaikan/Pemasangan</option><option>Operasional</option><option>Fam</option>
+                        </select>
+                     </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">DIPROSES / DIAJUKAN OLEH</label>
+                    <select value={expenseForm.applicantSelect} onChange={e => setExpenseForm({...expenseForm, applicantSelect: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange">
+                      <option value="Ayah">1. Ayah</option><option value="Mamah">2. Mamah</option><option value="Fathir">3. Fathir</option><option value="Dede">4. Dede</option><option value="Zahra">5. Zahra</option><option value="Manual">6. Manual Tulis Keterangan</option>
+                    </select>
+                    {expenseForm.applicantSelect === 'Manual' && (
+                      <input type="text" placeholder="Tulis nama pengaju manual..." required value={expenseForm.applicantCustom} onChange={e => setExpenseForm({...expenseForm, applicantCustom: e.target.value})} className="mt-3 w-full bg-orange-50 dark:bg-slate-800 border border-orange-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" />
+                    )}
+                  </div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">URAIAN / CATATAN</label><input type="text" required value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})} placeholder="Misal: Beli kabel FO 1 Roll" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-orange" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NOMINAL (RP)</label><input type="number" required value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})} placeholder="500000" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-lg font-black text-rose-600 outline-none focus:border-rose-500" /></div>
+                  
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 bg-kai-orange text-white rounded-xl font-bold text-sm shadow-lg">Simpan Kas</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {isTargetAdminModalOpen && targetAdmin && (
+            <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 md:p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2"><UserCog className="w-5 h-5 text-kai-blue"/> Edit Akses {targetAdmin.role}</h3>
+                <form onSubmit={handleSaveTargetAdmin} className="space-y-4">
+                  <div className="flex items-center gap-4 mb-6 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                    <div className="relative w-16 h-16 rounded-full border-2 border-kai-blue overflow-hidden bg-slate-100 flex items-center justify-center group shrink-0">
+                      {targetAdmin.photo ? <img src={targetAdmin.photo} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400" />}
+                      <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                        <Camera className="w-5 h-5 text-white" />
+                        <input type="file" accept="image/*" onChange={(e) => handlePhotoUploadInit(e, true)} className="hidden" />
+                      </label>
+                    </div>
+                    <div><p className="text-sm font-bold">Foto Staff</p><p className="text-[10px] text-slate-500 mt-1">Tap untuk ganti.</p></div>
+                  </div>
+                  
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NAMA LENGKAP</label><input type="text" required value={targetAdmin.name} onChange={e => setTargetAdmin({...targetAdmin, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">USERNAME LOGIN</label><input type="text" required value={targetAdmin.username} onChange={e => setTargetAdmin({...targetAdmin, username: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">PASSWORD AKSES</label><input type="text" required value={targetAdmin.password} onChange={e => setTargetAdmin({...targetAdmin, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">EMAIL STAFF</label><input type="email" value={targetAdmin.email} onChange={e => setTargetAdmin({...targetAdmin, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">NO WHATSAPP</label><input type="text" value={targetAdmin.phone} onChange={e => setTargetAdmin({...targetAdmin, phone: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue transition-colors" /></div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
+                    <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
+                    {!targetAdmin.credentialId ? (
+                      <button type="button" onClick={registerFingerprintTarget} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
+                        <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
+                      </button>
+                    ) : (
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs"><Check className="w-4 h-4"/> Terdaftar</div>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-[10px] font-bold text-slate-500">Aktifkan:</span>
+                          <input type="checkbox" checked={targetAdmin.fingerprintEnabled} onChange={(e) => setTargetAdmin({...targetAdmin, fingerprintEnabled: e.target.checked})} className="w-4 h-4 rounded text-kai-blue focus:ring-kai-blue"/>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button type="button" onClick={() => setIsTargetAdminModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm">Batal</button>
+                    <button type="submit" className="flex-1 py-3 rounded-xl bg-kai-blue text-white font-bold text-sm shadow-lg">Simpan Data</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {cropState.isOpen && (
+            <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-xs shadow-2xl animate-in zoom-in-95 duration-200">
+                <h3 className="text-base font-extrabold mb-4 text-center">Atur Foto</h3>
+                <div className="flex justify-center mb-4">
+                  <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-dashed border-kai-blue bg-slate-100 relative cursor-move touch-none" onMouseDown={handleCropDragStart} onMouseMove={handleCropDragMove} onMouseUp={handleCropDragEnd} onMouseLeave={handleCropDragEnd} onTouchStart={handleCropDragStart} onTouchMove={handleCropDragMove} onTouchEnd={handleCropDragEnd}>
+                    <img src={cropState.src} draggable="false" style={{ transform: `translate(calc(-50% + ${cropState.x}px), calc(-50% + ${cropState.y}px)) scale(${cropState.zoom})`, minWidth: '100%', minHeight: '100%', objectFit: 'cover', pointerEvents: 'none' }} className="absolute top-1/2 left-1/2 origin-center" />
+                  </div>
+                </div>
+                <input type="range" min="1" max="3" step="0.1" value={cropState.zoom} onChange={(e) => setCropState({...cropState, zoom: parseFloat(e.target.value)})} className="w-full accent-kai-blue mb-4" />
+                <div className="flex gap-2">
+                  <button onClick={() => setCropState({...cropState, isOpen: false})} className="flex-1 py-2.5 rounded-xl border border-slate-200 font-bold text-xs">Batal</button>
+                  <button onClick={applyCrop} className="flex-1 py-2.5 rounded-xl bg-kai-blue text-white font-bold text-xs">Simpan</button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
-    
-    // RENDER APP 
-    const rootElement = document.getElementById('root');
-    const root = createRoot(rootElement);
-    root.render(<ErrorBoundary><App /></ErrorBoundary>);
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
