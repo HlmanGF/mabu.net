@@ -51,8 +51,9 @@
     .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
     
     /* CSS Client */
-     .view-section { display: none; animation: fadeIn 0.3s ease; height: 100%; overflow-y: auto; padding-bottom: 90px; }
+      .view-section { display: none; animation: fadeIn 0.3s ease; flex: 1; overflow-y: auto; padding-bottom: 90px; }
  .view-section.active { display: block; }
+ .view-section.active.flex { display: flex; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .accordion-content { max-height: 0; transition: max-height 0.3s ease-out; }
     .accordion-item.active .accordion-icon { transform: rotate(180deg); }
@@ -77,7 +78,7 @@
   <!-- ========================================== -->
   <!-- 2. AREA PORTAL CLIENT (VANILLA JS)         -->
   <!-- ========================================== -->
-  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-screen w-full overflow-hidden relative">
+  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden">
       
             <!-- MODAL RUANG CHAT TIKET (SAMA PERSIS DENGAN ADMIN) -->
       <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
@@ -207,7 +208,7 @@
       </div>
       
       <!-- HEADER TOP CLIENT -->
-      <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg mb-6 sticky top-0 z-40">
+      <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg z-40 shrink-0">
           <div class="max-w-xl mx-auto flex justify-between items-center">
               <div>
                   <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
@@ -432,7 +433,7 @@
         </div>
     </div>
 <!-- MENU NAVIGASI BAWAH CLIENT -->
-                  <nav id="bottomNav" class="hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                  <nav id="bottomNav" class="hidden w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] shrink-0">
           <button id="nav-home" class="nav-item flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="text-[9px] font-black tracking-wide">Beranda</span></button>
           
           <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span class="text-[9px] font-black tracking-wide">Bayar</span></button>
@@ -449,7 +450,7 @@
       </nav>
 
       <!-- KONTEN: LOGIN CLIENT -->
-      <div id="view-login" class="view-section active max-w-xl mx-auto px-4 flex flex-col justify-center min-h-full">
+      <div id="view-login" class="view-section active flex flex-col justify-center p-4 w-full max-w-xl mx-auto h-full">
           <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
               <div class="text-center mb-6">
                   <div class="w-16 h-16 bg-kai-blue rounded-full flex items-center justify-center mx-auto mb-3">
@@ -2130,9 +2131,15 @@
         switchView('view-registrasi', document.getElementById('nav-registrasi'));
     }
 
-    function bukaMenuAkun(btn) {
-        if (currentUserDocId) { switchView('view-profil', btn); } else { switchView('view-login', btn); }
-    }
+     function bukaMenuAkun(btn) {
+     // Pengecekan ganda agar profil dijamin terbuka
+     const savedUser = localStorage.getItem('mabunet_client_session');
+     if (currentUserDocId || savedUser) { 
+         switchView('view-profil', btn); 
+     } else { 
+         switchView('view-login', btn); 
+     }
+ }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
