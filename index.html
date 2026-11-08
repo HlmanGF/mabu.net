@@ -1553,49 +1553,49 @@
                        </div>
                    </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                                                {tickets.length === 0 ? (
+                                                                        {tickets.length === 0 ? (
                           <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan masuk.</div>
                         ) : (
                           (() => {
-                         const uniqueTickets = tickets.filter((v, i, a) => a.findIndex(t => (t.customerId || t.id) === (v.customerId || v.id)) === i);
-                         const filteredUniqueTickets = uniqueTickets.filter(ticket => {
-                             const tInfo = getTicketInfo(ticket);
-                             const searchLower = chatSearchTerm.toLowerCase();
-                             return (tInfo.name || '').toLowerCase().includes(searchLower) || 
-                                    (tInfo.block || '').toLowerCase().includes(searchLower) || 
-                                    (tInfo.phone || '').toLowerCase().includes(searchLower);
-                         });
-                         return filteredUniqueTickets.map(ticket => {
-                            return uniqueTickets.map(ticket => {
-                            const tInfo = getTicketInfo(ticket);
-                            const tStatus = ticket.status || 'New';
-                            const isSelected = activeTicket?.id === ticket.id;
-                            const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
-                            return (
-                              <button 
-                                key={ticket.id} 
-                                onClick={() => setActiveTicket(ticket)}
-                                className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                              >
-                                <div className="flex justify-between items-start mb-1">
-                                  <div className="min-w-0 pr-2">
-                                    <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
-                                      👤 {tInfo.name}
-                                    </span>
-                                    {(tInfo.block || tInfo.phone) && (
-                                      <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>
-                                        {tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}
+                            const uniqueTickets = tickets.filter((v, i, a) => a.findIndex(t => (t.customerId || t.id) === (v.customerId || v.id)) === i);
+                            const filteredUniqueTickets = uniqueTickets.filter(ticket => {
+                                const tInfo = getTicketInfo(ticket);
+                                const searchLower = chatSearchTerm.toLowerCase();
+                                return (tInfo.name || '').toLowerCase().includes(searchLower) || 
+                                       (tInfo.block || '').toLowerCase().includes(searchLower) || 
+                                       (tInfo.phone || '').toLowerCase().includes(searchLower);
+                            });
+                            
+                            return filteredUniqueTickets.map(ticket => {
+                              const tInfo = getTicketInfo(ticket);
+                              const tStatus = ticket.status || 'New';
+                              const isSelected = activeTicket?.id === ticket.id;
+                              const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
+                              return (
+                                <button 
+                                  key={ticket.id} 
+                                  onClick={() => setActiveTicket(ticket)}
+                                  className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                                >
+                                  <div className="flex justify-between items-start mb-1">
+                                    <div className="min-w-0 pr-2">
+                                      <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
+                                        👤 {tInfo.name}
                                       </span>
-                                    )}
+                                      {(tInfo.block || tInfo.phone) && (
+                                        <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>
+                                          {tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 ${tStatus === 'New' || tStatus === 'Open' || tStatus === 'Baru' ? 'bg-rose-500 text-white' : tStatus === 'In Progress' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{tStatus}</span>
                                   </div>
-                                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 ${tStatus === 'New' || tStatus === 'Open' || tStatus === 'Baru' ? 'bg-rose-500 text-white' : tStatus === 'In Progress' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{tStatus}</span>
-                                </div>
-                                <p className={`text-[10px] font-semibold truncate mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>
-                                  {hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}
-                                </p>
-                              </button>
-                            );
-                          })
+                                  <p className={`text-[10px] font-semibold truncate mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>
+                                    {hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}
+                                  </p>
+                                </button>
+                              );
+                            });
                           })()
                         )}
                       </div>
