@@ -194,7 +194,7 @@
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
 
-      const [tickets, setTickets] = useState([]);
+      const [rawTickets, setRawTickets] = useState([]);
       const [activeTicket, setActiveTicket] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
       const [newChatInput, setNewChatInput] = useState('');
@@ -240,7 +240,8 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      const safeString = (val) => (val && typeof val === 'string') ? val.toLowerCase().trim() : '';
+      // PENGAMAN STRING
+      const safeString = (val) => val ? String(val).toLowerCase().trim() : '';
 
       const findMatchedCustomer = (item) => {
         if (!item || !Array.isArray(customers)) return null;
@@ -260,7 +261,7 @@
         const matched = findMatchedCustomer(ticket);
         
         let name = ticket.customerName || ticket.name || ticket.nama || matched?.name || ticket.phone || 'Pelanggan';
-        if (typeof name !== 'string') name = 'Pelanggan';
+        name = safeString(name) ? name : 'Pelanggan';
 
         const block = ticket.block || ticket.blok || matched?.block || '';
         const phone = ticket.phone || ticket.userPhone || matched?.phone || '';
@@ -320,14 +321,6 @@
         window.addEventListener('popstate', handleBackButton);
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, activeTicket, previewLightbox, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen, isNewChatModalOpen]);
-
-      useEffect(() => {
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
-        };
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }, [currentUser]);
 
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
@@ -393,10 +386,13 @@
           const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (docSnap) => {
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
+
+          // LISTENER TIKET RAW (Mencegah Stale Closure / Crash)
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             setTickets(allDocs);
+             setRawTickets(allDocs);
           });
+
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
              const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
@@ -410,6 +406,49 @@
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
+
+      // PROSES 1 KLIEN 1 TIKET DAN NADA DERING OTOMATIS
+      useEffect(() => {
+          if (rawTickets.length === 0) {
+              setTickets([]);
+              return;
+          }
+          
+          const uniqueMap = new Map();
+          rawTickets.forEach(t => {
+             const tInfo = getTicketInfo(t);
+             const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
+             
+             if (!uniqueMap.has(uniqueKey)) {
+                uniqueMap.set(uniqueKey, t);
+             } else {
+                const existing = uniqueMap.get(uniqueKey);
+                const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
+                const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+                if (currentTime > existingTime) {
+                   uniqueMap.set(uniqueKey, t);
+                }
+             }
+          });
+
+          const mergedList = Array.from(uniqueMap.values());
+          mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
+          
+          // NOTIFIKASI SUARA PESAN MASUK
+          let latestTime = 0;
+          mergedList.forEach(t => {
+              const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+              if (tTime > latestTime) latestTime = tTime;
+          });
+          
+          if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
+              notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
+          }
+          lastTicketUpdateRef.current = latestTime;
+
+          setTickets(mergedList);
+          setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
+      }, [rawTickets, customers]); // Sengaja re-run jika ada data klien yang berubah (foto profil dll)
 
       // LISTENER CHAT UNTUK TIKET AKTIF
       useEffect(() => {
@@ -448,21 +487,13 @@
 
       const handleStartNewChatWithCustomer = async (cust) => {
         if (!cust || !db) return;
-        
-        // Cari di displayTickets (yang sudah dirender)
-        const displayList = Array.from(new Map(tickets.map(t => {
-            const tInfo = getTicketInfo(t);
-            return [safeString(t.customerId || tInfo.name || t.id), t];
-        })).values());
-        
-        const existing = displayList.find(t => 
+        const existing = tickets.find(t => 
           t.status !== 'Closed' && (
             t.customerId === cust.id || 
             (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
             (t.customerName && safeString(t.customerName) === safeString(cust.name))
           )
         );
-
         if (existing) {
           setActiveTicket(existing);
           setIsNewChatModalOpen(false);
@@ -657,39 +688,9 @@
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      
-      // LOGIKA RENDER 1 BARIS TIKET
-      const uniqueMap = new Map();
-      tickets.forEach(t => {
-        const tInfo = getTicketInfo(t);
-        const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
-        if (!uniqueMap.has(uniqueKey)) {
-            uniqueMap.set(uniqueKey, t);
-        } else {
-            const existing = uniqueMap.get(uniqueKey);
-            const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
-            const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-            if (currentTime > existingTime) uniqueMap.set(uniqueKey, t);
-        }
-      });
-      const displayTickets = Array.from(uniqueMap.values());
-      displayTickets.sort((a, b) => (b.updatedAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.time || 0));
+      const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
 
-      const unreadTicketsCount = displayTickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
-
-      // TRIGGER AUDIO SAAT RENDER
-      useEffect(() => {
-         let latestTime = 0;
-         displayTickets.forEach(t => {
-             const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-             if (tTime > latestTime) latestTime = tTime;
-         });
-         if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-             notificationAudioRef.current.play().catch(e => console.log('Audio dicegah'));
-         }
-         lastTicketUpdateRef.current = latestTime;
-      }, [displayTickets]);
-
+      // Extract Active Info once
       let activeInfo = null;
       if (activeTicket) {
          activeInfo = getTicketInfo(activeTicket);
@@ -708,6 +709,7 @@
         </button>
       );
 
+      // ========== LAYAR LOGIN ==========
       if (!currentUser) {
         return (
           <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
@@ -912,6 +914,11 @@
                                     <p className="font-black text-[13px] md:text-sm text-kai-blue dark:text-white">{formatIDR(pkg.price)}</p>
                                   </div>
                                   <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar Manual</button>
+                                  <button onClick={() => {
+                                        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '0811122699');
+                                        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/${targetPhone}`;
+                                        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
+                                  }} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA Tagihan</button>
                                 </div>
                               </div>
                             )
@@ -1051,10 +1058,10 @@
                         </button>
                       </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-                        {displayTickets.length === 0 ? (
+                        {tickets.length === 0 ? (
                           <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan.</div>
                         ) : (
-                          displayTickets.map(ticket => {
+                          tickets.map(ticket => {
                             const tInfo = getTicketInfo(ticket);
                             const isSelected = activeTicket?.id === ticket.id;
                             const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
@@ -1122,6 +1129,7 @@
                               const imgAttachment = extractImageFromObj(msg);
                               return (
                                 <div key={msg.id || idx} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+                                  {/* BUBBLE CHAT WHATSAPP STYLE */}
                                   <div className={`max-w-[80%] p-3 shadow-sm ${isAdmin ? 'bg-kai-blue text-white rounded-2xl rounded-tr-sm' : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm'}`}>
                                     <p className={`text-[10px] font-extrabold mb-1 ${isAdmin ? 'text-blue-200' : 'text-kai-orange'}`}>{isAdmin ? (msg.sender || currentUser.name) : activeInfo.name}</p>
                                     {msgText && <p className="text-xs whitespace-pre-line">{msgText}</p>}
@@ -1152,7 +1160,8 @@
                             <button type="submit" disabled={!newChatInput.trim() && !chatImagePreview} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 shadow-sm hover:bg-kai-orangedark transition-colors"><Send className="w-4 h-4"/></button>
                           </form>
                         </div>
-                    ) : (
+                      );
+                    })() : (
                       <div className="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
                         <div className="text-center text-slate-400"><MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Pilih klien di samping untuk mulai mengobrol.</p></div>
                       </div>
@@ -1160,63 +1169,6 @@
                   </div>
                 )}
 
-                {/* --- LEDGER ROUTE --- */}
-                {activeTab === 'ledger' && (
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
-                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
-                      <div className="flex gap-2">
-                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm"><Download className="w-4 h-4"/></button>
-                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg shadow-sm"><Plus className="w-4 h-4"/></button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                         <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pemasukan</p>
-                         <p className="text-[13px] font-black text-kai-blue dark:text-white">{formatIDR(actualPaidRevenue)}</p>
-                       </div>
-                       <div className="bg-kai-blue p-3 rounded-2xl shadow-sm text-white relative overflow-hidden">
-                         <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-bl-full"></div>
-                         <p className="text-[9px] font-bold text-blue-200 uppercase mb-1 relative z-10">Sisa Kas Net</p>
-                         <p className="text-[13px] font-black relative z-10">{formatIDR(netProfit)}</p>
-                       </div>
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-sm">
-                         <p className="text-[9px] font-bold text-rose-400 uppercase mb-1">Keluar Jurnal</p>
-                         <p className="text-[13px] font-black text-rose-600 dark:text-rose-400">{formatIDR(totalJurnal)}</p>
-                       </div>
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/30 shadow-sm">
-                         <p className="text-[9px] font-bold text-orange-400 uppercase mb-1">Keluar Fam</p>
-                         <p className="text-[13px] font-black text-orange-600 dark:text-orange-400">{formatIDR(totalFam)}</p>
-                       </div>
-                    </div>
-
-                    <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mt-4 mb-2 px-1">Riwayat Kas Keluar</h3>
-                    <div className="space-y-3 pb-4">
-                      {displayedExpenses.length === 0 ? (
-                        <div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">Belum ada pengeluaran.</div>
-                      ) : (
-                        displayedExpenses.map(exp => (
-                          <div key={exp.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col gap-2">
-                             <div className="flex justify-between items-start">
-                               <div className="flex flex-col">
-                                 <span className="font-extrabold text-[14px] text-kai-blue dark:text-white">{exp.description}</span>
-                                 <span className="text-[10px] font-bold text-slate-400">{exp.date} • {exp.category}</span>
-                               </div>
-                               <span className="font-black text-rose-600 dark:text-rose-400 text-[14px]">{formatIDR(exp.amount)}</span>
-                             </div>
-                             {exp.applicant && <div className="text-[10px] font-bold text-kai-blue bg-blue-50 dark:bg-slate-700 dark:text-slate-300 px-2 py-1 rounded inline-block w-max">👤 Pengajuan: {exp.applicant}</div>}
-                             <div className="flex justify-end gap-1.5 pt-2 border-t border-slate-50 dark:border-slate-700/50 mt-1">
-                                <button onClick={() => { const isPreset = APPLICANTS.includes(exp.applicant); setEditingExpense(exp); setExpenseForm({ date: exp.date, category: exp.category, applicantSelect: isPreset ? exp.applicant : 'Manual', applicantCustom: isPreset ? '' : (exp.applicant || ''), description: exp.description, amount: exp.amount }); setIsExpenseModalOpen(true); }} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg text-kai-blue dark:text-white"><Edit3 className="w-3.5 h-3.5"/></button>
-                                <button onClick={() => handleDeleteExpense(exp.id)} className="px-3 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 rounded-lg"><Trash2 className="w-3.5 h-3.5"/></button>
-                             </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-                
                 {/* --- MIKROTIK CONSOLE ROUTE --- */}
                 {activeTab === 'mikrotik' && currentUser?.id === 'admin1' && (
                   <div className="space-y-4 pb-6">
