@@ -1478,25 +1478,42 @@
                         <button onClick={() => setIsNewChatModalOpen(true)} className="px-3 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-sm"><Plus className="w-3.5 h-3.5"/> Chat Baru</button>
                       </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                        {tickets.length === 0 ? (<div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan masuk.</div>) : (
-                          tickets.map(ticket => {
+                                                {tickets.length === 0 ? (
+                          <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan masuk.</div>
+                        ) : (
+                          (() => {
+                            const uniqueTickets = tickets.filter((v, i, a) => a.findIndex(t => (t.customerId || t.id) === (v.customerId || v.id)) === i);
+                            return uniqueTickets.map(ticket => {
                             const tInfo = getTicketInfo(ticket);
                             const tStatus = ticket.status || 'New';
                             const isSelected = activeTicket?.id === ticket.id;
                             const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
                             return (
-                              <button key={ticket.id} onClick={() => setActiveTicket(ticket)} className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                              <button 
+                                key={ticket.id} 
+                                onClick={() => setActiveTicket(ticket)}
+                                className={`w-full text-left p-3 rounded-xl mb-2 transition-colors border ${isSelected ? 'bg-kai-blue border-kai-blue text-white shadow-md' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                              >
                                 <div className="flex justify-between items-start mb-1">
                                   <div className="min-w-0 pr-2">
-                                    <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>👤 {tInfo.name}</span>
-                                    {(tInfo.block || tInfo.phone) && (<span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>{tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}</span>)}
+                                    <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
+                                      👤 {tInfo.name}
+                                    </span>
+                                    {(tInfo.block || tInfo.phone) && (
+                                      <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>
+                                        {tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}
+                                      </span>
+                                    )}
                                   </div>
                                   <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0 ${tStatus === 'New' || tStatus === 'Open' || tStatus === 'Baru' ? 'bg-rose-500 text-white' : tStatus === 'In Progress' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{tStatus}</span>
                                 </div>
-                                <p className={`text-[10px] font-semibold truncate mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>{hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}</p>
+                                <p className={`text-[10px] font-semibold truncate mt-1 ${isSelected ? 'text-blue-100' : 'text-slate-600 dark:text-slate-300'}`}>
+                                  {hasPhoto ? '📷 ' : ''}{ticket.lastReply || tInfo.initialMsg || tInfo.subject}
+                                </p>
                               </button>
                             );
                           })
+                          })()
                         )}
                       </div>
                     </div>
@@ -2190,7 +2207,7 @@
         muatNotifikasi();
     }
 
-    document.getElementById('ticketForm').addEventListener('submit', async function(e) {
+        document.getElementById('ticketForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         if(!currentUserDocId) { alert("Login dahulu."); return; }
 
@@ -2201,16 +2218,35 @@
         const desc = document.getElementById('ticketDesc').value;
 
         try {
-            await db.collection('tickets').add({
-                customerId: currentUserDocId,
-                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
-                issueType: type, subject: type, status: 'Open', 
-                timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
-                messages: [{ sender: 'client', text: desc, time: new Date().getTime() }]
+            // 1. Gunakan currentUserDocId sebagai ID Ruang Obrolan (1 Klien = 1 Ruang)
+            const roomRef = db.collection('tickets').doc(currentUserDocId);
+            const roomSnap = await roomRef.get();
+
+            if (!roomSnap.exists) {
+                // Buat ruang baru jika belum pernah chat
+                await roomRef.set({
+                    customerId: currentUserDocId,
+                    customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: 'Obrolan Layanan', subject: 'Obrolan Layanan', status: 'Open', 
+                    timestamp: Date.now(), dateStr: new Date().toLocaleString('id-ID')
+                });
+            } else {
+                // Jika sudah ada, buka kembali statusnya
+                await roomRef.update({ status: 'Open', updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
+
+            // 2. Kirim pesan ke dalam subcollection 'messages'
+            await roomRef.collection('messages').add({
+                sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                text: `[${type}] ${desc}`, message: `[${type}] ${desc}`, 
+                time: Date.now(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
+            // 3. Update ringkasan obrolan terakhir
+            await roomRef.update({ lastReply: `[${type}] ${desc}` });
+
             document.getElementById('ticketForm').reset();
-            alert("Pesan/Laporan berhasil dikirim! Silakan pantau di 'Daftar Tiket & Pesan Anda' di atas.");
+            alert("Pesan berhasil dikirim! Silakan cek di 'Daftar Tiket & Pesan Anda'.");
         } catch (err) { alert("Gagal mengirim: " + err.message); } 
         finally { btn.innerHTML = `Kirim Pesan`; btn.disabled = false; }
     });
@@ -2312,7 +2348,7 @@
         }
     }
 
-    document.getElementById('formPaymentProof').addEventListener('submit', async function(e) {
+        document.getElementById('formPaymentProof').addEventListener('submit', async function(e) {
         e.preventDefault();
         if(!tempBillProofBase64) { alert("Harap lampirkan gambar bukti transfer!"); return; }
 
@@ -2322,34 +2358,43 @@
         try {
             const now = new Date();
             const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            
+            const roomRef = db.collection('tickets').doc(currentUserDocId);
+            const roomSnap = await roomRef.get();
+            if (!roomSnap.exists) {
+                await roomRef.set({
+                    customerId: currentUserDocId, customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: 'Obrolan Layanan', subject: 'Obrolan Layanan', status: 'Open', 
+                    timestamp: Date.now(), dateStr: new Date().toLocaleString('id-ID')
+                });
+            } else {
+                await roomRef.update({ status: 'Open', updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
 
-            const ticketRef = await db.collection('tickets').add({
-                customerId: currentUserDocId,
-                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
-                issueType: "Konfirmasi Pembayaran", subject: "Konfirmasi Pembayaran", status: 'Open', 
-                timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
-                messages: [
-                    { sender: 'client', text: "Berikut ini bukti transfer tagihan bulan ini.", time: new Date().getTime() },
-                    { sender: 'client', text: "Bukti Transfer Terlampir", attachmentUrl: tempBillProofBase64, time: new Date().getTime() + 100 } 
-                ]
+            await roomRef.collection('messages').add({
+                sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                text: "Berikut ini bukti transfer tagihan bulan ini.", message: "Berikut ini bukti transfer tagihan bulan ini.", 
+                time: Date.now(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            await roomRef.collection('messages').add({
+                sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                text: "Bukti Transfer Terlampir", message: "Bukti Transfer Terlampir", imageUrl: tempBillProofBase64, attachment: tempBillProofBase64,
+                time: Date.now() + 100, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await roomRef.update({ lastReply: "Mengirim Bukti Transfer", lastImage: tempBillProofBase64 });
 
-            // TULIS KE APPROVALS AGAR ADMIN BISA APPROVE
             await db.collection('approvals').add({
-                customerId: currentUserDocId,
-                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
-                type: 'payment', category: 'payment',
-                monthKey: monthKey,
-                imageUrl: tempBillProofBase64,
-                ticketId: ticketRef.id,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(), time: Date.now()
+                customerId: currentUserDocId, customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                type: 'payment', category: 'payment', monthKey: monthKey,
+                imageUrl: tempBillProofBase64, ticketId: currentUserDocId, 
+                status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp(), time: Date.now()
             });
             
             tutupPaymentProof();
             alert("Bukti pembayaran telah terkirim! Admin akan segera memproses tagihan Anda.");
             switchView('view-bantuan', document.getElementById('nav-bantuan'));
-        } catch (err) { alert("Gagal mengupload bukti pembayaran: " + err.message); } 
+        } catch (err) { alert("Gagal mengupload: " + err.message); } 
         finally { btn.innerText = "Kirim Bukti ke Admin"; btn.disabled = false; }
     });
 
@@ -2380,7 +2425,7 @@
         document.getElementById('upgradeProofPreview').classList.add('hidden');
     }
 
-    document.getElementById('formUpgrade').addEventListener('submit', async function(e) {
+        document.getElementById('formUpgrade').addEventListener('submit', async function(e) {
         e.preventDefault();
         if(!currentUserDocId) return;
         if(!tempUpgradeProofBase64) { alert("Anda harus melampirkan bukti transfer terlebih dahulu!"); return; }
@@ -2391,35 +2436,45 @@
         const paketBaru = document.getElementById('upgradeSelect').value;
 
         try {
-            const ticketRef = await db.collection('tickets').add({
-                customerId: currentUserDocId,
-                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
-                issueType: "Pengajuan Ganti Paket", subject: "Pengajuan Ganti Paket", status: 'Open', 
-                category: 'upgrade', type: 'upgrade',
-                timestamp: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'),
-                messages: [
-                    { sender: 'client', text: `Saya ingin ganti ke paket: ${paketBaru}. Ini bukti transfernya.`, time: new Date().getTime() },
-                    { sender: 'client', text: "Bukti Transfer Upgrade", attachmentUrl: tempUpgradeProofBase64, time: new Date().getTime() + 100 }
-                ]
+            const roomRef = db.collection('tickets').doc(currentUserDocId);
+            const roomSnap = await roomRef.get();
+            
+            if (!roomSnap.exists) {
+                await roomRef.set({
+                    customerId: currentUserDocId, customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                    issueType: 'Obrolan Layanan', subject: 'Obrolan Layanan', status: 'Open', 
+                    timestamp: Date.now(), dateStr: new Date().toLocaleString('id-ID')
+                });
+            } else {
+                await roomRef.update({ status: 'Open', updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+            }
+
+            await roomRef.collection('messages').add({
+                sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                text: `Saya ingin ganti ke paket: ${paketBaru}. Ini bukti transfernya.`, message: `Saya ingin ganti ke paket: ${paketBaru}.`, 
+                time: Date.now(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
+            await roomRef.collection('messages').add({
+                sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                text: "Bukti Transfer Upgrade", message: "Bukti Transfer Upgrade", imageUrl: tempUpgradeProofBase64, attachment: tempUpgradeProofBase64,
+                time: Date.now() + 100, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await roomRef.update({ lastReply: `Pengajuan Upgrade: ${paketBaru}` });
 
             await db.collection('approvals').add({
-                customerId: currentUserDocId,
-                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
-                type: 'upgrade', category: 'upgrade',
-                targetPackageId: paketBaru,
-                imageUrl: tempUpgradeProofBase64,
-                ticketId: ticketRef.id,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(), time: Date.now()
+                customerId: currentUserDocId, customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                type: 'upgrade', category: 'upgrade', targetPackageId: paketBaru,
+                imageUrl: tempUpgradeProofBase64, ticketId: currentUserDocId,
+                status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp(), time: Date.now()
             });
 
             await db.collection('customers').doc(currentUserDocId).update({
-                pendingUpgrade: { packageId: paketBaru, status: 'Menunggu Pembayaran', timestamp: new Date().getTime() }
+                pendingUpgrade: { packageId: paketBaru, status: 'Menunggu Pembayaran', timestamp: Date.now() }
             });
             
             tutupUpgrade();
-            alert("Pengajuan Upgrade berhasil dikirim! Silakan tunggu konfirmasi Admin (bisa dicek di menu Tiket).");
+            alert("Pengajuan Upgrade berhasil dikirim!");
         } catch (err) { alert("Gagal mengajukan: " + err.message); } 
         finally { btn.innerText = "Ajukan & Kirim Bukti"; btn.disabled = false; }
     });
