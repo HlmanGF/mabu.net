@@ -434,7 +434,7 @@
     </div>               
 
       <!-- KONTEN: LOGIN CLIENT -->
-      <div id="view-login" class="view-section active flex flex-col justify-center p-4 w-full max-w-xl mx-auto h-full">
+      <div id="view-login" class="view-section flex flex-col justify-center p-4 w-full max-w-xl mx-auto h-full">
           <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
               <div class="text-center mb-6">
                   <div class="w-16 h-16 bg-kai-blue rounded-full flex items-center justify-center mx-auto mb-3">
@@ -502,26 +502,12 @@
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
               <button onclick="switchView('view-profil', document.getElementById('nav-akun'))" class="mb-4 flex items-center gap-1 text-[10px] font-bold text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Kembali</button>
               <h2 class="text-xl font-black text-kai-blue mb-1">Riwayat Tagihan</h2>
-              <div id="listRiwayat" class="space-y-3 mt-4"></div>
-            <nav id="bottomNav" class="hidden w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] shrink-0">
-          <button id="nav-home" class="nav-item flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="text-[9px] font-black tracking-wide">Beranda</span></button>
-          
-          <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span class="text-[9px] font-black tracking-wide">Bayar</span></button>
-          
-          <!-- MENU CHAT BARU -->
-          <button id="nav-chat" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuChat(this)">
-              <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-              <span class="text-[9px] font-black tracking-wide">Chat</span>
-          </button>
-          
-          <button id="nav-bantuan" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-bantuan', this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="text-[9px] font-black tracking-wide">Bantuan</span></button>
-          
-          <button id="nav-akun" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuAkun(this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="text-[9px] font-black tracking-wide">Akun</span></button>
+                            <div id="listRiwayat" class="space-y-3 mt-4"></div>
           </div>
       </div>
-  </div>
-<!-- MENU NAVIGASI BAWAH CLIENT -->
-<nav id="bottomNav" class="hidden w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] shrink-0">
+
+      <!-- MENU NAVIGASI BAWAH CLIENT (HANYA SATU) -->
+      <nav id="bottomNav" class="hidden w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] shrink-0">
           <button id="nav-home" class="nav-item flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="text-[9px] font-black tracking-wide">Beranda</span></button>
           
           <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span class="text-[9px] font-black tracking-wide">Bayar</span></button>
@@ -536,6 +522,8 @@
           
           <button id="nav-akun" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuAkun(this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="text-[9px] font-black tracking-wide">Akun</span></button>
       </nav>
+  </div> <!-- PENUTUP client-ui -->
+
   <!-- ========================================== -->
   <!-- 3. SCRIPT ADMIN (REACT JS)                 -->
   <!-- ========================================== -->
@@ -2028,7 +2016,7 @@
   <!-- ========================================== -->
   <script>
     // --- LOGIKA ROUTING ---
-        function checkRoute() {
+            function checkRoute() {
         const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
         const clientUI = document.getElementById('client-ui');
         const adminUI = document.getElementById('root');
