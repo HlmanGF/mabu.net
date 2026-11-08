@@ -31,7 +31,6 @@
     }
   </script>
   
-  <!-- HANYA BABEL SAJA (KEMBALI KE VERSI STABIL BAPAK) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
@@ -78,7 +77,7 @@
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X, RefreshCw
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -372,7 +371,6 @@
             if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
             else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
           });
-          
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => {
              if (docSnap.exists()) {
                  const data = docSnap.data();
@@ -395,47 +393,10 @@
           const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (docSnap) => {
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
-
-          // --- LOGIKA PENGELOMPOKAN 1 KLIEN 1 TIKET ---
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             
-             const uniqueMap = new Map();
-             allDocs.forEach(t => {
-                const tInfo = getTicketInfo(t);
-                const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
-                
-                if (!uniqueMap.has(uniqueKey)) {
-                   uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
-                } else {
-                   const existing = uniqueMap.get(uniqueKey);
-                   const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
-                   const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-                   if (currentTime > existingTime) {
-                      uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
-                   }
-                }
-             });
-
-             const mergedList = Array.from(uniqueMap.values());
-             mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
-             
-             // --- NOTIFIKASI SUARA ---
-             let latestTime = 0;
-             mergedList.forEach(t => {
-                 const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-                 if (tTime > latestTime) latestTime = tTime;
-             });
-             
-             if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-                 notificationAudioRef.current.play().catch(e => console.log('Audio autoplay blocked by browser.'));
-             }
-             lastTicketUpdateRef.current = latestTime;
-
-             setTickets(mergedList);
-             setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
+             setTickets(allDocs);
           });
-
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
              const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
@@ -448,8 +409,9 @@
               unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, [customers]);
+      }, []);
 
+      // LISTENER CHAT UNTUK TIKET AKTIF
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
@@ -486,13 +448,21 @@
 
       const handleStartNewChatWithCustomer = async (cust) => {
         if (!cust || !db) return;
-        const existing = tickets.find(t => 
+        
+        // Cari di displayTickets (yang sudah dirender)
+        const displayList = Array.from(new Map(tickets.map(t => {
+            const tInfo = getTicketInfo(t);
+            return [safeString(t.customerId || tInfo.name || t.id), t];
+        })).values());
+        
+        const existing = displayList.find(t => 
           t.status !== 'Closed' && (
             t.customerId === cust.id || 
             (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
             (t.customerName && safeString(t.customerName) === safeString(cust.name))
           )
         );
+
         if (existing) {
           setActiveTicket(existing);
           setIsNewChatModalOpen(false);
@@ -579,29 +549,19 @@
 
               const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
               if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
-                  await addDoc(collection(db, 'mikrotik_commands'), {
-                      action: 'UPGRADE_PACKAGE',
-                      pppoeUser: custDoc.pppoe_user,
-                      packageId: targetPkg
-                  });
+                  await addDoc(collection(db, 'mikrotik_commands'), { action: 'UPGRADE_PACKAGE', pppoeUser: custDoc.pppoe_user, packageId: targetPkg });
                   await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: deleteField() });
               } else {
                   const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
                   await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
               }
-              await updateDoc(doc(db, 'approvals', approvalData.id), {
-                  status: 'approved',
-                  approvedBy: currentUser.name,
-                  approvedAt: serverTimestamp()
-              });
+              await updateDoc(doc(db, 'approvals', approvalData.id), { status: 'approved', approvedBy: currentUser.name, approvedAt: serverTimestamp() });
               alert("Proses Approve Berhasil!");
           } catch (err) { alert("Gagal memproses approval: " + err.message); }
       };
 
       const handleRejectApprove = async (approvalId) => {
-          if (confirm("Tolak permohonan ini?")) {
-              await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name });
-          }
+          if (confirm("Tolak permohonan ini?")) { await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name }); }
       };
 
       const handleSaveMikrotikData = async (e) => {
@@ -679,7 +639,7 @@
 
       const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
-      // --- RENDERING VARIABELS ---
+      // VARIABLES
       const actualPaidRevenue = customers.filter(c => c.status === 'Aktif' && c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const totalPotentialRevenue = customers.filter(c => c.status === 'Aktif' && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
@@ -697,7 +657,43 @@
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
+      
+      // LOGIKA RENDER 1 BARIS TIKET
+      const uniqueMap = new Map();
+      tickets.forEach(t => {
+        const tInfo = getTicketInfo(t);
+        const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
+        if (!uniqueMap.has(uniqueKey)) {
+            uniqueMap.set(uniqueKey, t);
+        } else {
+            const existing = uniqueMap.get(uniqueKey);
+            const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
+            const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+            if (currentTime > existingTime) uniqueMap.set(uniqueKey, t);
+        }
+      });
+      const displayTickets = Array.from(uniqueMap.values());
+      displayTickets.sort((a, b) => (b.updatedAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.time || 0));
+
+      const unreadTicketsCount = displayTickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
+
+      // TRIGGER AUDIO SAAT RENDER
+      useEffect(() => {
+         let latestTime = 0;
+         displayTickets.forEach(t => {
+             const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+             if (tTime > latestTime) latestTime = tTime;
+         });
+         if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
+             notificationAudioRef.current.play().catch(e => console.log('Audio dicegah'));
+         }
+         lastTicketUpdateRef.current = latestTime;
+      }, [displayTickets]);
+
+      let activeInfo = null;
+      if (activeTicket) {
+         activeInfo = getTicketInfo(activeTicket);
+      }
 
       const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
         <button 
@@ -916,11 +912,6 @@
                                     <p className="font-black text-[13px] md:text-sm text-kai-blue dark:text-white">{formatIDR(pkg.price)}</p>
                                   </div>
                                   <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar Manual</button>
-                                  <button onClick={() => {
-                                        const targetPhone = cleanPhone(settingsData.waGatewayPhone || '0811122699');
-                                        const text = `*TAGIHAN MABUNET*\nYth. Bapak/Ibu: *${cust.name}* (Blok ${cust.block})\nBulan: *${MONTHS[selectedMonth]} ${selectedYear}*\nTagihan: *${formatIDR(pkg.price)}*\nJatuh Tempo: *Tgl ${cust.dueDate}*\n\nMohon bayar tagihan internet Anda. Abaikan pesan ini jika sudah lunas.\n\nInfo & CS: wa.me/${targetPhone}`;
-                                        window.open(`https://wa.me/${cleanPhone(cust.phone)}?text=${encodeURIComponent(text)}`, '_blank');
-                                  }} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA Tagihan</button>
                                 </div>
                               </div>
                             )
@@ -1060,10 +1051,10 @@
                         </button>
                       </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-                        {tickets.length === 0 ? (
+                        {displayTickets.length === 0 ? (
                           <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan.</div>
                         ) : (
-                          tickets.map(ticket => {
+                          displayTickets.map(ticket => {
                             const tInfo = getTicketInfo(ticket);
                             const isSelected = activeTicket?.id === ticket.id;
                             const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
@@ -1094,9 +1085,7 @@
                     </div>
 
                     {/* RUANG OBROLAN SEBELAH KANAN */}
-                    {activeTicket ? (() => {
-                      const activeInfo = getTicketInfo(activeTicket);
-                      return (
+                    {activeTicket && activeInfo ? (
                         <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
@@ -1163,8 +1152,7 @@
                             <button type="submit" disabled={!newChatInput.trim() && !chatImagePreview} className="p-3 bg-kai-orange text-white rounded-xl disabled:opacity-50 shadow-sm hover:bg-kai-orangedark transition-colors"><Send className="w-4 h-4"/></button>
                           </form>
                         </div>
-                      );
-                    })() : (
+                    ) : (
                       <div className="hidden md:flex flex-1 items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl">
                         <div className="text-center text-slate-400"><MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Pilih klien di samping untuk mulai mengobrol.</p></div>
                       </div>
@@ -1714,7 +1702,7 @@
           {/* Lightbox Zoom Foto */}
           {previewLightbox && (
             <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
-              <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full"><X className="w-6 h-6"/></button>
+              <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full hover:bg-white/30"><X className="w-6 h-6"/></button>
               <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
             </div>
           )}
