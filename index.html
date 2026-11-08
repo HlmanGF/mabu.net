@@ -644,6 +644,7 @@
       const [previewLightbox, setPreviewLightbox] = useState(null);
       const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
       const [chatCustomerSearch, setChatCustomerSearch] = useState('');
+      const [chatSearchTerm, setChatSearchTerm] = useState('');
       const chatScrollRef = useRef(null);
       const chatCameraInputRef = useRef(null);
       const chatGalleryInputRef = useRef(null);
@@ -1537,12 +1538,34 @@
                         <div><h3 className="font-black text-lg text-kai-blue dark:text-white">Chat & Layanan</h3><p className="text-[10px] text-slate-500">Obrolan, Kirim Foto & Tiket Klien</p></div>
                         <button onClick={() => setIsNewChatModalOpen(true)} className="px-3 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl text-[10px] font-bold flex items-center gap-1 shadow-sm"><Plus className="w-3.5 h-3.5"/> Chat Baru</button>
                       </div>
+                                         <div className="p-2 border-b border-slate-200 dark:border-slate-700">
+                       <div className="relative">
+                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                               <Search className="w-4 h-4" />
+                           </div>
+                           <input 
+                               type="text" 
+                               placeholder="Cari nama atau blok pelanggan..." 
+                               value={chatSearchTerm} 
+                               onChange={e => setChatSearchTerm(e.target.value)} 
+                               className="w-full bg-slate-100 dark:bg-slate-900 border-none rounded-xl pl-9 pr-3 py-2.5 text-xs font-bold outline-none text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-kai-blue" 
+                           />
+                       </div>
+                   </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
                                                 {tickets.length === 0 ? (
                           <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan masuk.</div>
                         ) : (
                           (() => {
-                            const uniqueTickets = tickets.filter((v, i, a) => a.findIndex(t => (t.customerId || t.id) === (v.customerId || v.id)) === i);
+                         const uniqueTickets = tickets.filter((v, i, a) => a.findIndex(t => (t.customerId || t.id) === (v.customerId || v.id)) === i);
+                         const filteredUniqueTickets = uniqueTickets.filter(ticket => {
+                             const tInfo = getTicketInfo(ticket);
+                             const searchLower = chatSearchTerm.toLowerCase();
+                             return (tInfo.name || '').toLowerCase().includes(searchLower) || 
+                                    (tInfo.block || '').toLowerCase().includes(searchLower) || 
+                                    (tInfo.phone || '').toLowerCase().includes(searchLower);
+                         });
+                         return filteredUniqueTickets.map(ticket => {
                             return uniqueTickets.map(ticket => {
                             const tInfo = getTicketInfo(ticket);
                             const tStatus = ticket.status || 'New';
