@@ -194,7 +194,7 @@
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
 
-      const [rawTickets, setRawTickets] = useState([]);
+      const [tickets, setTickets] = useState([]);
       const [activeTicket, setActiveTicket] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
       const [newChatInput, setNewChatInput] = useState('');
@@ -240,8 +240,7 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      // PENGAMAN STRING
-      const safeString = (val) => val ? String(val).toLowerCase().trim() : '';
+      const safeString = (val) => (val && typeof val === 'string') ? val.toLowerCase().trim() : '';
 
       const findMatchedCustomer = (item) => {
         if (!item || !Array.isArray(customers)) return null;
@@ -261,7 +260,7 @@
         const matched = findMatchedCustomer(ticket);
         
         let name = ticket.customerName || ticket.name || ticket.nama || matched?.name || ticket.phone || 'Pelanggan';
-        name = safeString(name) ? name : 'Pelanggan';
+        if (typeof name !== 'string') name = 'Pelanggan';
 
         const block = ticket.block || ticket.blok || matched?.block || '';
         const phone = ticket.phone || ticket.userPhone || matched?.phone || '';
@@ -322,6 +321,14 @@
         return () => window.removeEventListener('popstate', handleBackButton);
       }, [activeTab, activeTicket, previewLightbox, isCustomerModalOpen, isExpenseModalOpen, isTargetAdminModalOpen, isEditingProfile, showAdminManagement, cropState.isOpen, isMikrotikModalOpen, isNewChatModalOpen]);
 
+      useEffect(() => {
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }, [currentUser]);
+
       const writeLog = async (actionDesc) => {
         if(!db || !currentUser) return;
         try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
@@ -364,6 +371,7 @@
             if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
             else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
           });
+          
           const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => {
              if (docSnap.exists()) {
                  const data = docSnap.data();
@@ -387,10 +395,44 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // LISTENER TIKET RAW (Mencegah Stale Closure / Crash)
+          // PENGELOMPOKAN 1 THREAD
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             setRawTickets(allDocs);
+             
+             const uniqueMap = new Map();
+             allDocs.forEach(t => {
+                const tInfo = getTicketInfo(t);
+                const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
+                
+                if (!uniqueMap.has(uniqueKey)) {
+                   uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
+                } else {
+                   const existing = uniqueMap.get(uniqueKey);
+                   const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
+                   const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+                   if (currentTime > existingTime) {
+                      uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
+                   }
+                }
+             });
+
+             const mergedList = Array.from(uniqueMap.values());
+             mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
+             
+             // BUNYIKAN NOTIFIKASI
+             let latestTime = 0;
+             mergedList.forEach(t => {
+                 const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+                 if (tTime > latestTime) latestTime = tTime;
+             });
+             
+             if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
+                 notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
+             }
+             lastTicketUpdateRef.current = latestTime;
+
+             setTickets(mergedList);
+             setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
           });
 
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
@@ -405,50 +447,7 @@
               unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, []);
-
-      // PROSES 1 KLIEN 1 TIKET DAN NADA DERING OTOMATIS
-      useEffect(() => {
-          if (rawTickets.length === 0) {
-              setTickets([]);
-              return;
-          }
-          
-          const uniqueMap = new Map();
-          rawTickets.forEach(t => {
-             const tInfo = getTicketInfo(t);
-             const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
-             
-             if (!uniqueMap.has(uniqueKey)) {
-                uniqueMap.set(uniqueKey, t);
-             } else {
-                const existing = uniqueMap.get(uniqueKey);
-                const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
-                const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-                if (currentTime > existingTime) {
-                   uniqueMap.set(uniqueKey, t);
-                }
-             }
-          });
-
-          const mergedList = Array.from(uniqueMap.values());
-          mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
-          
-          // NOTIFIKASI SUARA PESAN MASUK
-          let latestTime = 0;
-          mergedList.forEach(t => {
-              const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-              if (tTime > latestTime) latestTime = tTime;
-          });
-          
-          if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-              notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
-          }
-          lastTicketUpdateRef.current = latestTime;
-
-          setTickets(mergedList);
-          setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
-      }, [rawTickets, customers]); // Sengaja re-run jika ada data klien yang berubah (foto profil dll)
+      }, [customers]);
 
       // LISTENER CHAT UNTUK TIKET AKTIF
       useEffect(() => {
@@ -555,11 +554,12 @@
                   timestamp: serverTimestamp()
               });
               await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: 'In Progress',
+                  status: activeTicket.status === 'Closed' ? 'In Progress' : 'In Progress',
                   lastReply: textVal,
                   lastImage: imgVal || null,
                   updatedAt: serverTimestamp(),
-                  messages: arrayUnion(msgObj)
+                  messages: arrayUnion(msgObj),
+                  chats: arrayUnion(msgObj)
               });
           } catch (err) { alert("Gagal kirim pesan: " + err.message); }
       };
@@ -689,12 +689,6 @@
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
       const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
-
-      // Extract Active Info once
-      let activeInfo = null;
-      if (activeTicket) {
-         activeInfo = getTicketInfo(activeTicket);
-      }
 
       const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
         <button 
@@ -1092,7 +1086,9 @@
                     </div>
 
                     {/* RUANG OBROLAN SEBELAH KANAN */}
-                    {activeTicket && activeInfo ? (
+                    {activeTicket ? (() => {
+                      const activeInfo = getTicketInfo(activeTicket);
+                      return (
                         <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
