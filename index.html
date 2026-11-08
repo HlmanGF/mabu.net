@@ -18,11 +18,11 @@
         extend: {
           colors: {
             kai: {
-              blue: '#1A2C5B',
-              bluedark: '#111D42',
-              orange: '#F97316',
+              blue: '#1A2C5B',      // Biru Navy KAI
+              bluedark: '#111D42',  // Biru Navy Gelap
+              orange: '#F97316',    // Orange Aksen KAI
               orangedark: '#EA580C',
-              bg: '#F3F4F6'
+              bg: '#F3F4F6'         // Abu-abu terang background
             }
           },
           fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
@@ -77,7 +77,7 @@
       Bell, Plus, Edit3, Trash2, FileText, Volume2, VolumeX, Server,
       Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Crop, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
@@ -132,6 +132,7 @@
     function formatIDR(val) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0); }
     const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
 
+    // FUNGSI KOMPRESI GAMBAR OTOMATIS 
     const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -151,6 +152,7 @@
       });
     };
 
+    // PENDETEKSI GAMBAR UNIVERSAL 
     const extractImageFromObj = (obj) => {
       if (!obj || typeof obj !== 'object') return null;
       const direct = obj.attachmentUrl || obj.imageUrl || obj.image || obj.photo || obj.img || obj.foto || obj.gambar || obj.bukti || obj.proofImage || obj.attachment || obj.file;
@@ -162,7 +164,10 @@
       return null;
     };
 
+    const safeString = (val) => (val && typeof val === 'string') ? val.toLowerCase().trim() : '';
+
     function App() {
+      // --- STATE UTAMA (Milik Index V5) ---
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
       const [loginForm, setLoginForm] = useState({ password: '' });
@@ -194,6 +199,7 @@
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
 
+      // --- STATE KHUSUS CHAT & LAYANAN ---
       const [tickets, setTickets] = useState([]);
       const [activeTicket, setActiveTicket] = useState(null);
       const [chatMessages, setChatMessages] = useState([]);
@@ -219,6 +225,7 @@
       const [alarmEnabled, setAlarmEnabled] = useState(false);
       const [isBroadcasting, setIsBroadcasting] = useState(false); 
       
+      // AUDIO NOTIFIKASI
       const notificationAudioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
       const lastTicketUpdateRef = useRef(0);
 
@@ -240,8 +247,7 @@
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
 
-      const safeString = (val) => (val && typeof val === 'string') ? val.toLowerCase().trim() : '';
-
+      // --- FUNGSI MENCARI PELANGGAN (AMAN) ---
       const findMatchedCustomer = (item) => {
         if (!item || !Array.isArray(customers)) return null;
         return customers.find(c => {
@@ -260,7 +266,7 @@
         const matched = findMatchedCustomer(ticket);
         
         let name = ticket.customerName || ticket.name || ticket.nama || matched?.name || ticket.phone || 'Pelanggan';
-        if (typeof name !== 'string') name = 'Pelanggan';
+        name = safeString(name) ? name : 'Pelanggan';
 
         const block = ticket.block || ticket.blok || matched?.block || '';
         const phone = ticket.phone || ticket.userPhone || matched?.phone || '';
@@ -285,7 +291,7 @@
         if (!approval) return { name: 'Pelanggan', block: '', matched: null };
         const matched = findMatchedCustomer(approval);
         let name = approval.customerName || approval.name || matched?.name || 'Pelanggan';
-        if (typeof name !== 'string') name = 'Pelanggan';
+        name = safeString(name) ? name : 'Pelanggan';
         const block = approval.block || approval.blok || matched?.block || '';
         return { name, block, matched };
       };
@@ -334,6 +340,7 @@
         try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
       };
 
+      // --- FETCH DATA FIREBASE ---
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
@@ -395,44 +402,9 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // PENGELOMPOKAN 1 THREAD
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             
-             const uniqueMap = new Map();
-             allDocs.forEach(t => {
-                const tInfo = getTicketInfo(t);
-                const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
-                
-                if (!uniqueMap.has(uniqueKey)) {
-                   uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
-                } else {
-                   const existing = uniqueMap.get(uniqueKey);
-                   const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
-                   const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-                   if (currentTime > existingTime) {
-                      uniqueMap.set(uniqueKey, { ...t, unifiedName: tInfo.name });
-                   }
-                }
-             });
-
-             const mergedList = Array.from(uniqueMap.values());
-             mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
-             
-             // BUNYIKAN NOTIFIKASI
-             let latestTime = 0;
-             mergedList.forEach(t => {
-                 const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
-                 if (tTime > latestTime) latestTime = tTime;
-             });
-             
-             if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-                 notificationAudioRef.current.play().catch(e => console.log('Audio dicegah browser'));
-             }
-             lastTicketUpdateRef.current = latestTime;
-
-             setTickets(mergedList);
-             setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
+             setTickets(allDocs);
           });
 
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
@@ -447,9 +419,42 @@
               unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, [customers]);
+      }, []);
 
-      // LISTENER CHAT UNTUK TIKET AKTIF
+      // --- DERIVED STATE: LOGIKA 1 KLIEN 1 THREAD CHAT ---
+      const displayTicketsMap = new Map();
+      tickets.forEach(t => {
+          const tInfo = getTicketInfo(t);
+          const uniqueKey = safeString(t.customerId || tInfo.name || t.id);
+          
+          if (!displayTicketsMap.has(uniqueKey)) {
+              displayTicketsMap.set(uniqueKey, t);
+          } else {
+              const existing = displayTicketsMap.get(uniqueKey);
+              const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
+              const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+              if (currentTime > existingTime) {
+                  displayTicketsMap.set(uniqueKey, t);
+              }
+          }
+      });
+      const displayTickets = Array.from(displayTicketsMap.values());
+      displayTickets.sort((a, b) => (b.updatedAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.time || 0));
+
+      // --- NADA DERING NOTIFIKASI PESAN MASUK ---
+      useEffect(() => {
+          let latestTime = 0;
+          displayTickets.forEach(t => {
+              const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
+              if (tTime > latestTime) latestTime = tTime;
+          });
+          if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
+              notificationAudioRef.current.play().catch(e => console.log('Autoplay ditolak oleh browser.'));
+          }
+          lastTicketUpdateRef.current = latestTime;
+      }, [displayTickets]);
+
+      // --- LISTENER PESAN DALAM RUANG OBROLAN AKTIF ---
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
@@ -462,7 +467,7 @@
               const combined = [...arrayMsgs, ...subMsgs];
               const uniqueMsgs = combined.filter((v, i, a) => a.findIndex(t => 
                 (t.id && v.id && t.id === v.id) || 
-                (t.time && v.time && Math.abs(t.time - v.time) < 2000 && (t.text || t.message) === (v.text || v.message))
+                (t.time && v.time && Math.abs(t.time - v.time) < 2000 && (t.text || t.message) === (v.text || v.message) && extractImageFromObj(t) === extractImageFromObj(v))
               ) === i);
               
               uniqueMsgs.sort((a, b) => (a.timestamp?.seconds * 1000 || a.time || 0) - (b.timestamp?.seconds * 1000 || b.time || 0));
@@ -472,7 +477,7 @@
               }, 120);
           });
           return () => unsubChats();
-      }, [activeTicket]);
+      }, [activeTicket?.id]);
 
       const handleSelectChatImage = async (e) => {
         const file = e.target.files[0];
@@ -486,7 +491,7 @@
 
       const handleStartNewChatWithCustomer = async (cust) => {
         if (!cust || !db) return;
-        const existing = tickets.find(t => 
+        const existing = displayTickets.find(t => 
           t.status !== 'Closed' && (
             t.customerId === cust.id || 
             (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
@@ -500,18 +505,10 @@
         }
         try {
           const newDoc = await addDoc(collection(db, 'tickets'), {
-            customerId: cust.id,
-            customerName: cust.name,
-            name: cust.name,
-            block: cust.block,
-            phone: cust.phone || '',
-            pppoe_user: cust.pppoe_user || '',
-            issueType: 'Obrolan Layanan MABUNET',
-            subject: 'Obrolan Layanan MABUNET',
-            status: 'In Progress',
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            time: Date.now(),
+            customerId: cust.id, customerName: cust.name, name: cust.name,
+            block: cust.block, phone: cust.phone || '', pppoe_user: cust.pppoe_user || '',
+            issueType: 'Obrolan Layanan MABUNET', subject: 'Obrolan Layanan MABUNET',
+            status: 'In Progress', createdAt: serverTimestamp(), updatedAt: serverTimestamp(), time: Date.now(),
             messages: []
           });
           setActiveTicket({
@@ -530,36 +527,19 @@
 
           const msgObj = {
               id: 'msg_' + Date.now(),
-              sender: currentUser.name,
-              senderName: currentUser.name,
-              senderType: 'admin',
-              role: 'admin',
-              isAdmin: true,
-              text: textVal,
-              message: textVal,
-              pesan: textVal,
-              attachmentUrl: imgVal,
-              imageUrl: imgVal,
-              image: imgVal,
-              photo: imgVal,
-              time: Date.now(),
-              dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+              sender: currentUser.name, senderName: currentUser.name, senderType: 'admin', role: 'admin', isAdmin: true,
+              text: textVal, message: textVal, pesan: textVal,
+              attachmentUrl: imgVal, imageUrl: imgVal, image: imgVal, photo: imgVal,
+              time: Date.now(), dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           };
           try {
               setNewChatInput('');
               setChatImagePreview(null);
 
-              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
-                  ...msgObj,
-                  timestamp: serverTimestamp()
-              });
+              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), { ...msgObj, timestamp: serverTimestamp() });
               await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: activeTicket.status === 'Closed' ? 'In Progress' : 'In Progress',
-                  lastReply: textVal,
-                  lastImage: imgVal || null,
-                  updatedAt: serverTimestamp(),
-                  messages: arrayUnion(msgObj),
-                  chats: arrayUnion(msgObj)
+                  status: 'In Progress', lastReply: textVal, lastImage: imgVal || null,
+                  updatedAt: serverTimestamp(), messages: arrayUnion(msgObj)
               });
           } catch (err) { alert("Gagal kirim pesan: " + err.message); }
       };
@@ -688,7 +668,12 @@
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
+      const unreadTicketsCount = displayTickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
+
+      let activeInfo = null;
+      if (activeTicket) {
+         activeInfo = getTicketInfo(activeTicket);
+      }
 
       const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
         <button 
@@ -1052,10 +1037,10 @@
                         </button>
                       </div>
                       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
-                        {tickets.length === 0 ? (
+                        {displayTickets.length === 0 ? (
                           <div className="text-center text-slate-400 text-xs font-bold py-10">Belum ada obrolan.</div>
                         ) : (
-                          tickets.map(ticket => {
+                          displayTickets.map(ticket => {
                             const tInfo = getTicketInfo(ticket);
                             const isSelected = activeTicket?.id === ticket.id;
                             const hasPhoto = !!tInfo.initialImg || !!ticket.lastImage;
@@ -1086,9 +1071,7 @@
                     </div>
 
                     {/* RUANG OBROLAN SEBELAH KANAN */}
-                    {activeTicket ? (() => {
-                      const activeInfo = getTicketInfo(activeTicket);
-                      return (
+                    {activeTicket && activeInfo ? (
                         <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
@@ -1522,7 +1505,7 @@
                           <div><label className="block text-[9px] font-bold text-slate-500 mb-1">EMAIL PEMULIHAN</label><input type="email" required value={editProfile.email} onChange={e => setEditProfile({...editProfile, email: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl px-3 py-2.5 text-xs font-bold outline-none border border-slate-200 dark:border-slate-700 focus:border-kai-blue" /></div>
 
                           <div className="pt-2 border-t border-slate-100 dark:border-slate-700 mt-4">
-                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik</label>
+                            <label className="block text-[9px] font-bold text-slate-500 mb-2 uppercase">Keamanan Biometrik (WebAuthn)</label>
                             {!editProfile.credentialId ? (
                               <button type="button" onClick={registerFingerprint} className="w-full flex items-center justify-center gap-2 py-2.5 bg-slate-50 text-slate-600 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors">
                                 <Fingerprint className="w-4 h-4 text-kai-blue" /> Daftarkan Sidik Jari
@@ -1658,13 +1641,10 @@
       );
     }
     
+    // RENDER UTAMA
     const rootElement = document.getElementById('root');
     const root = createRoot(rootElement);
-    root.render(
-        <ErrorBoundary>
-            <App />
-        </ErrorBoundary>
-    );
+    root.render(<App />);
   </script>
 </body>
 </html>
