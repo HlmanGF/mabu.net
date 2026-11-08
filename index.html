@@ -79,22 +79,44 @@
   <!-- ========================================== -->
   <div id="client-ui" class="hidden bg-kai-bg text-slate-800 pb-24 min-h-screen">
       
-      <!-- MODAL RUANG CHAT TIKET -->
+            <!-- MODAL RUANG CHAT TIKET (SAMA PERSIS DENGAN ADMIN) -->
       <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
           <div class="bg-kai-blue p-4 flex items-center gap-3 shadow-md">
               <button onclick="tutupChat()" class="text-white hover:text-kai-orange p-1">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
               </button>
               <div class="flex-1">
-                  <h3 class="font-black text-white text-sm" id="chatTicketType">Laporan Kendala</h3>
-                  <p class="text-[9px] text-slate-300" id="chatTicketStatus">Status: Menunggu Balasan</p>
+                  <h3 class="font-black text-white text-sm" id="chatTicketType">Obrolan Layanan</h3>
+                  <p class="text-[9px] text-slate-300" id="chatTicketStatus">Status: Open</p>
               </div>
           </div>
-          <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50"></div>
-          <form id="chatForm" class="p-3 bg-white border-t border-slate-200 flex gap-2">
-              <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik balasan..." required class="flex-1 bg-slate-100 border border-slate-200 rounded-full px-4 py-2 text-sm font-semibold outline-none focus:border-kai-blue">
-              <button type="submit" class="w-10 h-10 bg-kai-orange text-white rounded-full flex items-center justify-center shadow-md hover:bg-kai-orangedark transition-colors">
-                  <svg class="w-5 h-5 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          <div id="chatMessages" class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3"></div>
+          
+          <!-- Preview Gambar Sebelum Dikirim -->
+          <div id="clientChatImagePreviewContainer" class="px-4 py-2 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between hidden">
+              <div class="flex items-center gap-3">
+                  <img id="clientChatImagePreview" src="" class="w-12 h-12 rounded-lg object-cover border border-kai-blue" />
+                  <span class="text-xs font-bold text-kai-blue dark:text-white">Foto siap dikirim</span>
+              </div>
+              <button type="button" onclick="hapusPreviewGambarChat()" class="p-1.5 bg-rose-100 text-rose-600 rounded-full hover:bg-rose-200">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+          </div>
+
+          <form id="chatForm" class="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2">
+              <input id="clientChatCamera" type="file" accept="image/*" capture="environment" onchange="handleClientChatImage(event)" class="hidden" />
+              <input id="clientChatGallery" type="file" accept="image/*" onchange="handleClientChatImage(event)" class="hidden" />
+              
+              <button type="button" onclick="document.getElementById('clientChatCamera').click()" title="Ambil Foto" class="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              </button>
+              <button type="button" onclick="document.getElementById('clientChatGallery').click()" title="Pilih Galeri" class="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              </button>
+
+              <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik pesan..." required class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-kai-blue">
+              <button type="submit" class="p-3 bg-kai-orange text-white rounded-xl hover:bg-kai-orangedark transition-colors shadow-sm shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
               </button>
           </form>
       </div>
@@ -2251,9 +2273,12 @@
         finally { btn.innerHTML = `Kirim Pesan`; btn.disabled = false; }
     });
 
+        // Variabel penampung gambar chat sementara
+    let clientChatImageData = null;
+
     function bukaChat(ticketId, type, status) {
         currentChatTicketId = ticketId;
-        document.getElementById('chatTicketType').innerText = type;
+        document.getElementById('chatTicketType').innerText = type || 'Obrolan Layanan';
         document.getElementById('chatTicketStatus').innerText = `Status: ${status}`;
         document.getElementById('chatModal').classList.remove('hidden');
         document.getElementById('chatModal').classList.add('flex');
@@ -2266,19 +2291,29 @@
                 let html = '';
                 
                 if (messages.length === 0) {
-                    html = '<p class="text-center text-[10px] text-slate-400 py-4">Belum ada percakapan.</p>';
+                    html = '<div class="text-center text-slate-400 text-xs py-10">Mulai obrolan...</div>';
                 } else {
                     messages.forEach(msg => {
+                        const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender !== 'client';
+                        const isClient = !isAdmin;
+                        
                         const dateObj = msg.time ? new Date(msg.time) : new Date();
                         const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
                         
-                        if(msg.sender === 'client') {
-                            html += `<div class="chat-bubble-client max-w-[80%] px-4 py-2 shadow-sm text-sm break-words"><p>${msg.text || ''}</p><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
-                            if(msg.attachmentUrl) {
-                                html += `<div class="chat-bubble-client max-w-[80%] px-2 py-2 shadow-sm"><img src="${msg.attachmentUrl}" class="w-full rounded-lg" onclick="window.open('${msg.attachmentUrl}', '_blank')"><p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div>`;
-                            }
+                        const senderLabel = isAdmin ? 'Admin MABUNET' : (globalName || 'Anda');
+                        const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
+                        const textMsg = msg.text || msg.message || '';
+
+                        if(isClient) {
+                            html += `<div class="flex justify-end"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-kai-blue text-white rounded-tr-none"><p class="text-[10px] font-extrabold mb-1 text-blue-200">${senderLabel}</p>`;
+                            if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                            if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open('${imgAttachment}', '_blank')">`;
+                            html += `<p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div></div>`;
                         } else {
-                            html += `<div class="chat-bubble-admin max-w-[80%] px-4 py-2 shadow-sm text-sm break-words"><p class="text-[9px] font-black text-kai-orange mb-0.5">Admin MABUNET</p><p>${msg.text || ''}</p><p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div>`;
+                            html += `<div class="flex justify-start"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none"><p class="text-[10px] font-extrabold mb-1 text-kai-orange">${senderLabel}</p>`;
+                            if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                            if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700" onclick="window.open('${imgAttachment}', '_blank')">`;
+                            html += `<p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div></div>`;
                         }
                     });
                 }
@@ -2294,25 +2329,79 @@
         document.getElementById('chatModal').classList.remove('flex');
         if(chatListener) { chatListener(); chatListener = null; }
         currentChatTicketId = null;
+        hapusPreviewGambarChat();
+    }
+
+    function handleClientChatImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width, height = img.height;
+                const maxWidth = 900;
+                if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                clientChatImageData = canvas.toDataURL('image/jpeg', 0.75);
+                
+                document.getElementById('clientChatImagePreview').src = clientChatImageData;
+                document.getElementById('clientChatImagePreviewContainer').classList.remove('hidden');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        event.target.value = null;
+    }
+
+    function hapusPreviewGambarChat() {
+        clientChatImageData = null;
+        document.getElementById('clientChatImagePreview').src = "";
+        document.getElementById('clientChatImagePreviewContainer').classList.add('hidden');
     }
 
     document.getElementById('chatForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const input = document.getElementById('chatInput');
         const teks = input.value.trim();
-        if(!teks || !currentChatTicketId) return;
+        if(!currentChatTicketId) return;
+        if(!teks && !clientChatImageData) return;
         
-        input.value = ''; 
+        const btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
         try {
-            // GUNAKAN SUBCOLLECTION AGAR SINKRON DENGAN ADMIN
-            await db.collection('tickets').doc(currentChatTicketId).collection('messages').add({
+            const msgData = {
                 sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
-                text: teks, message: teks, time: new Date().getTime(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+                text: teks || (clientChatImageData ? '📷 Mengirim Foto' : ''), 
+                message: teks || (clientChatImageData ? '📷 Mengirim Foto' : ''),
+                time: Date.now(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (clientChatImageData) {
+                msgData.imageUrl = clientChatImageData;
+                msgData.attachment = clientChatImageData;
+            }
+
+            await db.collection('tickets').doc(currentChatTicketId).collection('messages').add(msgData);
+            
             await db.collection('tickets').doc(currentChatTicketId).update({
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'Open'
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(), 
+                status: 'Open',
+                lastReply: teks || '📷 Mengirim Foto',
+                lastImage: clientChatImageData || null
             });
-        } catch(e) { alert("Gagal mengirim pesan: " + e.message); }
+
+            input.value = '';
+            hapusPreviewGambarChat();
+        } catch(err) { 
+            alert("Gagal mengirim pesan: " + err.message); 
+        } finally {
+            btn.disabled = false;
+        }
     });
 
     function bukaPaymentProof() {
