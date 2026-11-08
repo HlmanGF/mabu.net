@@ -18,11 +18,11 @@
         extend: {
           colors: {
             kai: {
-              blue: '#1A2C5B',
-              bluedark: '#111D42',
-              orange: '#F97316',
+              blue: '#1A2C5B',      // Biru Navy KAI
+              bluedark: '#111D42',  // Biru Navy Gelap
+              orange: '#F97316',    // Orange Aksen KAI
               orangedark: '#EA580C',
-              bg: '#F3F4F6'
+              bg: '#F3F4F6'         // Abu-abu terang background
             }
           },
           fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
@@ -30,8 +30,9 @@
       } 
     }
   </script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
+  <!-- KERANGKA ASLI INDEX V5 BAPAK (SANGAT STABIL) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
@@ -41,9 +42,10 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     .dark ::-webkit-scrollbar-thumb { background: #334155; }
-    .custom-scrollbar::-webkit-scrollbar { display: none; width: 0px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 0px; display: none; }
     .custom-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     
+    /* Efek Tiket Sobek */
     .ticket-divider {
       background-image: linear-gradient(to bottom, #e2e8f0 50%, rgba(255,255,255,0) 0%);
       background-position: right;
@@ -81,7 +83,7 @@
     } from 'https://esm.sh/lucide-react@0.292.0';
     
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, deleteField } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
     const firebaseConfig = {
@@ -142,7 +144,7 @@
         return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
     }
 
-    // --- FUNGSI AMAN UNTUK GAMBAR & STRING ---
+    // --- FUNGSI AMAN UNTUK GAMBAR DAN STRING CHAT ---
     const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -173,10 +175,13 @@
       return null;
     };
 
+    const safeString = (val) => (val && typeof val === 'string') ? val.toLowerCase().trim() : '';
+
     function App() {
-      // --- STATE UTAMA (Milik Index V5) ---
+      // --- STATE UTAMA (Milik V5 Asli) ---
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
+      
       const [loginForm, setLoginForm] = useState({ password: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -184,11 +189,13 @@
       const [forgotMode, setForgotMode] = useState(false);
       const [forgotEmail, setForgotEmail] = useState('');
       const [forgotMessage, setForgotMessage] = useState({ text: '', type: '' });
+
       const [isDarkMode, setIsDarkMode] = useState(false); 
       
       const [activeTab, setActiveTab] = useState('dashboard');
       const [editProfile, setEditProfile] = useState({});
       const [isEditingProfile, setIsEditingProfile] = useState(false); 
+      
       const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
       const [targetAdmin, setTargetAdmin] = useState(null);
       const [isTargetAdminModalOpen, setIsTargetAdminModalOpen] = useState(false);
@@ -206,23 +213,6 @@
       const [auditLogs, setAuditLogs] = useState([]); 
       const [settingsData, setSettingsData] = useState({ waGatewayPhone: '62811122699' }); 
       const [isDbLoading, setIsDbLoading] = useState(true);
-
-      // --- STATE KHUSUS CHAT, TIKET & APPROVAL ---
-      const [tickets, setTickets] = useState([]);
-      const [activeTicket, setActiveTicket] = useState(null);
-      const [chatMessages, setChatMessages] = useState([]);
-      const [newChatInput, setNewChatInput] = useState('');
-      const [chatImagePreview, setChatImagePreview] = useState(null);
-      const [previewLightbox, setPreviewLightbox] = useState(null);
-      const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
-      const [chatCustomerSearch, setChatCustomerSearch] = useState('');
-      const [pendingApprovals, setPendingApprovals] = useState([]);
-      
-      const chatScrollRef = useRef(null);
-      const chatCameraInputRef = useRef(null);
-      const chatGalleryInputRef = useRef(null);
-      const notificationAudioRef = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
-      const lastTicketUpdateRef = useRef(0);
       
       const [mikrotikStatus, setMikrotikStatus] = useState(null);
       const [mikrotikTab, setMikrotikTab] = useState('secret');
@@ -243,7 +233,10 @@
       
       const [mikrotikFormType, setMikrotikFormType] = useState('secret'); 
       const [editingMikrotikData, setEditingMikrotikData] = useState(null);
-      const [mikrotikForm, setMikrotikForm] = useState({ name: '', password: '', profile: 'default', comment: '', server: 'all', macAddress: '', address: '', type: 'bypassed' });
+      const [mikrotikForm, setMikrotikForm] = useState({ 
+          name: '', password: '', profile: 'default', comment: '', server: 'all', macAddress: '', address: '', type: 'bypassed' 
+      });
+
       const [formData, setFormData] = useState({ name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: '' });
       const [expenseForm, setExpenseForm] = useState({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' });
       const [editingCustomer, setEditingCustomer] = useState(null);
@@ -253,11 +246,74 @@
       const [isDragging, setIsDragging] = useState(false);
       const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+      // --- STATE KHUSUS CHAT, TIKET, APPROVAL ---
+      const [tickets, setTickets] = useState([]);
+      const [activeTicket, setActiveTicket] = useState(null);
+      const [chatMessages, setChatMessages] = useState([]);
+      const [newChatInput, setNewChatInput] = useState('');
+      const [chatImagePreview, setChatImagePreview] = useState(null);
+      const [previewLightbox, setPreviewLightbox] = useState(null);
+      const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+      const [chatCustomerSearch, setChatCustomerSearch] = useState('');
+      const [pendingApprovals, setPendingApprovals] = useState([]);
+      
+      const chatScrollRef = useRef(null);
+      const chatCameraInputRef = useRef(null);
+      const chatGalleryInputRef = useRef(null);
+
       const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
       const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
       const currentPeriodKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
       const getPackage = (pkgId) => PACKAGES.find(p => p.id === pkgId) || { speed: 'Custom', price: 0 };
       const todayDay = new Date().getDate();
+
+      // --- FUNGSI MENCARI PELANGGAN DENGAN AMAN ---
+      const getTicketInfo = (ticket) => {
+        if (!ticket) return { name: 'Pelanggan', block: '', phone: '', photo: '', subject: 'Obrolan Pelanggan', initialMsg: '', initialImg: null };
+        
+        // Cari customer di database
+        let matched = null;
+        if (customers && customers.length > 0) {
+            matched = customers.find(c => 
+              (ticket.customerId && c.id === ticket.customerId) ||
+              (ticket.phone && c.phone && cleanPhone(c.phone) === cleanPhone(ticket.phone)) ||
+              (ticket.customerName && c.name && safeString(c.name) === safeString(ticket.customerName))
+            );
+        }
+
+        let name = ticket.customerName || ticket.name || ticket.nama || matched?.name || ticket.phone || 'Pelanggan';
+        if (typeof name !== 'string') name = 'Pelanggan';
+
+        const block = ticket.block || ticket.blok || matched?.block || '';
+        const phone = ticket.phone || ticket.userPhone || matched?.phone || '';
+        const photo = matched?.foto_profil || ticket.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1A2C5B&color=fff`;
+        const subject = ticket.issueType || ticket.subject || ticket.title || ticket.category || 'Obrolan & Layanan';
+        
+        let initialMsg = '';
+        let initialImg = extractImageFromObj(ticket);
+        
+        if (ticket.messages && Array.isArray(ticket.messages) && ticket.messages.length > 0) {
+            const firstM = ticket.messages[0];
+            initialMsg = firstM?.text || firstM?.message || '';
+            if (!initialImg) initialImg = extractImageFromObj(firstM);
+        } else {
+            const rawMsg = ticket.message || ticket.pesan || ticket.description || ticket.keluhan || '';
+            initialMsg = (typeof rawMsg === 'string' && !rawMsg.startsWith('data:image')) ? rawMsg : '';
+        }
+        return { name, block, phone, photo, subject, initialMsg, initialImg, matched };
+      };
+
+      const getApprovalInfo = (approval) => {
+        if (!approval) return { name: 'Pelanggan', block: '', matched: null };
+        let matched = null;
+        if (customers && customers.length > 0) {
+            matched = customers.find(c => c.id === approval.customerId || (approval.customerName && safeString(c.name) === safeString(approval.customerName)));
+        }
+        let name = approval.customerName || approval.name || matched?.name || 'Pelanggan';
+        if (typeof name !== 'string') name = 'Pelanggan';
+        const block = approval.block || approval.blok || matched?.block || '';
+        return { name, block, matched };
+      };
 
       useEffect(() => {
         if (isDarkMode) document.documentElement.classList.add('dark');
@@ -303,7 +359,6 @@
         try { await addDoc(collection(db, 'logs'), { time: new Date().getTime(), dateStr: new Date().toLocaleString('id-ID'), admin: currentUser.name, action: actionDesc }); } catch(e) {}
       };
 
-      // --- FETCH FIREBASE ---
       useEffect(() => {
         if (!db) { setIsDbLoading(false); return; }
         try {
@@ -365,23 +420,24 @@
              if (docSnap.exists()) setMikrotikIpBindings(docSnap.data().bindings || []);
           });
 
-          // PENGELOMPOKAN 1 NAMA 1 TIKET
+          // PENGELOMPOKAN 1 THREAD
           const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
              const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              
              const uniqueMap = new Map();
              allDocs.forEach(t => {
-                let uniqueKey = t.customerId || t.phone || t.customerName || t.name || t.id;
-                uniqueKey = String(uniqueKey).toLowerCase().trim();
+                let key = t.customerId || '';
+                if (!key && t.phone) key = cleanPhone(t.phone);
+                if (!key) key = safeString(t.customerName || t.name || t.id);
                 
-                if (!uniqueMap.has(uniqueKey)) {
-                   uniqueMap.set(uniqueKey, t);
+                if (!uniqueMap.has(key)) {
+                   uniqueMap.set(key, t);
                 } else {
-                   const existing = uniqueMap.get(uniqueKey);
+                   const existing = uniqueMap.get(key);
                    const existingTime = existing.updatedAt?.seconds || existing.createdAt?.seconds || existing.time || 0;
                    const currentTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
                    if (currentTime > existingTime) {
-                      uniqueMap.set(uniqueKey, t);
+                      uniqueMap.set(key, t);
                    }
                 }
              });
@@ -389,16 +445,18 @@
              const mergedList = Array.from(uniqueMap.values());
              mergedList.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0));
              
+             // BUNYIKAN NOTIFIKASI
              let latestTime = 0;
              mergedList.forEach(t => {
                  const tTime = t.updatedAt?.seconds || t.createdAt?.seconds || t.time || 0;
                  if (tTime > latestTime) latestTime = tTime;
              });
              
-             if (lastTicketUpdateRef.current > 0 && latestTime > lastTicketUpdateRef.current) {
-                 notificationAudioRef.current.play().catch(e => console.log('Audio blocked by browser.'));
+             if (window.lastTicketTime && latestTime > window.lastTicketTime) {
+                 const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                 audio.play().catch(e => console.log('Audio autoplay blocked'));
              }
-             lastTicketUpdateRef.current = latestTime;
+             window.lastTicketTime = latestTime;
 
              setTickets(mergedList);
              setActiveTicket(prev => prev ? (mergedList.find(t => t.id === prev.id) || prev) : null);
@@ -416,20 +474,28 @@
               unsubTickets(); unsubApprovals();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
-      }, []);
+      }, [customers]); // Pass customers so ticket mapping updates when names/photos change
 
-      // LISTENER CHAT UNTUK RUANG OBROLAN AKTIF
+      // LISTENER CHAT UNTUK RUANG AKTIF
       useEffect(() => {
           if (!activeTicket || !db) return;
           const unsubChats = onSnapshot(collection(db, 'tickets', activeTicket.id, 'messages'), (snapshot) => {
               const subMsgs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-              const arrayMsgs = Array.isArray(activeTicket.messages) ? activeTicket.messages : [];
+              const arrayMsgs = [
+                ...(Array.isArray(activeTicket.messages) ? activeTicket.messages : []),
+                ...(Array.isArray(activeTicket.chats) ? activeTicket.chats : [])
+              ];
               
               const combined = [...arrayMsgs, ...subMsgs];
-              const uniqueMsgs = combined.filter((v, i, a) => a.findIndex(t => 
-                (t.id && v.id && t.id === v.id) || 
-                (t.time && v.time && Math.abs(t.time - v.time) < 2000 && (t.text || t.message) === (v.text || v.message))
-              ) === i);
+              const uniqueMsgs = [];
+              const seen = new Set();
+              combined.forEach(m => {
+                  const key = m.id || String(m.time) + String(m.text || '');
+                  if (!seen.has(key)) {
+                      seen.add(key);
+                      uniqueMsgs.push(m);
+                  }
+              });
               
               uniqueMsgs.sort((a, b) => (a.timestamp?.seconds * 1000 || a.time || 0) - (b.timestamp?.seconds * 1000 || b.time || 0));
               setChatMessages(uniqueMsgs);
@@ -438,7 +504,7 @@
               }, 120);
           });
           return () => unsubChats();
-      }, [activeTicket]);
+      }, [activeTicket?.id]);
 
       const handleSelectChatImage = async (e) => {
         const file = e.target.files[0];
@@ -446,7 +512,7 @@
         try {
           const compressed = await compressImageFile(file, 900, 0.75);
           setChatImagePreview(compressed);
-        } catch (err) { alert("Gagal memproses gambar."); }
+        } catch (err) { alert("Gagal memproses gambar: " + err.message); }
         e.target.value = null;
       };
 
@@ -456,7 +522,7 @@
           t.status !== 'Closed' && (
             t.customerId === cust.id || 
             (t.phone && cust.phone && cleanPhone(t.phone) === cleanPhone(cust.phone)) ||
-            (t.customerName && String(t.customerName).toLowerCase() === String(cust.name).toLowerCase())
+            (t.customerName && safeString(t.customerName) === safeString(cust.name))
           )
         );
         if (existing) {
@@ -466,14 +532,26 @@
         }
         try {
           const newDoc = await addDoc(collection(db, 'tickets'), {
-            customerId: cust.id, customerName: cust.name, name: cust.name, block: cust.block,
-            phone: cust.phone || '', pppoe_user: cust.pppoe_user || '', issueType: 'Obrolan Layanan MABUNET',
-            subject: 'Obrolan Layanan MABUNET', status: 'In Progress', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
-            time: Date.now(), messages: []
+            customerId: cust.id,
+            customerName: cust.name,
+            name: cust.name,
+            block: cust.block,
+            phone: cust.phone || '',
+            pppoe_user: cust.pppoe_user || '',
+            issueType: 'Obrolan Layanan MABUNET',
+            subject: 'Obrolan Layanan MABUNET',
+            status: 'In Progress',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            time: Date.now(),
+            messages: []
           });
-          setActiveTicket({ id: newDoc.id, customerId: cust.id, customerName: cust.name, name: cust.name, block: cust.block, phone: cust.phone || '', status: 'In Progress' });
+          setActiveTicket({
+            id: newDoc.id, customerId: cust.id, customerName: cust.name, name: cust.name,
+            block: cust.block, phone: cust.phone || '', issueType: 'Obrolan Layanan MABUNET', status: 'In Progress'
+          });
           setIsNewChatModalOpen(false);
-        } catch (err) { alert("Gagal membuat obrolan."); }
+        } catch (err) { alert("Gagal membuat ruang obrolan: " + err.message); }
       };
 
       const handleSendChat = async (e) => {
@@ -483,18 +561,38 @@
           const imgVal = chatImagePreview || null;
 
           const msgObj = {
-              id: 'msg_' + Date.now(), sender: currentUser.name, senderName: currentUser.name, senderType: 'admin', role: 'admin', isAdmin: true,
-              text: textVal, message: textVal, attachmentUrl: imgVal, imageUrl: imgVal, image: imgVal, photo: imgVal,
-              time: Date.now(), dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+              id: 'msg_' + Date.now(),
+              sender: currentUser.name,
+              senderName: currentUser.name,
+              senderType: 'admin',
+              role: 'admin',
+              isAdmin: true,
+              text: textVal,
+              message: textVal,
+              pesan: textVal,
+              attachmentUrl: imgVal,
+              imageUrl: imgVal,
+              image: imgVal,
+              photo: imgVal,
+              time: Date.now(),
+              dateStr: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
           };
           try {
-              setNewChatInput(''); setChatImagePreview(null);
-              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), { ...msgObj, timestamp: serverTimestamp() });
-              await updateDoc(doc(db, 'tickets', activeTicket.id), {
-                  status: 'In Progress', lastReply: textVal, lastImage: imgVal || null,
-                  updatedAt: serverTimestamp(), messages: arrayUnion(msgObj)
+              setNewChatInput('');
+              setChatImagePreview(null);
+
+              await addDoc(collection(db, 'tickets', activeTicket.id, 'messages'), {
+                  ...msgObj,
+                  timestamp: serverTimestamp()
               });
-          } catch (err) { alert("Gagal kirim pesan."); }
+              await updateDoc(doc(db, 'tickets', activeTicket.id), {
+                  status: 'In Progress',
+                  lastReply: textVal,
+                  lastImage: imgVal || null,
+                  updatedAt: serverTimestamp(),
+                  messages: arrayUnion(msgObj)
+              });
+          } catch (err) { alert("Gagal kirim pesan: " + err.message); }
       };
 
       const closeTicket = async (ticketId) => {
@@ -505,19 +603,18 @@
       };
 
       const handleApprove = async (approvalData) => {
-          let nameApprove = approvalData.customerName || approvalData.name || 'Pelanggan';
-          if (!confirm(`Yakin menyetujui (Approve) permohonan dari ${nameApprove}?`)) return;
+          const info = getApprovalInfo(approvalData);
+          if (!confirm(`Yakin menyetujui (Approve) permohonan dari ${info.name}?`)) return;
           try {
-              const custDoc = customers.find(c => c.id === approvalData.customerId) || customers.find(c => String(c.name).toLowerCase() === String(nameApprove).toLowerCase());
-              if (!custDoc) throw new Error("Data pelanggan tidak ditemukan di database!");
+              const custDoc = info.matched || customers.find(c => c.id === approvalData.customerId);
+              if (!custDoc) throw new Error("Data pelanggan tidak ditemukan!");
 
-              const targetPkg = approvalData.targetPackageId || approvalData.packageId;
+              const targetPkg = approvalData.targetPackageId || approvalData.newPackageId || approvalData.packageId;
               if (approvalData.type === 'upgrade' || approvalData.category === 'upgrade') {
                   await addDoc(collection(db, 'mikrotik_commands'), { action: 'UPGRADE_PACKAGE', pppoeUser: custDoc.pppoe_user, packageId: targetPkg });
-                  // HAPUS PENDING UPGRADE
-                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg }); 
+                  await updateDoc(doc(db, 'customers', custDoc.id), { packageId: targetPkg, pendingUpgrade: deleteField() });
               } else {
-                  const monthKey = approvalData.monthKey || currentPeriodKey;
+                  const monthKey = approvalData.monthKey || approvalData.period || currentPeriodKey;
                   await updateDoc(doc(db, 'customers', custDoc.id), { [`payments.${monthKey}`]: true });
               }
               await updateDoc(doc(db, 'approvals', approvalData.id), { status: 'approved', approvedBy: currentUser.name, approvedAt: serverTimestamp() });
@@ -526,9 +623,7 @@
       };
 
       const handleRejectApprove = async (approvalId) => {
-          if (confirm("Tolak permohonan ini?")) {
-              await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name });
-          }
+          if (confirm("Tolak permohonan ini?")) { await updateDoc(doc(db, 'approvals', approvalId), { status: 'rejected', rejectedBy: currentUser.name }); }
       };
 
       const handleSaveMikrotikData = async (e) => {
@@ -581,15 +676,15 @@
       };
 
       const handleDeleteCustomer = async (id) => {
-        if(confirm(`Yakin hapus pelanggan ini?`)) { await deleteDoc(doc(db, 'customers', id)); }
+        if(confirm(`Yakin ingin menghapus data pelanggan ini?`)) { await deleteDoc(doc(db, 'customers', id)); }
       };
 
       const handleDeleteExpense = async (id) => {
-        if(confirm("Yakin hapus pengeluaran ini?")) { await deleteDoc(doc(db, 'expenses', id)); }
+        if(confirm("Yakin hapus catatan pengeluaran ini?")) { await deleteDoc(doc(db, 'expenses', id)); }
       };
 
       const toggleIsolirManual = async (cust) => {
-        if(confirm(`Yakin ${cust.status === 'Aktif' ? 'ISOLIR' : 'AKTIFKAN'} pelanggan ${cust.name}?`)) {
+        if(confirm(`Yakin ${cust.status === 'Aktif' ? 'ISOLIR' : 'AKTIFKAN'} internet pelanggan ${cust.name}?`)) {
           await updateDoc(doc(db, 'customers', cust.id), { status: cust.status === 'Aktif' ? 'Non-Aktif' : 'Aktif' });
         }
       };
@@ -606,7 +701,6 @@
 
       const handleLogout = () => { setCurrentUser(null); localStorage.removeItem('mabunet_session'); };
 
-      // KUMPULAN VARIABEL RENDER UI
       const actualPaidRevenue = customers.filter(c => c.status === 'Aktif' && c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const totalPotentialRevenue = customers.filter(c => c.status === 'Aktif' && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
@@ -626,23 +720,10 @@
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
       const unreadTicketsCount = tickets.filter(t => !t.status || t.status === 'New' || t.status === 'Open' || t.status === 'Baru').length;
 
-      // Extract Active Info once
+      // Extract Active Info (Aman)
       let activeInfo = null;
       if (activeTicket) {
-         let aName = activeTicket.customerName || activeTicket.name || activeTicket.phone || 'Pelanggan';
-         let aBlock = activeTicket.block || activeTicket.blok || '';
-         let aPhoto = activeTicket.photo || activeTicket.foto_profil || `https://ui-avatars.com/api/?name=${encodeURIComponent(aName)}&background=1A2C5B&color=fff`;
-         let aSubject = activeTicket.issueType || activeTicket.subject || 'Obrolan Pelanggan';
-         let aPhone = activeTicket.phone || activeTicket.userPhone || '';
-         let aInitialMsg = '';
-         if (activeTicket.messages && activeTicket.messages.length > 0) {
-             aInitialMsg = activeTicket.messages[0].text || activeTicket.messages[0].message || '';
-         } else {
-             aInitialMsg = activeTicket.message || activeTicket.pesan || '';
-         }
-         let aInitialImg = extractImageFromObj(activeTicket);
-         
-         activeInfo = { name: aName, block: aBlock, photo: aPhoto, subject: aSubject, phone: aPhone, initialMsg: aInitialMsg, initialImg: aInitialImg };
+         activeInfo = getTicketInfo(activeTicket);
       }
 
       const SidebarItem = ({ id, icon: Icon, label, badgeCount }) => (
@@ -1041,7 +1122,9 @@
                     </div>
 
                     {/* RUANG OBROLAN SEBELAH KANAN */}
-                    {activeTicket && activeInfo ? (
+                    {activeTicket ? (() => {
+                      const activeInfo = getTicketInfo(activeTicket);
+                      return (
                         <div className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm flex flex-col h-full overflow-hidden">
                           <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                             <div className="flex items-center gap-3 min-w-0">
@@ -1117,6 +1200,288 @@
                   </div>
                 )}
 
+                {/* --- MIKROTIK CONSOLE ROUTE --- */}
+                {activeTab === 'mikrotik' && currentUser?.id === 'admin1' && (
+                  <div className="space-y-4 pb-6">
+                    <div className="flex justify-between items-center mb-2 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">MikroTik Console</h2>
+                      <button onClick={() => { setIsMikrotikLoading(true); setTimeout(() => setIsMikrotikLoading(false), 500); }} className="text-[10px] font-bold bg-white text-kai-blue px-3 py-1.5 rounded-lg shadow-sm border border-slate-200">
+                         Refresh Data
+                      </button>
+                    </div>
+                    
+                    <div className="flex gap-2 overflow-x-auto custom-scrollbar mb-2 px-1 lg:px-0 pb-1">
+                        <button onClick={() => setMikrotikTab('secret')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'secret' ? 'bg-kai-blue text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Key className="w-3.5 h-3.5"/> PPPoE Secret
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-users')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-users' ? 'bg-kai-orange text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Users className="w-3.5 h-3.5"/> Hotspot Users
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-active')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-active' ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Activity className="w-3.5 h-3.5"/> Active
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-hosts')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-hosts' ? 'bg-purple-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Server className="w-3.5 h-3.5"/> Hosts
+                        </button>
+                        <button onClick={() => setMikrotikTab('hotspot-bindings')} className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors shadow-sm flex items-center gap-1.5 shrink-0 ${mikrotikTab === 'hotspot-bindings' ? 'bg-rose-500 text-white' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'}`}>
+                            <Link className="w-3.5 h-3.5"/> IP Bindings
+                        </button>
+                    </div>
+                    
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 md:p-6 shadow-sm">
+                        
+                        {/* TAB: PPPoE SECRET */}
+                        {mikrotikTab === 'secret' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700">Menampilkan daftar akun internet rumahan (PPPoE) yang terdaftar di sistem.</p>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Username (Name)</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {mikrotikUsers.length === 0 ? (
+                                                <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data kosong atau belum disinkronisasi.</td></tr>
+                                            ) : (
+                                                mikrotikUsers.map((mUser, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                        <td className="p-3 text-xs font-bold text-kai-blue dark:text-white">{mUser.name}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
+                                                        <td className="p-3">
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${mUser.disabled === 'false' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                {mUser.disabled === 'false' ? 'AKTIF' : 'DISABLED'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3 flex justify-end gap-2">
+                                                            <button onClick={() => { 
+                                                                setEditingMikrotikData(mUser); 
+                                                                setMikrotikFormType('secret');
+                                                                setMikrotikForm({ name: mUser.name, password: '', profile: mUser.profile, comment: mUser.comment || '' });
+                                                                setIsMikrotikModalOpen(true);
+                                                            }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors" title="Edit"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                            <button onClick={() => runMikrotikCommand('DELETE_SECRET', mUser.id, mUser.name, `Hapus Secret ${mUser.name}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button onClick={() => {
+                                        setEditingMikrotikData(null);
+                                        setMikrotikFormType('secret');
+                                        setMikrotikForm({ name: '', password: '', profile: 'default', comment: '' });
+                                        setIsMikrotikModalOpen(true);
+                                    }} className="bg-kai-blue text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-kai-bluedark transition-colors">
+                                        <Plus className="w-4 h-4"/> Buat Secret Baru
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* TAB: HOTSPOT USERS */}
+                        {mikrotikTab === 'hotspot-users' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-orange-50 dark:bg-orange-900/20 p-2 rounded-lg border border-orange-100 dark:border-orange-800/30">Menampilkan daftar user/voucher Hotspot.</p>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">User / Voucher</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Profile</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Limit Uptime</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Server</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {mikrotikHotspotUsers.length === 0 ? (
+                                                <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data kosong atau belum disinkronisasi.</td></tr>
+                                            ) : (
+                                                mikrotikHotspotUsers.map((mUser, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                        <td className="p-3 text-xs font-bold text-kai-orange dark:text-orange-400">{mUser.name}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.profile}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptimeLimit || 'unlimited'}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.server || 'all'}</td>
+                                                        <td className="p-3 flex justify-end gap-2">
+                                                            <button onClick={() => { 
+                                                                setEditingMikrotikData(mUser); 
+                                                                setMikrotikFormType('hotspot_user');
+                                                                setMikrotikForm({ name: mUser.name, password: '', profile: mUser.profile, server: mUser.server || 'all', comment: mUser.comment || '' });
+                                                                setIsMikrotikModalOpen(true);
+                                                            }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors" title="Edit"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                            <button onClick={() => runMikrotikCommand('DELETE_HOTSPOT_USER', mUser.id, mUser.name, `Hapus Hotspot User ${mUser.name}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors" title="Hapus"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button onClick={() => {
+                                        setEditingMikrotikData(null);
+                                        setMikrotikFormType('hotspot_user');
+                                        setMikrotikForm({ name: '', password: '', profile: 'default', server: 'all', comment: '' });
+                                        setIsMikrotikModalOpen(true);
+                                    }} className="bg-kai-orange text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-kai-orangedark transition-colors">
+                                        <Plus className="w-4 h-4"/> Buat User Hotspot
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* TAB: HOTSPOT ACTIVE */}
+                        {mikrotikTab === 'hotspot-active' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-lg border border-emerald-100 dark:border-emerald-800/30">Menampilkan daftar pengguna Hotspot yang sedang terhubung dan menggunakan internet saat ini.</p>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">User</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">IP Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Uptime</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {mikrotikHotspotActive.length === 0 ? (
+                                                <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada pengguna aktif saat ini.</td></tr>
+                                            ) : (
+                                                mikrotikHotspotActive.map((mUser, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                        <td className="p-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">{mUser.user}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500 font-mono">{mUser.macAddress}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.uptime}</td>
+                                                        <td className="p-3 flex justify-end gap-2">
+                                                            <button onClick={() => runMikrotikCommand('KICK_HOTSPOT_ACTIVE', mUser.id, mUser.user, `Tendang (Kick) ${mUser.user} dari jaringan?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors text-[9px] font-bold">KICK</button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* TAB: HOTSPOT HOSTS */}
+                        {mikrotikTab === 'hotspot-hosts' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-purple-50 dark:bg-purple-900/20 p-2 rounded-lg border border-purple-100 dark:border-purple-800/30">Menampilkan daftar seluruh perangkat (Hosts) yang terdeteksi di jaringan Hotspot (baik sudah login maupun belum).</p>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">To Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Status</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {mikrotikHotspotHosts.length === 0 ? (
+                                                <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Tidak ada perangkat (Host) terdeteksi.</td></tr>
+                                            ) : (
+                                                mikrotikHotspotHosts.map((mUser, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                        <td className="p-3 text-xs font-bold text-purple-600 dark:text-purple-400 font-mono">{mUser.macAddress}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.toAddress}</td>
+                                                        <td className="p-3 flex items-center gap-1">
+                                                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${mUser.authorized ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{mUser.authorized ? 'AUTH' : 'UNAUTH'}</span>
+                                                            {mUser.bypass && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">BYPASS</span>}
+                                                        </td>
+                                                        <td className="p-3 text-right">
+                                                            <button onClick={() => {
+                                                                setEditingMikrotikData(null);
+                                                                setMikrotikFormType('ip_binding');
+                                                                setMikrotikForm({ macAddress: mUser.macAddress, address: mUser.address, type: 'bypassed', server: 'all', comment: '' });
+                                                                setIsMikrotikModalOpen(true);
+                                                            }} className="p-1.5 bg-slate-100 hover:bg-purple-500 hover:text-white text-slate-500 rounded transition-colors text-[9px] font-bold shadow-sm border border-slate-200">MAKE BINDING</button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </>
+                        )}
+                        
+                        {/* TAB: IP BINDINGS */}
+                        {mikrotikTab === 'hotspot-bindings' && (
+                            <>
+                                <p className="text-[10px] text-slate-500 mb-4 bg-rose-50 dark:bg-rose-900/20 p-2 rounded-lg border border-rose-100 dark:border-rose-800/30">Menampilkan daftar Bypass atau Blokir MAC/IP akses tanpa login Hotspot.</p>
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[500px]">
+                                        <thead>
+                                            <tr className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">MAC Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">IP Address</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Tipe (Type)</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase">Komentar</th>
+                                                <th className="p-3 text-[10px] font-bold text-slate-500 uppercase text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {mikrotikIpBindings.length === 0 ? (
+                                                <tr><td colSpan="5" className="text-center py-6 text-slate-400 text-xs font-bold">Data IP Bindings kosong.</td></tr>
+                                            ) : (
+                                                mikrotikIpBindings.map((mUser, idx) => (
+                                                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                                        <td className="p-3 text-[11px] font-bold text-rose-600 dark:text-rose-400 font-mono">{mUser.macAddress}</td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.address || '-'}</td>
+                                                        <td className="p-3">
+                                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${mUser.type === 'bypassed' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                                                {mUser.type}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-3 text-[10px] font-bold text-slate-500">{mUser.comment || '-'}</td>
+                                                        <td className="p-3 flex justify-end gap-2">
+                                                            <button onClick={() => {
+                                                                setEditingMikrotikData(mUser);
+                                                                setMikrotikFormType('ip_binding');
+                                                                setMikrotikForm({ macAddress: mUser.macAddress, address: mUser.address, type: mUser.type, server: mUser.server, comment: mUser.comment || '' });
+                                                                setIsMikrotikModalOpen(true);
+                                                            }} className="p-1.5 bg-slate-100 hover:bg-kai-blue hover:text-white text-slate-500 rounded transition-colors"><Edit3 className="w-3.5 h-3.5"/></button>
+                                                            <button onClick={() => runMikrotikCommand('DELETE_IP_BINDING', mUser.id, mUser.macAddress, `Hapus Binding MAC ${mUser.macAddress}?`)} className="p-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-500 rounded transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="mt-4 flex justify-end">
+                                    <button onClick={() => {
+                                        setEditingMikrotikData(null);
+                                        setMikrotikFormType('ip_binding');
+                                        setMikrotikForm({ macAddress: '', address: '', type: 'bypassed', server: 'all', comment: '' });
+                                        setIsMikrotikModalOpen(true);
+                                    }} className="bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-rose-700 transition-colors">
+                                        <Plus className="w-4 h-4"/> Tambah IP Binding
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                  </div>
+                )}
+                
                 {/* --- PORTAL & SETTINGS --- */}
                 {activeTab === 'portal' && (
                   <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl text-center shadow-sm">
@@ -1172,10 +1537,10 @@
       );
     }
     
-    // START APP
+    // RENDER APP 
     const rootElement = document.getElementById('root');
     const root = createRoot(rootElement);
-    root.render(<ErrorBoundary><App /></ErrorBoundary>);
+    root.render(<App />);
   </script>
 </body>
 </html>
