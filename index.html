@@ -220,26 +220,62 @@
           </div>
       </div>
 
-      <!-- KONTEN: BERANDA -->
+            <!-- KONTEN: BERANDA -->
       <div id="view-home" class="view-section max-w-xl mx-auto px-4">
-          <div class="bg-gradient-to-r from-kai-blue to-kai-bluedark p-5 rounded-3xl shadow-sm border border-slate-700 text-white mb-6 relative overflow-hidden">
-              <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-              <h2 class="text-lg font-black mb-1 relative z-10">Internet Tanpa Batas! 🚀</h2>
-              <p class="text-xs text-slate-300 relative z-10">Nikmati layanan internet fiber optik unlimited untuk keluarga Anda.</p>
+          <!-- KARTU INFORMASI ELEGAN -->
+          <div class="bg-gradient-to-br from-kai-bluedark via-kai-blue to-kai-bluedark p-5 rounded-[28px] shadow-[0_8px_30px_rgba(26,44,91,0.3)] border border-white/10 text-white mb-6 relative overflow-hidden">
+              <!-- Efek Kaca/Blur -->
+              <div class="absolute -right-10 -top-10 w-32 h-32 bg-kai-orange/30 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+              
+              <div class="relative z-10 flex justify-between items-start mb-4">
+                  <div>
+                      <p class="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Selamat Datang,</p>
+                      <h2 class="text-xl font-black" id="homeNamaClient">Memuat...</h2>
+                      <p class="text-xs text-kai-orange font-bold mt-0.5" id="homeBlokClient">Blok -</p>
+                  </div>
+                  <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
+                      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+                  </div>
+              </div>
+
+              <div class="relative z-10 grid grid-cols-2 gap-3 mt-5">
+                  <!-- Status Internet -->
+                  <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                      <p class="text-[9px] font-bold text-slate-300 uppercase mb-1">Status Internet</p>
+                      <div class="flex items-center gap-2">
+                          <span id="homeStatusDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                          <p class="text-sm font-black text-white" id="homeStatusText">Memuat...</p>
+                      </div>
+                  </div>
+                  <!-- Sisa Tagihan -->
+                  <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                      <p class="text-[9px] font-bold text-slate-300 uppercase mb-1">Sisa Tagihan</p>
+                      <p class="text-sm font-black text-white" id="homeTagihanText">Rp 0</p>
+                  </div>
+              </div>
+              
+              <div class="relative z-10 mt-3 bg-black/20 rounded-xl p-2 flex justify-between items-center">
+                  <span class="text-[9px] font-bold text-slate-300">Paket Aktif:</span>
+                  <span class="text-[10px] font-black text-kai-orange" id="homePaketText">-</span>
+              </div>
           </div>
 
           <h3 class="text-sm font-black text-kai-blue mb-3 px-1">Layanan Utama</h3>
           <div class="grid grid-cols-2 gap-4 mb-6">
-              <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
-                  <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
+              <!-- Tombol Pasang Baru -->
+              <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer transition-all active:scale-95">
+                  <div class="w-14 h-14 bg-blue-50 text-kai-blue rounded-2xl flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg></div>
                   <h4 class="font-extrabold text-xs text-kai-blue">Pasang Baru</h4>
               </div>
-              <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer">
-                  <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg></div>
+              <!-- Tombol Bayar -->
+              <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer transition-all active:scale-95">
+                  <div class="w-14 h-14 bg-orange-50 text-kai-orange rounded-2xl flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg></div>
                   <h4 class="font-extrabold text-xs text-kai-blue">Bayar Tagihan</h4>
               </div>
-              <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center cursor-pointer col-span-2">
-                  <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
+              <!-- Tombol Bantuan -->
+              <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="bg-white p-4 rounded-3xl shadow-sm hover:shadow-md border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer col-span-2 transition-all active:scale-95">
+                  <div class="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mb-3"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
                   <h4 class="font-extrabold text-xs text-kai-blue">Pusat Bantuan & Lapor Kendala</h4>
               </div>
           </div>
