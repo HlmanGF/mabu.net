@@ -324,13 +324,6 @@
               </button>
           </div>
       </div>
-
-      <!-- KONTEN: BANTUAN -->
-      <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
-          <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-2">Daftar Tiket & Pesan Anda</h2>
-          <div id="listTickets" class="space-y-3 mb-6">
-              <div class="text-center py-6 bg-white border border-slate-200 border-dashed rounded-2xl"><p class="text-[10px] font-bold text-slate-400">Belum ada laporan atau pesan masuk.</p></div>
-          </div>
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6">
               <h3 class="text-lg font-black text-kai-blue mb-1">Buat Laporan / Pertanyaan Baru</h3>
               <p class="text-[10px] font-semibold text-slate-500 mb-5">Admin akan membalas pesan Anda langsung di aplikasi ini.</p>
@@ -402,11 +395,19 @@
       </div>
 
       <!-- MENU NAVIGASI BAWAH CLIENT -->
-      <nav id="bottomNav" class="hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                  <nav id="bottomNav" class="hidden fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around p-2 pb-safe z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <button id="nav-home" class="nav-item flex flex-col items-center w-full py-2 text-kai-orange transition-transform transform scale-110" onclick="switchView('view-home', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span class="text-[9px] font-black tracking-wide">Beranda</span></button>
-          <button id="nav-registrasi" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-registrasi', this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg><span class="text-[9px] font-black tracking-wide">Daftar</span></button>
+          
           <button id="nav-pembayaran" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-pembayaran', this)"><svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg><span class="text-[9px] font-black tracking-wide">Bayar</span></button>
+          
+          <!-- MENU CHAT BARU -->
+          <button id="nav-chat" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuChat(this)">
+              <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+              <span class="text-[9px] font-black tracking-wide">Chat</span>
+          </button>
+          
           <button id="nav-bantuan" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="switchView('view-bantuan', this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span class="text-[9px] font-black tracking-wide">Bantuan</span></button>
+          
           <button id="nav-akun" class="nav-item flex flex-col items-center w-full py-2 text-slate-400 hover:text-slate-600 transition-colors" onclick="bukaMenuAkun(this)"><svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="text-[9px] font-black tracking-wide">Akun</span></button>
       </nav>
 
@@ -2187,45 +2188,7 @@
                     }
                 }
             }
-        });
-
-        ticketsListener = db.collection('tickets').where('customerId', '==', currentUserDocId)
-            .onSnapshot(snapshot => {
-                const listDiv = document.getElementById('listTickets');
-                if(snapshot.empty) {
-                    listDiv.innerHTML = `<div class="text-center py-6 bg-white border border-slate-200 border-dashed rounded-2xl"><p class="text-[10px] font-bold text-slate-400">Belum ada laporan atau pesan masuk.</p></div>`;
-                    return;
-                }
-
-                let html = '';
-                snapshot.docs.forEach(doc => {
-                    const t = doc.data();
-                    const tId = doc.id;
-                    let statusColor = t.status === 'Selesai' || t.status === 'Closed' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600';
-                    
-                    let lastMessageText = "Ketuk untuk melihat percakapan...";
-                    if (t.messages && Array.isArray(t.messages) && t.messages.length > 0) {
-                        let lastMsg = t.messages[t.messages.length - 1];
-                        lastMessageText = lastMsg.text || (lastMsg.attachmentUrl ? "Menerima Gambar" : "Pesan...");
-                    }
-
-                    html += `
-                        <div onclick="bukaChat('${tId}', '${t.issueType || t.subject}', '${t.status}')" class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:border-kai-blue transition-colors shadow-sm">
-                            <div class="flex-1 overflow-hidden pr-2">
-                                <h4 class="font-black text-sm text-kai-blue">${t.issueType || t.subject}</h4>
-                                <p class="text-[10px] font-semibold text-slate-500 mt-1 truncate">${lastMessageText}</p>
-                                <p class="text-[8px] font-bold text-slate-400 mt-1">${t.dateStr}</p>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <span class="px-2 py-1 rounded text-[9px] font-black ${statusColor}">${t.status}</span>
-                                <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </div>
-                        </div>
-                    `;
-                });
-                listDiv.innerHTML = html;
-            });
-        
+        });      
         muatNotifikasi();
     }
 
@@ -2276,6 +2239,23 @@
         // Variabel penampung gambar chat sementara
     let clientChatImageData = null;
 
+        function bukaMenuChat(btn) {
+        if (!currentUserDocId) {
+            alert("Anda harus login untuk menggunakan fitur chat.");
+            switchView('view-login', document.getElementById('nav-akun'));
+            return;
+        }
+        
+        // Ubah warna menu bawah
+        document.querySelectorAll('.nav-item').forEach(b => {
+            b.classList.remove('text-kai-orange', 'scale-110'); b.classList.add('text-slate-400');
+        });
+        btn.classList.remove('text-slate-400'); btn.classList.add('text-kai-orange', 'scale-110');
+        
+        // Panggil fungsi buka chat (ID ruang = ID pelanggan)
+        bukaChat(currentUserDocId, 'Obrolan Layanan', 'Open');
+    }
+
     function bukaChat(ticketId, type, status) {
         currentChatTicketId = ticketId;
         document.getElementById('chatTicketType').innerText = type || 'Obrolan Layanan';
@@ -2283,44 +2263,44 @@
         document.getElementById('chatModal').classList.remove('hidden');
         document.getElementById('chatModal').classList.add('flex');
 
-        chatListener = db.collection('tickets').doc(ticketId).onSnapshot(doc => {
-            if(doc.exists) {
-                const data = doc.data();
-                const messages = (data.messages && Array.isArray(data.messages)) ? data.messages : [];
-                const chatBox = document.getElementById('chatMessages');
-                let html = '';
-                
-                if (messages.length === 0) {
-                    html = '<div class="text-center text-slate-400 text-xs py-10">Mulai obrolan...</div>';
-                } else {
-                    messages.forEach(msg => {
-                        const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender !== 'client';
-                        const isClient = !isAdmin;
-                        
-                        const dateObj = msg.time ? new Date(msg.time) : new Date();
-                        const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
-                        
-                        const senderLabel = isAdmin ? 'Admin MABUNET' : (globalName || 'Anda');
-                        const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
-                        const textMsg = msg.text || msg.message || '';
+        if(chatListener) chatListener(); // Matikan listener lama jika ada
 
-                        if(isClient) {
-                            html += `<div class="flex justify-end"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-kai-blue text-white rounded-tr-none"><p class="text-[10px] font-extrabold mb-1 text-blue-200">${senderLabel}</p>`;
-                            if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
-                            if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open('${imgAttachment}', '_blank')">`;
-                            html += `<p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div></div>`;
-                        } else {
-                            html += `<div class="flex justify-start"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none"><p class="text-[10px] font-extrabold mb-1 text-kai-orange">${senderLabel}</p>`;
-                            if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
-                            if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700" onclick="window.open('${imgAttachment}', '_blank')">`;
-                            html += `<p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div></div>`;
-                        }
-                    });
-                }
-                
-                chatBox.innerHTML = html;
-                setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
+        // BACA DARI SUBCOLLECTION AGAR SINKRON DENGAN ADMIN
+        chatListener = db.collection('tickets').doc(ticketId).collection('messages').orderBy('time', 'asc').onSnapshot(snapshot => {
+            const chatBox = document.getElementById('chatMessages');
+            let html = '';
+            
+            if (snapshot.empty) {
+                html = '<div class="text-center text-slate-400 text-xs py-10">Mulai obrolan...</div>';
+            } else {
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender !== 'client';
+                    const isClient = !isAdmin;
+                    
+                    const dateObj = msg.time ? new Date(msg.time) : new Date();
+                    const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
+                    
+                    const senderLabel = isAdmin ? 'Admin MABUNET' : (globalName || 'Anda');
+                    const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
+                    const textMsg = msg.text || msg.message || '';
+
+                    if(isClient) {
+                        html += `<div class="flex justify-end"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-kai-blue text-white rounded-tr-none"><p class="text-[10px] font-extrabold mb-1 text-blue-200">${senderLabel}</p>`;
+                        if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                        if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open('${imgAttachment}', '_blank')">`;
+                        html += `<p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div></div>`;
+                    } else {
+                        html += `<div class="flex justify-start"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none"><p class="text-[10px] font-extrabold mb-1 text-kai-orange">${senderLabel}</p>`;
+                        if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                        if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700" onclick="window.open('${imgAttachment}', '_blank')">`;
+                        html += `<p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div></div>`;
+                    }
+                });
             }
+            
+            chatBox.innerHTML = html;
+            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
         });
     }
 
@@ -2363,7 +2343,7 @@
         document.getElementById('clientChatImagePreviewContainer').classList.add('hidden');
     }
 
-    document.getElementById('chatForm').addEventListener('submit', async function(e) {
+        document.getElementById('chatForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         const input = document.getElementById('chatInput');
         const teks = input.value.trim();
@@ -2386,14 +2366,19 @@
                 msgData.attachment = clientChatImageData;
             }
 
+            // 1. Simpan pesan ke subcollection
             await db.collection('tickets').doc(currentChatTicketId).collection('messages').add(msgData);
             
-            await db.collection('tickets').doc(currentChatTicketId).update({
+            // 2. Buat / Update dokumen utama pakai .set(..., {merge:true}) agar tidak error jika ruangan belum ada
+            await db.collection('tickets').doc(currentChatTicketId).set({
+                customerId: currentUserDocId,
+                customerName: globalName, name: globalName, block: globalBlock, phone: globalPhone,
+                issueType: 'Obrolan Layanan', subject: 'Obrolan Layanan', status: 'Open',
+                timestamp: Date.now(), dateStr: new Date().toLocaleString('id-ID'),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(), 
-                status: 'Open',
                 lastReply: teks || '📷 Mengirim Foto',
                 lastImage: clientChatImageData || null
-            });
+            }, { merge: true });
 
             input.value = '';
             hapusPreviewGambarChat();
