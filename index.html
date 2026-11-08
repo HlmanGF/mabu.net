@@ -1952,9 +1952,14 @@
         messagingSenderId: "362703627315",
         appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
     };
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const db = firebase.firestore();
-    const storage = firebase.storage();
+        // PERBAIKAN: Beri nama aplikasi 'clientApp' agar tidak bentrok dengan Admin
+    let clientApp;
+    try {
+        clientApp = firebase.app('clientApp');
+    } catch (e) {
+        clientApp = firebase.initializeApp(firebaseConfig, 'clientApp');
+    }
+    const db = clientApp.firestore();
     
     let currentUserDocId = null;
     let cropperInstance = null;
