@@ -1259,9 +1259,12 @@
                     </div>
                     <span className="text-[10px] font-bold text-slate-400">Sidik Jari</span>
                   </button>
-                  <a href="#client" className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
-    <User className="w-4 h-4" /> Masuk sebagai Pelanggan
-</a>
+                                    <button 
+                      type="button"
+                      onClick={() => { window.location.href = window.location.origin + "/#client"; }} 
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
+                      <User className="w-4 h-4" /> Masuk sebagai Pelanggan
+                  </button>
                 </div>
               )}
             </div>
