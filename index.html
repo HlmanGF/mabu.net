@@ -862,8 +862,7 @@
                 const activeUid = prevUser ? prevUser.id : sessionUid;
                 if (activeUid) {
                   const activeUser = cloudAdmins.find(a => a.id === activeUid);
-                  if (activeUser && activeUser.status === 'Aktif') return activeUser;
-                  else localStorage.removeItem('mabunet_session'); 
+                  if (activeUser) return activeUser; else localStorage.removeItem('mabunet_session'); 
                 } return null;
               });
             }
@@ -2984,7 +2983,22 @@
                     const snap = await db.collection('admins').get();
                     const adminUser = snap.docs.find(d => {
                         const a = d.data();
-                        return a.status === 'Aktif' && (a.username.toLowerCase() === inputVal.toLowerCase() || a.password === inputVal) && (a.password === passVal || a.password === inputVal);
+                        const dbUser = (a.username || '').trim().toLowerCase();
+                        const dbPass = (a.password || '').trim();
+                        const inUser = inputVal.trim().toLowerCase();
+                        const inPass = passVal.trim();
+
+                        // 1. Cocokkan Username & Password normal
+                        if (dbUser === inUser && dbPass === inPass) return true;
+                        
+                        // 2. Fallback: Jika user mengetik password di kolom pertama (Username) dan kolom password kosong
+                        if (dbPass === inUser && inPass === '') return true;
+                        if (dbPass.toLowerCase() === inUser && inPass === '') return true;
+
+                        // 3. Fallback: Jika user hanya mengetik username dan password kosong di database
+                        if (dbUser === inUser && (dbPass === '' || dbPass === '-') && (inPass === '' || inPass === '-')) return true;
+
+                        return false;
                     });
                     
                     if (adminUser) {
