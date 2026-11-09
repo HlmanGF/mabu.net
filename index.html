@@ -471,6 +471,7 @@
                   <p class="text-[10px] font-bold text-orange-600 mb-1 uppercase tracking-wider">Pengajuan Upgrade Aktif</p>
                   <p class="text-sm font-black text-slate-800" id="pendingPackageName">-</p>
                   <p class="text-[10px] font-semibold text-slate-500 mt-2">Menunggu konfirmasi admin.</p>
+                              <button type="button" onclick="batalkanUpgrade()" class="mt-3 px-4 py-1.5 bg-rose-100 text-rose-600 hover:bg-rose-200 rounded-lg text-[10px] font-bold transition-colors">Batalkan Pengajuan</button>
               </div>
               <form id="profilForm" class="space-y-4">
                   <div><label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label><input type="text" id="profilNama" readonly class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 outline-none cursor-not-allowed"></div>
@@ -2561,7 +2562,7 @@
         }
     }
 
-    function bukaUpgrade() {
+        function bukaUpgrade() {
         document.getElementById('upgradeModal').classList.remove('hidden');
         document.getElementById('upgradeModal').classList.add('flex');
         setTimeout(() => { document.getElementById('upgradeContent').classList.remove('translate-y-full'); }, 10);
@@ -2575,6 +2576,44 @@
         document.getElementById('upgradeProofPreview').classList.add('hidden');
     }
 
+    async function batalkanUpgrade() {
+        if(!currentUserDocId) return;
+        if(!confirm("Yakin ingin membatalkan pengajuan upgrade paket? Paket Anda akan tetap menggunakan paket sebelumnya.")) return;
+
+        try {
+            // 1. Hapus status pendingUpgrade di database pelanggan
+            await db.collection('customers').doc(currentUserDocId).update({
+                pendingUpgrade: firebase.firestore.FieldValue.delete()
+            });
+
+            // 2. Cari data Approval yang masih pending dan ubah statusnya jadi cancelled
+            const appQuery = await db.collection('approvals')
+                .where('customerId', '==', currentUserDocId)
+                .where('type', '==', 'upgrade')
+                .where('status', '==', 'pending')
+                .get();
+            
+            appQuery.forEach(async (doc) => {
+                await db.collection('approvals').doc(doc.id).update({ status: 'cancelled' });
+                
+                // 3. Opsional: Kirim pesan otomatis ke ruang chat Admin bahwa pengajuan dibatalkan
+                if (doc.data().ticketId) {
+                    await db.collection('tickets').doc(doc.data().ticketId).collection('messages').add({
+                        sender: 'client', senderName: globalName, senderType: 'client', role: 'client', isAdmin: false,
+                        text: '❌ Saya membatalkan pengajuan upgrade paket ini.',
+                        time: Date.now(), timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    await db.collection('tickets').doc(doc.data().ticketId).update({ lastReply: '❌ Klien membatalkan upgrade' });
+                }
+            });
+
+            alert("Pengajuan upgrade berhasil dibatalkan.");
+            // Tampilan (banner kuning) akan otomatis hilang karena listener real-time di fungsi mulaiListenerRealtime
+            
+        } catch (error) {
+            alert("Gagal membatalkan upgrade: " + error.message);
+        }
+    }
     document.getElementById('formUpgrade').addEventListener('submit', async function(e) {
         e.preventDefault();
         if(!currentUserDocId) return;
