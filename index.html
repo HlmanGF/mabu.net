@@ -138,7 +138,7 @@
   <!-- ========================================== -->
   <!-- 2. AREA PORTAL CLIENT (VANILLA JS)         -->
   <!-- ========================================== -->
-  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden">
+  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden hidden" style="display:none !important;"">
       
       <!-- MODAL RUANG CHAT TIKET -->
       <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
@@ -724,8 +724,7 @@
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
-      localStorage.removeItem('mabunet_session'); localStorage.removeItem('mabunet_device_user');
-      localStorage.removeItem('mabunet_session');
+      /* Sabotage cleared */
       const [loginForm, setLoginForm] = useState({ password: '', smartInput: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -838,7 +837,7 @@
 
       useEffect(() => {
         const handleVisibilityChange = () => {
-          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
+          /* Auto-logout disabled */
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -858,13 +857,7 @@
               const cloudAdmins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               setAdmins(cloudAdmins);
               const sessionUid = localStorage.getItem('mabunet_session');
-              setCurrentUser(prevUser => {
-                  const activeUid = prevUser ? prevUser.id : localStorage.getItem('mabunet_session');
-                  if (activeUid === 'admin1') {
-                      return { id: 'admin1', username: 'Hilman', name: 'Hilman Fatahillah', role: 'Super Admin', status: 'Aktif' };
-                  }
-                  return prevUser;
-              });
+              setCurrentUser(prevUser => { if(prevUser) return prevUser; return { id: "admin1", username: "Hilman", name: "Hilman Fatahillah", role: "Super Admin", status: "Aktif" }; });
             }
           });
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
@@ -1335,25 +1328,7 @@
         </button>
       );
 
-      
-      if (!currentUser) {
-        return (
-          <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-            <div className="bg-white p-8 rounded-3xl max-w-sm w-full shadow-2xl">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-black text-kai-blue">MABU<span className="text-kai-orange">NET</span></h1>
-                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
-              </div>
-              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg font-bold">{loginError}</div>}
-              <form onSubmit={handleLogin} className="space-y-4">
-                <input type="password" placeholder="Masukkan Password..." required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" />
-                <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg hover:bg-kai-orangedark transition-colors">Masuk Panel</button>
-              </form>
-            </div>
-          </div>
-        );
-      }
-    
+      if (!currentUser) { return null; }
 
       return (
         <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
