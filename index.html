@@ -2274,6 +2274,30 @@
                     if(data.status === 'Aktif') { statEl.classList.add('text-emerald-600'); statEl.classList.remove('text-rose-600'); } 
                     else { statEl.classList.add('text-rose-600'); statEl.classList.remove('text-emerald-600'); }
                     if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
+                    // --- UPDATE TAGIHAN DI MENU PEMBAYARAN ---
+                    const PACKAGE_PRICES = { '5mbps_100': 100000, '10mbps_150': 150000, '15mbps_200': 200000, '20mbps_250': 250000, '25mbps_300': 300000, 'netflix_10mbps_200': 200000, 'netflix_15mbps_250': 250000 };
+                    const hargaPaket = PACKAGE_PRICES[data.packageId] || 0;
+                    const d = new Date();
+                    const bulanSekarang = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const sudahBayar = data.payments && data.payments[bulanSekarang];
+                    
+                    const tagihanText = document.getElementById('payTotalTagihan');
+                    const statusText = document.getElementById('payStatusTagihan');
+                    
+                    if (tagihanText) {
+                        if (sudahBayar || hargaPaket === 0) {
+                            tagihanText.innerText = 'LUNAS';
+                            tagihanText.classList.add('text-emerald-500');
+                            tagihanText.classList.remove('text-kai-orange');
+                            if(statusText) statusText.innerText = 'Tagihan bulan ini sudah dibayar.';
+                        } else {
+                            tagihanText.innerText = `Rp ${hargaPaket.toLocaleString('id-ID')}`;
+                            tagihanText.classList.remove('text-emerald-500');
+                            tagihanText.classList.add('text-kai-orange');
+                            if(statusText) statusText.innerText = 'Mohon selesaikan pembayaran.';
+                        }
+                    }
+                    // ----------------------------------------
 
                     if (data.pendingUpgrade) {
                         document.getElementById('pendingUpgradeAlert').classList.remove('hidden');
@@ -2356,7 +2380,7 @@
 
         chatListener = db.collection('tickets').doc(ticketId).collection('messages').orderBy('time', 'asc').onSnapshot(snapshot => {
             const chatBox = document.getElementById('chatMessages');
-            let html = '';
+                        let html = '';
             
             if (snapshot.empty) {
                 html = '<div class="text-center text-slate-400 text-xs py-10">Mulai obrolan...</div>';
@@ -2364,7 +2388,6 @@
                 snapshot.forEach(doc => {
                     const msg = doc.data();
                     const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender !== 'client';
-                    const isClient = !isAdmin;
                     
                     const dateObj = msg.time ? new Date(msg.time) : new Date();
                     const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
@@ -2372,25 +2395,40 @@
                     const senderLabel = isAdmin ? 'Admin MABUNET' : (globalName || 'Anda');
                     const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
                     const textMsg = msg.text || msg.message || '';
+                    
+                    // Ambil Foto Profil
+                    const clientPhoto = document.getElementById('profilImage').src;
+                    const avatarAdmin = `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 border border-slate-300 shadow-sm"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>`;
+                    const avatarClient = `<div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200 shadow-sm"><img src="${clientPhoto}" class="w-full h-full object-cover"></div>`;
 
-                    if(isClient) {
-                        html += `<div class="flex justify-end"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-kai-blue text-white rounded-tr-none"><p class="text-[10px] font-extrabold mb-1 text-blue-200">${senderLabel}</p>`;
-                        if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                    if(!isAdmin) {
+                        // Pesan Klien (Kanan)
+                        html += `<div class="flex justify-end items-end gap-2">`;
+                        html += `<div class="max-w-[75%] flex flex-col items-end">`;
+                        html += `<div class="bg-kai-blue text-white rounded-2xl rounded-tr-sm p-3 shadow-sm">`;
+                        if(textMsg) html += `<p class="text-xs whitespace-pre-line leading-relaxed">${textMsg}</p>`;
                         if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open('${imgAttachment}', '_blank')">`;
-                        html += `<p class="text-[8px] text-slate-300 text-right mt-1">${timeStr}</p></div></div>`;
+                        html += `</div>`;
+                        html += `<p class="text-[8px] text-slate-400 mt-1 mr-1">${timeStr}</p>`;
+                        html += `</div>`;
+                        html += avatarClient;
+                        html += `</div>`;
                     } else {
-                        html += `<div class="flex justify-start"><div class="max-w-[80%] rounded-2xl p-3 shadow-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-tl-none"><p class="text-[10px] font-extrabold mb-1 text-kai-orange">${senderLabel}</p>`;
-                        if(textMsg) html += `<p class="text-xs whitespace-pre-line">${textMsg}</p>`;
+                        // Pesan Admin (Kiri)
+                        html += `<div class="flex justify-start items-end gap-2">`;
+                        html += avatarAdmin;
+                        html += `<div class="max-w-[75%] flex flex-col items-start">`;
+                        html += `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm p-3 shadow-sm">`;
+                        html += `<p class="text-[9px] font-black text-kai-orange mb-1">${senderLabel}</p>`;
+                        if(textMsg) html += `<p class="text-xs whitespace-pre-line leading-relaxed">${textMsg}</p>`;
                         if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700" onclick="window.open('${imgAttachment}', '_blank')">`;
-                        html += `<p class="text-[8px] text-slate-400 mt-1">${timeStr}</p></div></div>`;
+                        html += `</div>`;
+                        html += `<p class="text-[8px] text-slate-400 mt-1 ml-1">${timeStr}</p>`;
+                        html += `</div>`;
+                        html += `</div>`;
                     }
                 });
             }
-            
-            chatBox.innerHTML = html;
-            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
-        });
-    }
 
     function tutupChat() {
         document.getElementById('chatModal').classList.add('hidden');
