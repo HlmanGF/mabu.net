@@ -1576,9 +1576,18 @@
                                 >
                                   <div className="flex justify-between items-start mb-1">
                                     <div className="min-w-0 pr-2">
-                                      <span className={`font-extrabold text-sm block truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
-                                        👤 {tInfo.name}
+                                                                          <div className="flex items-center gap-2 truncate">
+                                      <div className={`w-7 h-7 rounded-full overflow-hidden shrink-0 border shadow-sm ${isSelected ? 'border-white/30 bg-white/10' : 'border-slate-200 dark:border-slate-700 bg-slate-100'}`}>
+                                        {(tInfo.matched?.photo || tInfo.matched?.foto_profil) ? (
+                                          <img src={tInfo.matched.photo || tInfo.matched.foto_profil} className="w-full h-full object-cover" />
+                                        ) : (
+                                          <User className="w-full h-full p-1.5 text-slate-400" />
+                                        )}
+                                      </div>
+                                      <span className={`font-extrabold text-sm truncate ${isSelected ? 'text-white' : 'text-kai-blue dark:text-white'}`}>
+                                        {tInfo.name}
                                       </span>
+                                    </div>
                                       {(tInfo.block || tInfo.phone) && (
                                         <span className={`text-[9px] font-bold block ${isSelected ? 'text-orange-300' : 'text-kai-orange'}`}>
                                           {tInfo.block ? `Blok ${tInfo.block}` : ''} {tInfo.phone ? `• ${tInfo.phone}` : ''}
