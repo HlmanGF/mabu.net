@@ -1306,69 +1306,59 @@
             </div>
           )}
 
-          <aside className="hidden lg:flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-sm z-40 relative transition-all duration-300" style={{ width: isSidebarCollapsed ? '5rem' : '16rem' }}>
-            <div className="p-5 flex items-center justify-center gap-3">
-              <div className="w-9 h-9 bg-kai-blue rounded-xl flex items-center justify-center shrink-0">
-                <img src="./mabunetlogo.png" className="w-6 h-6 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
-              </div>
-              {!isSidebarCollapsed && (<div className="overflow-hidden"><h2 className="font-black text-lg tracking-tight text-slate-800 dark:text-white">MABU<span className="text-kai-orange">NET</span></h2><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Admin Panel</p></div>)}
+          <aside className={`hidden lg:flex flex-col h-full bg-kai-blue text-white shadow-xl z-40 relative transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-64'}`}>
+            <div className={`p-5 flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'gap-3'}`}>
+              <img src="./mabunetlogo.png" className="w-8 h-8 object-contain shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+              {!isSidebarCollapsed && (<div className="overflow-hidden"><h2 className="font-black text-lg tracking-tight text-white">MABUNET</h2><p className="text-[9px] font-bold text-kai-orange uppercase tracking-widest">Admin Panel</p></div>)}
             </div>
             {!isSidebarCollapsed && (
               <div className="px-5 mb-6 mt-2">
-                <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white dark:bg-slate-900 shrink-0 border border-slate-200 dark:border-slate-700">
-                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-2 text-slate-400" />}
+                <div className="bg-kai-bluedark rounded-xl p-3 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-700 shrink-0 border border-slate-600">
+                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-1.5 text-slate-300" />}
                   </div>
-                  <div className="flex-1 min-w-0"><p className="font-bold text-sm text-slate-800 dark:text-white truncate">{currentUser.name}</p><p className="text-[9px] font-black text-kai-orange truncate uppercase mt-0.5">{currentUser.role}</p></div>
+                  <div className="flex-1 min-w-0"><p className="font-bold text-sm truncate">{currentUser.name}</p><p className="text-[9px] font-black text-slate-400 truncate uppercase mt-0.5">{currentUser.role}</p></div>
                 </div>
               </div>
             )}
             {isSidebarCollapsed && (
                <div className="w-full flex justify-center mb-6 mt-2">
-                 <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-2 text-slate-400" />}
+                 <div className="w-10 h-10 rounded-full overflow-hidden bg-kai-bluedark border border-slate-600">
+                    {currentUser.photo ? <img src={currentUser.photo} className="w-full h-full object-cover" /> : <User className="w-full h-full p-1.5 text-slate-400" />}
                  </div>
                </div>
             )}
-            <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar space-y-1">
+            <nav className="flex-1 px-3 overflow-y-auto custom-scrollbar">
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Data Pelanggan" badgeCount={pendingApprovals.length} />
               <SidebarItem id="tickets" icon={MessageCircle} label="Chat & Layanan" badgeCount={unreadTicketsCount} />
-              <SidebarItem id="announcements" icon={Megaphone} label="Pengumuman" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               {currentUser.id === 'admin1' && <SidebarItem id="mikrotik" icon={Server} label="MikroTik" />}
               <SidebarItem id="portal" icon={Globe} label="Portal Web" />
-              <div className="my-3 h-px bg-slate-100 dark:bg-slate-800 mx-2"></div>
+              <div className="my-3 h-px bg-kai-bluedark mx-2"></div>
               <SidebarItem id="settings" icon={Settings} label="Pengaturan" />
             </nav>
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-              <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="w-full flex items-center justify-center gap-2 p-2 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500 mb-1">
+            <div className="p-3 border-t border-kai-bluedark">
+              <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="w-full flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-bold hover:bg-kai-bluedark transition-colors text-slate-400 mb-1">
                 {isSidebarCollapsed ? <ChevronRight className="w-4 h-4"/> : <><ChevronLeft className="w-4 h-4"/> Sembunyikan</>}
               </button>
-              <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-2 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
+              <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 p-2 text-rose-400 rounded-lg text-xs font-bold hover:bg-kai-bluedark transition-colors">
                 <LogOut className="w-4 h-4"/> {!isSidebarCollapsed && 'Keluar'}
               </button>
             </div>
           </aside>
 
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <div className="hidden lg:flex items-center justify-between px-8 py-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
-              <div>
-                <h1 className="text-xl font-black text-slate-800 dark:text-white capitalize">{activeTab === 'dashboard' ? 'Ringkasan' : activeTab}</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">MABUNET Panel</p>
+            <div className="hidden lg:flex items-center justify-end p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 gap-3">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-1.5 gap-2">
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
+                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 gap-2 border border-slate-200 dark:border-slate-700">
-                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select>
-                  <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-sm font-bold outline-none cursor-pointer text-kai-blue dark:text-white">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                </div>
-                <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-kai-orange transition-colors border border-slate-200 dark:border-slate-700">{isDarkMode ? <Sun className="w-5 h-5"/> : <Moon className="w-5 h-5"/>}</button>
-              </div>
+              <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-kai-orange">{isDarkMode ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button>
             </div>
 
-            <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative bg-slate-50 dark:bg-slate-900">
-              <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-16 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all">
+            <main className="flex-1 overflow-y-auto pb-24 lg:pb-8 custom-scrollbar relative">
+              <div className="lg:hidden w-full bg-kai-blue px-4 pt-6 pb-20 rounded-b-[40px] text-white absolute top-0 left-0 right-0 z-0 transition-all">
                 <div className="flex justify-between items-center mb-6">
                   <div><p className="text-xs text-slate-300">Selamat datang,</p><h2 className="font-bold text-lg">{currentUser.name}</h2></div>
                   <div className="flex gap-2">
@@ -1378,134 +1368,107 @@
                 </div>
               </div>
 
-              <div className="relative z-10 mt-24 lg:mt-6 px-4 lg:px-8 max-w-6xl mx-auto space-y-4">
-{activeTab === 'dashboard' && (
-                  <div className="space-y-5 animate-fade-in">
-                    
-                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-kai-orange/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10 mb-6">
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5 text-kai-orange"/> Pendapatan Bersih ({MONTHS[selectedMonth]} {selectedYear})</p>
-                          <h3 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{formatIDR(netProfit)}</h3>
-                        </div>
-                        <div className="lg:hidden flex bg-slate-100 rounded-xl px-3 py-2 gap-2 border border-slate-200">
-                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-xs font-bold outline-none text-slate-700">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
-                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-xs font-bold outline-none text-slate-700">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+              <div className={`relative z-10 mt-24 lg:mt-6 px-4 lg:px-8 max-w-6xl mx-auto space-y-4`}>
+                
+                {activeTab === 'dashboard' && (
+                  <>
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm text-kai-blue dark:text-white">Saldo Kas Bersih</span></div>
+                        <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
+                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
+                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                         </div>
                       </div>
-                      
-                      <div className="grid grid-cols-3 gap-3 relative z-10 border-t border-slate-100 dark:border-slate-700 pt-5">
-                        <div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Total Omset</p>
-                          <p className="text-sm font-black text-slate-800 dark:text-white">{formatIDR(totalPotentialRevenue)}</p>
-                        </div>
-                        <div className="border-l border-slate-100 dark:border-slate-700 pl-3">
-                          <p className="text-[9px] font-bold text-emerald-500 uppercase mb-1">Telah Bayar</p>
-                          <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatIDR(actualPaidRevenue)}</p>
-                        </div>
-                        <div className="border-l border-slate-100 dark:border-slate-700 pl-3">
-                          <p className="text-[9px] font-bold text-kai-blue dark:text-blue-400 uppercase mb-1">Pelanggan</p>
-                          <p className="text-sm font-black text-slate-800 dark:text-white">{customers.filter(c=>c.packageId!=='free_0').length} <span className="text-[10px] text-slate-400 font-bold">({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</span></p>
-                        </div>
+                      <div className="flex justify-between items-end">
+                        <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3>
+                        <div className="text-right"><p className="text-[10px] font-bold text-slate-400">Total Pelanggan</p><p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p></div>
                       </div>
                     </div>
                     
-                    <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-2 bg-kai-blue/10 text-kai-blue dark:text-blue-400 rounded-xl"><Server className="w-4 h-4"/></div>
-                          <div>
-                            <h3 className="font-black text-sm text-slate-800 dark:text-white">RouterOS MikroTik</h3>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Status Jaringan</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                          <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: mikrotikStatus ? '#34d399' : '#fb7185' }}></span><span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: mikrotikStatus ? '#10b981' : '#f43f5e' }}></span></span>
-                          <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: mikrotikStatus ? '#059669' : '#e11d48' }}>{mikrotikStatus ? 'Online' : 'Offline'}</span>
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mt-2 mb-2">
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2"><div className="p-1.5 bg-kai-blue text-white rounded-lg"><Server className="w-4 h-4"/></div><h3 className="font-black text-sm text-kai-blue dark:text-white">RouterOS MikroTik</h3></div>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`relative flex h-2.5 w-2.5`}><span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${mikrotikStatus ? 'bg-emerald-400' : 'bg-rose-400'}`}></span><span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${mikrotikStatus ? 'bg-emerald-500' : 'bg-rose-500'}`}></span></span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">{mikrotikStatus ? 'Online' : 'Offline'}</span>
                         </div>
                       </div>
                       <div className="grid grid-cols-4 gap-2">
-                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2.5 rounded-xl text-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1">CPU Load</p><p className="font-black text-sm text-slate-800 dark:text-white">{mikrotikStatus?.cpu || '0'}%</p></div>
-                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2.5 rounded-xl text-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1">Free RAM</p><p className="font-black text-sm text-slate-800 dark:text-white">{mikrotikStatus?.ram || '0'} MB</p></div>
-                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2.5 rounded-xl text-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1">Uptime</p><p className="font-black text-[10px] text-slate-800 dark:text-white leading-tight break-words">{mikrotikStatus?.uptime || '--'}</p></div>
-                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2.5 rounded-xl text-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-1">User Aktif</p><p className="font-black text-sm text-kai-orange">{mikrotikStatus?.activeUsers || '0'}</p></div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">CPU Load</p><p className="font-black text-xs text-kai-blue dark:text-white">{mikrotikStatus?.cpu || '0'}%</p></div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Free RAM</p><p className="font-black text-xs text-kai-blue dark:text-white">{mikrotikStatus?.ram || '0'} MB</p></div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Uptime</p><p className="font-black text-[9px] text-kai-blue dark:text-white leading-tight break-words">{mikrotikStatus?.uptime || '--'}</p></div>
+                        <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700 p-2 rounded-xl text-center flex flex-col justify-center"><p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">User Aktif</p><p className="font-black text-xs text-kai-orange">{mikrotikStatus?.activeUsers || '0'}</p></div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
-                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl gap-2 group hover:border-kai-blue transition-colors shadow-sm">
-                          <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-kai-blue dark:text-blue-400 rounded-xl flex items-center justify-center group-hover:bg-kai-blue group-hover:text-white transition-colors"><UserPlus className="w-5 h-5"/></div>
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                      <div className="grid grid-cols-3 gap-2">
+                        <button onClick={() => { setEditingCustomer(null); setFormData({name: '', block: '', phone: '', packageId: 'std_10', dueDate: 1, status: 'Aktif', notes: '', pppoe_user: ''}); setIsCustomerModalOpen(true); }} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-kai-blue dark:text-blue-400 rounded-2xl flex items-center justify-center group-hover:bg-kai-blue group-hover:text-white transition-colors shadow-sm"><UserPlus className="w-6 h-6"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Pelanggan<br/>Baru</span>
                         </button>
-                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl gap-2 group hover:border-kai-orange transition-colors shadow-sm">
-                          <div className="w-10 h-10 bg-orange-50 dark:bg-orange-900/30 text-kai-orange rounded-xl flex items-center justify-center group-hover:bg-kai-orange group-hover:text-white transition-colors"><CreditCard className="w-5 h-5"/></div>
+                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="flex flex-col items-center gap-2 group">
+                          <div className="w-12 h-12 bg-orange-50 dark:bg-orange-900/30 text-kai-orange rounded-2xl flex items-center justify-center group-hover:bg-kai-orange group-hover:text-white transition-colors shadow-sm"><CreditCard className="w-6 h-6"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Catat<br/>Kas</span>
                         </button>
-                        <button onClick={handleBroadcastWA} disabled={isBroadcasting} className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl gap-2 group hover:border-emerald-500 transition-colors shadow-sm">
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors" style={{ backgroundColor: isBroadcasting ? '#e2e8f0' : '#ecfdf5', color: isBroadcasting ? '#94a3b8' : '#059669' }}><Send className="w-4 h-4 ml-0.5"/></div>
+                        <button onClick={handleBroadcastWA} disabled={isBroadcasting} className="flex flex-col items-center gap-2 group">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm transition-colors ${isBroadcasting ? 'bg-slate-200 text-slate-400' : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white'}`}><Send className="w-5 h-5 ml-1"/></div>
                           <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 text-center leading-tight">Blast<br/>WA</span>
                         </button>
+                      </div>
                     </div>
 
-                    <div className="mt-8">
-                      <div className="flex justify-between items-end mb-4 px-1">
-                        <div>
-                          <h3 className="font-black text-lg text-slate-800 dark:text-white">Tagihan Tertunda</h3>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Bulan {MONTHS[selectedMonth]} {selectedYear}</p>
-                        </div>
-                        <span className="bg-rose-100 text-rose-600 px-3 py-1 rounded-full text-xs font-black">{dueCustomers.length} Belum Bayar</span>
-                      </div>
-                      
-                      <div className="relative w-full shadow-sm mb-4">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
-                        <input type="text" placeholder="Cari Nama / Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-xs font-bold outline-none focus:border-kai-blue transition-colors shadow-sm" />
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+                          <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg"><TrendingUp className="w-4 h-4 text-kai-blue dark:text-white"/></div>
+                          <div><p className="text-[9px] font-bold text-slate-400 uppercase">Total Omset</p><p className="text-sm font-black text-slate-800 dark:text-white">{formatIDR(totalPotentialRevenue)}</p></div>
+                       </div>
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-3">
+                          <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg"><Check className="w-4 h-4 text-emerald-600"/></div>
+                          <div><p className="text-[9px] font-bold text-slate-400 uppercase">Telah Bayar</p><p className="text-sm font-black text-emerald-600 dark:text-emerald-400">{formatIDR(actualPaidRevenue)}</p></div>
+                       </div>
+                    </div>
 
+                    <div className="sticky top-0 lg:top-0 z-30 bg-kai-bg dark:bg-slate-900 pt-3 pb-3 -mx-4 px-4 sm:mx-0 sm:px-0 transition-colors">
+                      <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-black text-base text-kai-blue dark:text-white">Tagihan Tertunda ({dueCustomers.length})</h3>
+                        <span className="text-xs font-bold text-kai-orange">Bulan {MONTHS[selectedMonth]}</span>
+                      </div>
+                      <div className="relative w-full shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Search className="w-4 h-4" /></div>
+                        <input type="text" placeholder="Cari Nama / Blok..." value={dueSearchTerm} onChange={e => setDueSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-3 text-xs font-semibold outline-none focus:border-kai-blue transition-colors" />
+                      </div>
+                    </div>
+
+                    <div>
                       {filteredDueCustomers.length === 0 ? (
-                        <div className="text-center py-10 bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center">
-                          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mb-3">
-                            <Check className="w-8 h-8 text-emerald-500"/>
-                          </div>
-                          <h4 className="font-black text-sm text-slate-800 dark:text-white mb-1">Semua Lunas!</h4>
-                          <p className="text-xs text-slate-500 font-medium">Tidak ada tagihan tertunda bulan ini.</p>
-                        </div>
+                        <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3 pb-4">
                           {filteredDueCustomers.map(cust => {
                             const pkg = getPackage(cust.packageId);
                             const isToday = cust.dueDate === todayDay;
                             return (
-                              <div key={cust.id} className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-kai-blue">
-                                
-                                <div className="flex items-start gap-3">
-                                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: isToday ? '#ffe4e6' : '#f1f5f9', color: isToday ? '#e11d48' : '#64748b' }}>
-                                    <User className="w-5 h-5"/>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-black text-sm text-slate-800 dark:text-white">{cust.name}</h4>
-                                    <p className="text-[10px] font-bold text-slate-500 mt-0.5">Blok {cust.block} • {pkg.speed}</p>
-                                  </div>
+                              <div key={cust.id} className={`flex bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${isToday ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-700'} relative overflow-hidden`}>
+                                <div className="flex-1 p-3 md:p-4">
+                                  <div className="flex justify-between items-start"><h4 className="font-extrabold text-sm md:text-base text-kai-blue dark:text-white truncate pr-2">{cust.name}</h4><div className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-slate-500 whitespace-nowrap">BLOK {cust.block}</div></div>
+                                  <div className="text-[10px] font-semibold text-slate-400 mt-1">{pkg.speed} • HP: {cust.phone || '-'}</div>
+                                  <div className={`text-[10px] font-bold mt-3 inline-block px-2 py-1 rounded-md ${isToday ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30' : 'bg-slate-50 dark:bg-slate-700 text-slate-500'}`}>Jatuh Tempo TGL {cust.dueDate}</div>
                                 </div>
-
-                                <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto border-t border-slate-100 md:border-t-0 pt-3 md:pt-0 mt-1 md:mt-0">
-                                  <div className="text-left md:text-right">
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Nominal</p>
-                                    <p className="font-black text-sm text-kai-blue dark:text-blue-400">{formatIDR(pkg.price)}</p>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button onClick={() => sendWAInvoice(cust)} className="w-9 h-9 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100 hover:text-emerald-600 rounded-xl flex items-center justify-center text-slate-500 transition-colors" title="Kirim Tagihan WA"><Send className="w-4 h-4"/></button>
-                                    <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="px-4 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl text-xs font-bold shadow-sm transition-colors">Bayar</button>
-                                  </div>
+                                <div className="w-1.5 ticket-divider relative flex flex-col justify-between"><div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -top-1.5 -left-1"></div><div className="w-3 h-3 bg-kai-bg dark:bg-slate-900 rounded-full absolute -bottom-1.5 -left-1"></div></div>
+                                <div className="w-28 md:w-32 bg-slate-50 dark:bg-slate-800/50 flex flex-col justify-center p-3 gap-2">
+                                  <div className="text-right"><p className="text-[8px] font-bold text-slate-400 uppercase">Total Tagihan</p><p className="font-black text-[13px] md:text-sm text-kai-blue dark:text-white">{formatIDR(pkg.price)}</p></div>
+                                  <button onClick={() => togglePayment(cust.id, currentPeriodKey)} className="w-full py-1.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[10px] font-bold shadow-sm transition-colors">Bayar</button>
+                                  <button onClick={() => sendWAInvoice(cust)} className="w-full py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-white rounded-lg text-[10px] font-bold hover:bg-slate-50 transition-colors">WA</button>
                                 </div>
-
                               </div>
                             )
                           })}
                         </div>
                       )}
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {activeTab === 'customers' && (
