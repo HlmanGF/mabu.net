@@ -338,19 +338,35 @@
           </div>
       </div>
 
-      <!-- KONTEN: PEMBAYARAN -->
+            <!-- KONTEN: PEMBAYARAN -->
       <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
-          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 text-center mt-2">
-              <h2 class="text-xl font-black text-kai-blue mb-1">Pembayaran Tagihan</h2>
-              <p class="text-xs font-semibold text-slate-500 mb-6">Scan QRIS di bawah ini untuk membayar langganan internet Anda.</p>
-              <div class="bg-slate-50 border-2 border-dashed border-slate-300 p-6 rounded-3xl mx-auto mb-6 shadow-inner">
-                  <div class="text-kai-blue font-black text-lg tracking-widest mb-4">QRIS MABUNET</div>
-                  <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-48 h-48 object-contain mx-auto mb-4 rounded-xl shadow-md border bg-white">
+          <div class="bg-white rounded-[30px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 text-center mt-2 relative overflow-hidden">
+              <!-- Banner Atas -->
+              <div class="absolute top-0 inset-x-0 h-32 bg-gradient-to-br from-kai-blue to-kai-bluedark z-0"></div>
+              
+              <div class="relative z-10 pt-6 pb-6 px-6">
+                  <h2 class="text-xl font-black text-white mb-1">Pembayaran Tagihan</h2>
+                  <p class="text-[10px] font-semibold text-slate-300 mb-6">Scan QRIS di bawah ini untuk membayar</p>
+
+                  <!-- Kartu QRIS -->
+                  <div class="bg-white p-5 rounded-3xl shadow-xl border border-slate-200 mb-6 mx-auto inline-block w-full max-w-[280px]">
+                      <div class="text-kai-blue font-black text-sm tracking-widest mb-3 uppercase">MABUNET QRIS</div>
+                      
+                      <div class="bg-slate-50 p-2 rounded-2xl border-2 border-dashed border-slate-300 mb-4">
+                          <img src="./qris.jpg" alt="QRIS Code MabuNet" class="w-full aspect-square object-contain rounded-xl">
+                      </div>
+                      
+                      <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Total Tagihan</div>
+                      <div class="text-2xl font-black text-kai-orange mb-1" id="payTotalTagihan">Rp 0</div>
+                      <div class="text-[9px] text-slate-400 font-semibold" id="payStatusTagihan">Memuat...</div>
+                  </div>
+
+                  <!-- Tombol Upload -->
+                  <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] active:scale-95 transition-all">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                      Upload Bukti Pembayaran
+                  </button>
               </div>
-              <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-sm shadow-lg">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                  Upload Bukti Pembayaran
-              </button>
           </div>
       </div>
       
