@@ -67,69 +67,6 @@
 </head>
 <body>
 
-
-<div id="elegant-login" class="fixed inset-0 z-[99999] bg-[#0F172A] flex items-center justify-center p-4 overflow-y-auto" style="display: none;">
-    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-kai-blue rounded-full mix-blend-screen filter blur-[100px] opacity-40 pointer-events-none"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-kai-orange rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
-
-    <div class="relative z-10 w-full max-w-4xl grid lg:grid-cols-2 bg-white rounded-[32px] overflow-hidden shadow-2xl border border-white/10">
-        <div class="hidden lg:flex flex-col justify-center p-12 bg-gradient-to-br from-kai-blue to-kai-bluedark relative text-white">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-kai-orange rounded-full mix-blend-screen filter blur-[80px] opacity-30"></div>
-            <div class="flex items-center gap-4 mb-10 relative z-10">
-                <img src="./mabunetlogo.png" class="w-16 h-16 object-contain bg-white rounded-2xl p-2" onerror="this.style.display='none'">
-                <div>
-                    <h1 class="text-3xl font-black tracking-tight leading-none">MABU<span class="text-kai-orange">NET</span></h1>
-                    <p class="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mt-1">Sistem Terpadu</p>
-                </div>
-            </div>
-            <h2 class="text-4xl font-black leading-tight mb-4 relative z-10">Satu Aplikasi,<br>Semua <span class="text-kai-orange">Terhubung</span>.</h2>
-            <p class="text-sm text-slate-300 font-medium max-w-sm relative z-10">Kelola tagihan internet Anda atau akses panel admin dengan satu pintu masuk yang aman.</p>
-        </div>
-
-        <div class="p-8 md:p-12 flex flex-col justify-center bg-white relative">
-            <div class="text-center mb-8 lg:hidden">
-                <img src="./mabunetlogo.png" class="w-16 h-16 mx-auto mb-3" onerror="this.style.display='none'">
-                <h1 class="text-2xl font-black text-kai-blue">MABU<span class="text-kai-orange">NET</span></h1>
-            </div>
-
-            <div class="mb-8">
-                <h2 class="text-2xl font-black text-slate-800 mb-1">Selamat Datang</h2>
-                <p class="text-xs font-semibold text-slate-500">Masuk menggunakan Nomor WA atau ID Admin</p>
-            </div>
-
-            <div id="loginErrorMsg" class="hidden mb-4 p-3 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold text-center border border-rose-100"></div>
-
-            <form id="elegantLoginForm" class="space-y-5">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider ml-1">Nomor WhatsApp / ID Admin</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        </span>
-                        <input type="text" id="smartInput" required autocomplete="off" placeholder="08123456789 / Username" class="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-kai-blue focus:ring-4 focus:ring-kai-blue/10 transition-all text-slate-800">
-                    </div>
-                </div>
-
-                <div id="adminPassContainer" class="hidden animate-fade-in">
-                    <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider ml-1">Password Admin</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        </span>
-                        <input type="password" id="adminPassInput" placeholder="••••••••" class="w-full h-14 pl-12 pr-12 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-kai-blue focus:ring-4 focus:ring-kai-blue/10 transition-all text-slate-800">
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full h-14 bg-kai-blue text-white rounded-2xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(26,44,91,0.5)] hover:bg-kai-bluedark active:scale-[0.98] transition-all">
-                    Masuk ke Aplikasi
-                </button>
-            </form>
-            <p class="text-center text-[10px] font-semibold text-slate-400 mt-8">© MABUNET • Sistem Terpadu</p>
-        </div>
-    </div>
-</div>
-
-
   <!-- ========================================== -->
   <!-- 1. AREA ADMIN PANEL (REACT JS)             -->
   <!-- ========================================== -->
@@ -138,7 +75,7 @@
   <!-- ========================================== -->
   <!-- 2. AREA PORTAL CLIENT (VANILLA JS)         -->
   <!-- ========================================== -->
-  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden hidden" style="display:none !important;"">
+  <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden">
       
       <!-- MODAL RUANG CHAT TIKET -->
       <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
@@ -724,7 +661,7 @@
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
-      /* Sabotage cleared */
+      localStorage.removeItem('mabunet_session');
       const [loginForm, setLoginForm] = useState({ password: '', smartInput: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -837,7 +774,7 @@
 
       useEffect(() => {
         const handleVisibilityChange = () => {
-          /* Auto-logout disabled */
+          if (document.visibilityState === 'hidden' && window.innerWidth < 1024 && currentUser) { handleLogout(); }
         };
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -857,7 +794,14 @@
               const cloudAdmins = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               setAdmins(cloudAdmins);
               const sessionUid = localStorage.getItem('mabunet_session');
-              setCurrentUser(prevUser => { if(prevUser) return prevUser; return { id: "admin1", username: "Hilman", name: "Hilman Fatahillah", role: "Super Admin", status: "Aktif" }; });
+              setCurrentUser(prevUser => {
+                const activeUid = prevUser ? prevUser.id : sessionUid;
+                if (activeUid) {
+                  const activeUser = cloudAdmins.find(a => a.id === activeUid);
+                  if (activeUser && activeUser.status === 'Aktif') return activeUser;
+                  else localStorage.removeItem('mabunet_session'); 
+                } return null;
+              });
             }
           });
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
@@ -1328,7 +1272,60 @@
         </button>
       );
 
-      if (!currentUser) { return null; }
+      if (!currentUser) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-kai-blue rounded-b-[40px]"></div>
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
+              <div className="text-center mb-8">
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
+                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
+              </div>
+              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg flex items-center gap-2 font-bold"><ShieldAlert className="w-4 h-4"/> {loginError}</div>}
+              {forgotMessage.text && <div className={`mb-4 p-3 text-xs rounded-lg font-bold ${forgotMessage.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{forgotMessage.text}</div>}
+              {!forgotMode ? (
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                      <Lock className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                      <input type="text" placeholder="Nomor WA / Password Admin..." required value={loginForm.smartInput || ''} onChange={e => setLoginForm({...loginForm, smartInput: e.target.value})} className="w-full bg-transparent pl-8 pr-8 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-0 text-slate-400 hover:text-kai-blue">{showPassword ? <EyeOff className="w-5 h-5"/> : <Eye className="w-5 h-5"/>}</button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end"><button type="button" onClick={() => {setForgotMode(true); setForgotMessage({text: '', type: ''});}} className="text-[10px] text-kai-blue font-bold">Lupa Password?</button></div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg hover:bg-kai-orangedark transition-colors">Masuk</button>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="text-xs font-bold text-center text-slate-500 mb-2">Pemulihan Akun</div>
+                  <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                    <Mail className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                    <input type="email" placeholder="Email Terdaftar..." required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className="w-full bg-transparent pl-8 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                  </div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-blue text-white text-sm font-bold shadow-lg mt-2">Cek Password</button>
+                  <button type="button" onClick={() => setForgotMode(false)} className="w-full text-center text-slate-500 text-xs font-bold">Kembali</button>
+                </form>
+              )}
+              
+              {!forgotMode && (
+                <div className="mt-8 flex flex-col items-center gap-3">
+                  <button onClick={() => handleFingerprintScan()} className="flex flex-col items-center gap-2 group">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600 group-hover:border-kai-blue transition-colors">
+                      <Fingerprint className="w-6 h-6 text-kai-blue dark:text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400">Sidik Jari</span>
+                  </button>
+                  
+                  <a href="/client" onClick={(e) => { e.preventDefault(); window.location.href = window.location.origin + "/client"; }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
+                      <User className="w-4 h-4" /> Masuk sebagai Pelanggan
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      }
 
       return (
         <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
@@ -2936,117 +2933,5 @@
         closeCropper();
     }
   </script>
-
-<script>
-    // --- SMART LOGIN LOGIC (FINAL FIX) ---
-    
-    function initElegantLogin() {
-        const el = document.getElementById('elegant-login');
-        if (!el) return;
-        
-        if (!localStorage.getItem('mabunet_session')) {
-            el.style.display = 'flex';
-        } else {
-            el.style.display = 'none';
-        }
-
-        const input = document.getElementById('smartInput');
-        const passContainer = document.getElementById('adminPassContainer');
-        const errDiv = document.getElementById('loginErrorMsg');
-
-        input.addEventListener('input', function(e) {
-            const isAdmin = /[a-zA-Z]/.test(e.target.value);
-            passContainer.style.display = isAdmin ? 'block' : 'none';
-            errDiv.style.display = 'none';
-        });
-
-        document.getElementById('elegantLoginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const inputVal = input.value.trim();
-            const passVal = document.getElementById('adminPassInput').value.trim();
-            const btn = this.querySelector('button[type="submit"]');
-            
-            errDiv.style.display = 'none';
-            btn.innerText = 'Memproses...';
-            btn.disabled = true;
-
-            const isAdmin = /[a-zA-Z]/.test(inputVal);
-
-            try {
-                if (isAdmin) {
-                    // MODE DARURAT (GOD MODE)
-                    // Cek dulu apakah user memasukkan kredensial default
-                    if ((inputVal.toLowerCase() === 'hilman' || inputVal.toLowerCase() === 'admin1') && (passVal === 'Kosong,19' || passVal === '123' || passVal === '')) {
-                        localStorage.setItem('mabunet_session', 'admin1');
-                        localStorage.setItem('mabunet_device_user', 'admin1');
-                        window.location.reload();
-                        return;
-                    }
-
-                    // Jika bukan default, coba cari di database
-                    const snap = await db.collection('admins').get();
-                    let adminUser = snap.docs.find(d => {
-                        const a = d.data();
-                        const dbU = (a.username || '').trim().toLowerCase();
-                        const dbP = (a.password || '').trim();
-                        return dbU === inputVal.toLowerCase() && dbP === passVal;
-                    });
-
-                    // Jika masih gagal, coba cek apakah user mengetik password di kolom pertama
-                    if (!adminUser && passVal === '') {
-                         adminUser = snap.docs.find(d => {
-                            const a = d.data();
-                            return (a.password || '').trim() === inputVal;
-                         });
-                    }
-
-                    if (adminUser) {
-                        localStorage.setItem('mabunet_session', adminUser.id);
-                        localStorage.setItem('mabunet_device_user', adminUser.id);
-                        window.location.reload();
-                    } else {
-                        errDiv.innerText = 'Login Gagal! Coba ketik "Hilman" dan password "Kosong,19".';
-                        errDiv.style.display = 'block';
-                        btn.innerText = 'Masuk ke Aplikasi';
-                        btn.disabled = false;
-                    }
-                } else {
-                    // LOGIN PELANGGAN
-                    const cleanPhone = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
-                    const norm = cleanPhone(inputVal);
-                    const withZero = norm.startsWith('62') ? '0'+norm.substring(2) : norm;
-                    
-                    let snap = await db.collection('customers').where('phone', '==', inputVal).get();
-                    if (snap.empty) snap = await db.collection('customers').where('phone', '==', norm).get();
-                    if (snap.empty) snap = await db.collection('customers').where('phone', '==', withZero).get();
-                    
-                    let matched = null;
-                    if (!snap.empty) matched = snap.docs[0];
-                    else {
-                        const all = await db.collection('customers').get();
-                        matched = all.docs.find(d => cleanPhone(d.data().phone) === norm);
-                    }
-
-                    if (matched) {
-                        localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.data().foto_profil}));
-                        window.location.href = '/client';
-                    } else {
-                        errDiv.innerText = 'Nomor WhatsApp tidak terdaftar.';
-                        errDiv.style.display = 'block';
-                        btn.innerText = 'Masuk ke Aplikasi';
-                        btn.disabled = false;
-                    }
-                }
-            } catch(err) {
-                errDiv.innerText = 'Error: ' + err.message;
-                errDiv.style.display = 'block';
-                btn.innerText = 'Masuk ke Aplikasi';
-                btn.disabled = false;
-            }
-        });
-    }
-    
-window.addEventListener('load', initElegantLogin);
-</script>
 </body>
 </html>
