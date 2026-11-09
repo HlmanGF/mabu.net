@@ -453,33 +453,63 @@
       </div>               
 
       <!-- KONTEN: LOGIN CLIENT -->
-      <div id="view-login" class="view-section flex flex-col justify-center p-4 w-full max-w-xl mx-auto h-full">
-          <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200 mt-2">
-              <div class="text-center mb-6">
-                  <div class="w-16 h-16 bg-kai-blue rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
-                  </div>
-                  <h2 class="text-xl font-black text-kai-blue mb-1">Login Akun</h2>
-                  <p class="text-[10px] font-semibold text-slate-500">Masuk untuk melihat Data Penagihan & Tiket Anda.</p>
-              </div>
-              <form id="loginForm" class="space-y-4">
-                  <div>
-                      <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nomor WhatsApp</label>
-                      <input type="tel" id="loginWA" required placeholder="Contoh: 08123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
-                  </div>
-                  <button type="submit" id="btnLogin" class="w-full py-4 mt-2 bg-kai-blue text-white rounded-xl font-black text-sm shadow-lg">Masuk ke Portal</button>
-              </form>
-              <div class="mt-8 text-center border-t border-slate-100 pt-5">
-                  <p class="text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Belum berlangganan?</p>
-                  <button type="button" onclick="masukSebagaiTamu()" class="w-full py-3 bg-slate-50 text-kai-blue border border-slate-200 hover:bg-slate-100 rounded-xl font-black text-sm transition-all shadow-sm">Daftar Pasang Baru</button>
-              </div>
-              <div class="mt-4 text-center">
-                  <a href="/" class="text-[10px] font-bold text-slate-400 hover:text-kai-blue underline">← Kembali ke Admin</a>
-              </div>
-          </div>
-      </div>
+      
+  <!-- KONTEN: LOGIN CLIENT (Premium) -->
+  <div id="view-login" class="view-section flex flex-col justify-center items-center p-6 w-full min-h-screen relative overflow-hidden bg-[#0F172A]">
+      
+      <!-- Ornamen Latar Belakang -->
+      <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-kai-blue rounded-full mix-blend-screen filter blur-[100px] opacity-40 pointer-events-none"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-kai-orange rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
 
-      <!-- KONTEN: PROFIL CLIENT -->
+      <div class="relative z-10 w-full max-w-md">
+          <!-- Logo & Judul -->
+          <div class="text-center mb-8">
+              <div class="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl shadow-xl border border-white/20 mb-5 p-3">
+                  <img src="./mabunetlogo.png" alt="MABUNET" class="w-full h-full object-contain" onerror="this.style.display='none'">
+              </div>
+              <h1 class="text-4xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
+              <p class="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Portal Pelanggan</p>
+          </div>
+
+          <!-- Card Login -->
+          <div class="bg-white rounded-[32px] p-8 shadow-2xl border border-white/10">
+              <div class="text-center mb-7">
+                  <h2 class="text-2xl font-black text-slate-800 mb-1">Selamat Datang</h2>
+                  <p class="text-xs font-semibold text-slate-500">Masuk menggunakan nomor WhatsApp terdaftar</p>
+              </div>
+
+              <form id="loginForm" class="space-y-5">
+                  <div>
+                      <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider ml-1">Nomor WhatsApp</label>
+                      <div class="relative">
+                          <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400">
+                              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                          </span>
+                          <input type="tel" id="loginWA" placeholder="08123456789" required="" inputmode="numeric" class="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-kai-blue focus:ring-4 focus:ring-kai-blue/10 transition-all">
+                      </div>
+                  </div>
+                  <button type="submit" id="btnLogin" class="w-full h-14 bg-kai-blue text-white rounded-2xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(26,44,91,0.5)] hover:bg-kai-bluedark active:scale-[0.98] transition-all disabled:opacity-60">
+                      Masuk ke Portal
+                  </button>
+              </form>
+
+              <div class="my-7 flex items-center gap-3">
+                  <div class="flex-1 h-px bg-slate-200"></div>
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Belum Berlangganan?</span>
+                  <div class="flex-1 h-px bg-slate-200"></div>
+              </div>
+
+              <button type="button" onclick="masukSebagaiTamu()" class="w-full h-14 bg-white border-2 border-slate-200 text-slate-700 rounded-2xl font-black text-sm hover:border-kai-blue hover:text-kai-blue active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                  Daftar Pasang Baru
+              </button>
+          </div>
+
+          <p class="text-center text-[10px] font-semibold text-slate-500 mt-8">© 2024 MABUNET • Master Billing &amp; Network</p>
+      </div>
+  </div>
+
+
       <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mt-2">
               <div class="flex justify-between items-center mb-6">
@@ -595,7 +625,7 @@
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
     const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
-    const PORTAL_URL = window.location.origin + "/#client"; 
+    const PORTAL_URL = window.location.origin + "/client"; 
 
     const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
       return new Promise((resolve, reject) => {
@@ -1271,7 +1301,7 @@
                     <span className="text-[10px] font-bold text-slate-400">Sidik Jari</span>
                   </button>
                   
-                  <a href="#client" onClick={(e) => { e.preventDefault(); window.location.href = window.location.origin + window.location.pathname + "#client"; }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
+                  <a href="/client" onClick={(e) => { e.preventDefault(); window.location.href = window.location.origin + "/client"; }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
                       <User className="w-4 h-4" /> Masuk sebagai Pelanggan
                   </a>
                 </div>
