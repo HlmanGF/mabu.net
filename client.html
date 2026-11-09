@@ -48,6 +48,8 @@
     .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
     
     /* CSS Client */
+    /* Mencegah swipe to go back */
+    body { overscroll-behavior-x: none !important; overscroll-behavior-y: none !important; }
     .view-section:not(.active) { display: none !important; }
     .view-section { animation: fadeIn 0.3s ease; width: 100%; flex: 1; overflow-y: auto; padding-bottom: 20px; }
     .view-section.active { display: block; }
@@ -2114,6 +2116,17 @@
         }
     }
     window.addEventListener('hashchange', checkRoute);
+    
+    // --- ANTI SWIPE LOGOUT ---
+    if (history.scrollRestoration) { history.scrollRestoration = 'manual'; }
+    window.addEventListener('popstate', function(event) {
+        const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
+        if (isClient && localStorage.getItem('mabunet_client_session')) {
+            // Jika user mencoba swipe back (keluar dari portal), cegat dan kembalikan ke state awal
+            history.pushState(null, null, window.location.href);
+            if(typeof showToast === 'function') showToast('Gunakan tombol "Keluar Akun" untuk keluar.', 'info');
+        }
+    });
     window.addEventListener('load', checkRoute);
     setTimeout(checkRoute, 100);
 
