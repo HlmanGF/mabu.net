@@ -794,14 +794,18 @@
               setAdmins(cloudAdmins);
               const sessionUid = localStorage.getItem('mabunet_session');
               setCurrentUser(prevUser => {
-                  const activeUid = prevUser ? prevUser.id : localStorage.getItem("mabunet_session");
-                  if (activeUid) {
-                      const activeUser = cloudAdmins.find(a => a.id === activeUid);
-                      if (activeUser && activeUser.status === "Aktif") return activeUser;
-                      else localStorage.removeItem("mabunet_session");
-                  }
-                  return null;
-              });
+        // Jika sudah login, jangan sentuh sesinya!
+        if (prevUser) return prevUser;
+        
+        // Jika belum login, coba pulihkan dari localStorage
+        const savedUid = localStorage.getItem("mabunet_session");
+        if (savedUid) {
+            const savedUser = cloudAdmins.find(a => a.id === savedUid);
+            if (savedUser && savedUser.status === "Aktif") return savedUser;
+            else localStorage.removeItem("mabunet_session");
+        }
+        return null;
+    });
             }
           });
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
