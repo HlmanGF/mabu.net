@@ -661,7 +661,7 @@
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
-      localStorage.removeItem('mabunet_session'); localStorage.removeItem('mabunet_device_user');
+      localStorage.removeItem('mabunet_session');
       const [loginForm, setLoginForm] = useState({ password: '', smartInput: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -1046,15 +1046,30 @@
         }
       };
 
-      const handleLogin = (e) => {
+      const handleLogin = async (e) => {
         if(e) e.preventDefault(); setLoginError('');
-        const user = admins.find(a => a.password === loginForm.password);
-        if (user) {
-          if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
-          setCurrentUser(user); setEditProfile(user);
-          localStorage.setItem('mabunet_session', user.id); 
-          localStorage.setItem('mabunet_device_user', user.id); 
-        } else { setLoginError('Password salah!'); }
+        const inputVal = (loginForm.smartInput || '').trim();
+        if (!inputVal) return;
+        
+        // Jika mengandung huruf, anggap Admin (Password)
+        if (/[a-zA-Z]/.test(inputVal)) {
+            const user = admins.find(a => a.password === inputVal);
+            if (user) {
+              if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
+              setCurrentUser(user); setEditProfile(user);
+              localStorage.setItem('mabunet_session', user.id); 
+              localStorage.setItem('mabunet_device_user', user.id); 
+            } else {
+              setLoginError('Password Admin salah!');
+            }
+        } else {
+            // Jika hanya angka, anggap Pelanggan
+            if (typeof window.smartLoginClient === 'function') {
+              window.smartLoginClient(inputVal);
+            } else {
+              setLoginError('Sistem login pelanggan belum siap.');
+            }
+        }
       };
 
       const registerFingerprint = async () => {
@@ -1257,97 +1272,60 @@
         </button>
       );
 
-      
-if (!currentUser) {
-        const isAdminMode = /[a-zA-Z]/.test(loginForm.smartInput || '');
-
-        const handleSmartLogin = async (e) =&gt; {
-          e.preventDefault();
-          setLoginError('');
-          const inputVal = (loginForm.smartInput || '').trim();
-          if (!inputVal) return;
-
-          if (isAdminMode) {
-            const user = admins.find(a =&gt; a.username.toLowerCase() === inputVal.toLowerCase() &amp;&amp; a.password === loginForm.password);
-            if (user) {
-              if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
-              setCurrentUser(user); setEditProfile(user);
-              localStorage.setItem('mabunet_session', user.id); 
-              localStorage.setItem('mabunet_device_user', user.id); 
-            } else {
-              setLoginError('Username atau Password Admin salah!');
-            }
-          } else {
-            if (typeof window.smartLoginClient === 'function') {
-              window.smartLoginClient(inputVal);
-            } else {
-              setLoginError('Fungsi login pelanggan tidak siap.');
-            }
-          }
-        };
-
+      if (!currentUser) {
         return (
-          <div classname="min-h-screen flex flex-col items-center justify-center p-4 bg-[#0F172A] relative overflow-hidden">
-            <div classname="absolute top-[-10%] left-[-10%] w-96 h-96 bg-kai-blue rounded-full mix-blend-screen filter blur-[100px] opacity-40 pointer-events-none"></div>
-            <div classname="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-kai-orange rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
-
-            <div classname="relative z-10 w-full max-w-md">
-              <div classname="text-center mb-8">
-                <div classname="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl shadow-xl border border-white/20 mb-5 p-3">
-                  <img src="./mabunetlogo.png" alt="MABUNET" classname="w-full h-full object-contain" onerror="{(e)" ==""> { e.target.style.display = 'none'; }} /&gt;
-                </div>
-                <h1 classname="text-4xl font-black text-white tracking-tight">MABU<span classname="text-kai-orange">NET</span></h1>
-                <p classname="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Master Billing &amp; Network</p>
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-kai-bg dark:bg-slate-900 transition-colors duration-500 relative">
+            <div className="absolute top-0 inset-x-0 h-1/2 bg-kai-blue rounded-b-[40px]"></div>
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl relative z-10">
+              <div className="text-center mb-8">
+                <img src="./mabunetlogo.png" alt="MABUNET" className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                <h1 className="text-2xl font-black text-kai-blue dark:text-white">MABU<span className="text-kai-orange">NET</span></h1>
+                <p className="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">Admin Access</p>
               </div>
-
-              <div classname="bg-white rounded-[32px] p-8 shadow-2xl border border-white/10">
-                <div classname="text-center mb-7">
-                  <h2 classname="text-2xl font-black text-slate-800 mb-1">Selamat Datang</h2>
-                  <p classname="text-xs font-semibold text-slate-500">Masuk menggunakan Nomor WA atau ID Admin</p>
-                </div>
-
-                {loginError &amp;&amp; <div classname="mb-5 p-3 bg-rose-50 text-rose-600 text-xs rounded-xl flex items-center gap-2 font-bold border border-rose-100"><shieldalert classname="w-4 h-4 shrink-0"> {loginError}</shieldalert></div>}
-
-                <form onsubmit="{handleSmartLogin}" classname="space-y-5">
+              {loginError && <div className="mb-4 p-3 bg-rose-50 text-rose-600 text-xs rounded-lg flex items-center gap-2 font-bold"><ShieldAlert className="w-4 h-4"/> {loginError}</div>}
+              {forgotMessage.text && <div className={`mb-4 p-3 text-xs rounded-lg font-bold ${forgotMessage.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{forgotMessage.text}</div>}
+              {!forgotMode ? (
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
-                    <label classname="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider ml-1">Nomor WhatsApp / ID</label>
-                    <div classname="relative">
-                      <span classname="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
-                        {isAdminMode ? <user classname="w-5 h-5"> : <svg classname="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokelinecap="round" strokelinejoin="round" strokewidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>}
-                      </user></span>
-                      <input type="text" placeholder="08123456789 / Username" required="" value="{loginForm.smartInput" ||="" ''}="" onchange="{e" ==""> setLoginForm({...loginForm, smartInput: e.target.value})} className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-kai-blue focus:ring-4 focus:ring-kai-blue/10 transition-all text-slate-800" /&gt;
+                    <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                      <Lock className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                      <input type="text" placeholder="Nomor WA / Password Admin..." required value={loginForm.smartInput || ''} onChange={e => setLoginForm({...loginForm, smartInput: e.target.value})} className="w-full bg-transparent pl-8 pr-8 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute bottom-2 right-0 text-slate-400 hover:text-kai-blue">{showPassword ? <EyeOff className="w-5 h-5"/> : <Eye className="w-5 h-5"/>}</button>
                     </div>
                   </div>
-
-                  {isAdminMode &amp;&amp; (
-                    <div classname="animate-fade-in">
-                      <label classname="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-wider ml-1">Password Admin</label>
-                      <div classname="relative">
-                        <span classname="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 pointer-events-none">
-                          <lock classname="w-5 h-5">
-                        </lock></span>
-                        <input type="{showPassword" ?="" "text"="" :="" "password"}="" placeholder="••••••••" required="" value="{loginForm.password" ||="" ''}="" onchange="{e" ==""> setLoginForm({...loginForm, password: e.target.value})} className="w-full h-14 pl-12 pr-12 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:border-kai-blue focus:ring-4 focus:ring-kai-blue/10 transition-all text-slate-800" /&gt;
-                        <button type="button" onclick="{()" ==""> setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-kai-blue"&gt;{showPassword ? <eyeoff classname="w-5 h-5"> : <eye classname="w-5 h-5">}</eye></eyeoff></button>
-                      </div>
-                    </div>
-                  )}
-
-                  <button type="submit" classname="w-full h-14 bg-kai-blue text-white rounded-2xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(26,44,91,0.5)] hover:bg-kai-bluedark active:scale-[0.98] transition-all disabled:opacity-60">
-                    Masuk ke Aplikasi
-                  </button>
+                  <div className="flex justify-end"><button type="button" onClick={() => {setForgotMode(true); setForgotMessage({text: '', type: ''});}} className="text-[10px] text-kai-blue font-bold">Lupa Password?</button></div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-orange text-white text-sm font-bold shadow-lg hover:bg-kai-orangedark transition-colors">Masuk</button>
                 </form>
-
-                <div classname="mt-6 pt-5 border-t border-slate-100 text-center">
-                  <button type="button" onclick="{()" ==""> window.location.href = '/'} className="text-[11px] font-bold text-slate-400 hover:text-kai-blue transition-colors"&gt;
-                    © MABUNET • Sistem Terpadu
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="text-xs font-bold text-center text-slate-500 mb-2">Pemulihan Akun</div>
+                  <div className="relative border-b-2 border-slate-200 dark:border-slate-600 focus-within:border-kai-blue pb-1 transition-colors">
+                    <Mail className="absolute bottom-2 left-0 w-5 h-5 text-slate-400" />
+                    <input type="email" placeholder="Email Terdaftar..." required value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} className="w-full bg-transparent pl-8 pr-4 py-2 text-sm font-bold outline-none text-slate-800 dark:text-white" />
+                  </div>
+                  <button type="submit" className="w-full py-3.5 rounded-xl bg-kai-blue text-white text-sm font-bold shadow-lg mt-2">Cek Password</button>
+                  <button type="button" onClick={() => setForgotMode(false)} className="w-full text-center text-slate-500 text-xs font-bold">Kembali</button>
+                </form>
+              )}
+              
+              {!forgotMode && (
+                <div className="mt-8 flex flex-col items-center gap-3">
+                  <button onClick={() => handleFingerprintScan()} className="flex flex-col items-center gap-2 group">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center border border-slate-200 dark:border-slate-600 group-hover:border-kai-blue transition-colors">
+                      <Fingerprint className="w-6 h-6 text-kai-blue dark:text-white" />
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400">Sidik Jari</span>
                   </button>
+                  
+                  <a href="/client" onClick={(e) => { e.preventDefault(); window.location.href = window.location.origin + "/client"; }} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-kai-blue text-kai-blue font-bold text-xs hover:bg-blue-50 transition-colors mt-2">
+                      <User className="w-4 h-4" /> Masuk sebagai Pelanggan
+                  </a>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         );
       }
-
 
       return (
         <div className="flex h-screen w-full bg-kai-bg dark:bg-slate-900 text-slate-800 dark:text-slate-100 overflow-hidden">
@@ -2113,46 +2091,8 @@ if (!currentUser) {
   <!-- 4. SCRIPT CLIENT (VANILLA JS)              -->
   <!-- ========================================== -->
   <script>
-    
-    window.smartLoginClient = async function(wa, btnElement) {
-        const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
-        const normalizedInput = cleanPhone(wa);
-        const withZero = normalizedInput.startsWith('62') ? '0' + normalizedInput.substring(2) : normalizedInput;
-        
-        try {
-            let snapshot = await db.collection('customers').where('phone', '==', wa).get();
-            if (snapshot.empty) snapshot = await db.collection('customers').where('phone', '==', normalizedInput).get();
-            if (snapshot.empty) snapshot = await db.collection('customers').where('phone', '==', withZero).get();
-            
-            let matchedDoc = null;
-            if (!snapshot.empty) {
-                matchedDoc = snapshot.docs[0];
-            } else {
-                const allSnap = await db.collection('customers').get();
-                matchedDoc = allSnap.docs.find(d => cleanPhone(d.data().phone) === normalizedInput);
-            }
-
-            if (matchedDoc) {
-                localStorage.setItem('mabunet_client_session', JSON.stringify({id: matchedDoc.id, foto: matchedDoc.data().foto_profil}));
-                window.location.href = '/client'; 
-            } else {
-                const errDiv = document.createElement('div');
-                errDiv.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg z-[9999] animate-fade-in';
-                errDiv.textContent = 'Nomor WhatsApp tidak terdaftar.';
-                document.body.appendChild(errDiv);
-                setTimeout(() => errDiv.remove(), 3000);
-            }
-        } catch (err) {
-            alert("Kesalahan jaringan: " + err.message);
-        }
-    };
-
     function checkRoute() {
         const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
-        const savedUser = localStorage.getItem('mabunet_client_session');
-        if (isClient && !savedUser) {
-            window.location.href = '/'; return;
-        }
         const clientUI = document.getElementById('client-ui');
         const adminUI = document.getElementById('root');
         
