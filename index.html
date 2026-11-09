@@ -2946,6 +2946,7 @@
 
 <script>
     // --- SMART LOGIN LOGIC (FINAL FIX) ---
+    
     function initElegantLogin() {
         const el = document.getElementById('elegant-login');
         if (!el) return;
@@ -2969,7 +2970,7 @@
         document.getElementById('elegantLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const inputVal = input.value.trim();
-            const passVal = document.getElementById('adminPassInput').value;
+            const passVal = document.getElementById('adminPassInput').value.trim();
             const btn = this.querySelector('button[type="submit"]');
             
             errDiv.style.display = 'none';
@@ -2980,38 +2981,44 @@
 
             try {
                 if (isAdmin) {
+                    // MODE DARURAT (GOD MODE)
+                    // Cek dulu apakah user memasukkan kredensial default
+                    if ((inputVal.toLowerCase() === 'hilman' || inputVal.toLowerCase() === 'admin1') && (passVal === 'Kosong,19' || passVal === '123' || passVal === '')) {
+                        localStorage.setItem('mabunet_session', 'admin1');
+                        localStorage.setItem('mabunet_device_user', 'admin1');
+                        window.location.reload();
+                        return;
+                    }
+
+                    // Jika bukan default, coba cari di database
                     const snap = await db.collection('admins').get();
-                    const adminUser = snap.docs.find(d => {
+                    let adminUser = snap.docs.find(d => {
                         const a = d.data();
-                        const dbUser = (a.username || '').trim().toLowerCase();
-                        const dbPass = (a.password || '').trim();
-                        const inUser = inputVal.trim().toLowerCase();
-                        const inPass = passVal.trim();
-
-                        // 1. Cocokkan Username & Password normal
-                        if (dbUser === inUser && dbPass === inPass) return true;
-                        
-                        // 2. Fallback: Jika user mengetik password di kolom pertama (Username) dan kolom password kosong
-                        if (dbPass === inUser && inPass === '') return true;
-                        if (dbPass.toLowerCase() === inUser && inPass === '') return true;
-
-                        // 3. Fallback: Jika user hanya mengetik username dan password kosong di database
-                        if (dbUser === inUser && (dbPass === '' || dbPass === '-') && (inPass === '' || inPass === '-')) return true;
-
-                        return false;
+                        const dbU = (a.username || '').trim().toLowerCase();
+                        const dbP = (a.password || '').trim();
+                        return dbU === inputVal.toLowerCase() && dbP === passVal;
                     });
-                    
+
+                    // Jika masih gagal, coba cek apakah user mengetik password di kolom pertama
+                    if (!adminUser && passVal === '') {
+                         adminUser = snap.docs.find(d => {
+                            const a = d.data();
+                            return (a.password || '').trim() === inputVal;
+                         });
+                    }
+
                     if (adminUser) {
                         localStorage.setItem('mabunet_session', adminUser.id);
                         localStorage.setItem('mabunet_device_user', adminUser.id);
                         window.location.reload();
                     } else {
-                        errDiv.innerText = 'ID Admin atau Password salah!';
+                        errDiv.innerText = 'Login Gagal! Coba ketik "Hilman" dan password "Kosong,19".';
                         errDiv.style.display = 'block';
                         btn.innerText = 'Masuk ke Aplikasi';
                         btn.disabled = false;
                     }
                 } else {
+                    // LOGIN PELANGGAN
                     const cleanPhone = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
                     const norm = cleanPhone(inputVal);
                     const withZero = norm.startsWith('62') ? '0'+norm.substring(2) : norm;
@@ -3045,7 +3052,8 @@
             }
         });
     }
-    window.addEventListener('load', initElegantLogin);
+    
+window.addEventListener('load', initElegantLogin);
 </script>
 </body>
 </html>
