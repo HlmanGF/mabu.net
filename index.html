@@ -1258,7 +1258,6 @@
       );
 
       
-
 if (!currentUser) {
         const isAdminMode = /[a-zA-Z]/.test(loginForm.smartInput || '');
 
@@ -2135,7 +2134,7 @@ if (!currentUser) {
 
             if (matchedDoc) {
                 localStorage.setItem('mabunet_client_session', JSON.stringify({id: matchedDoc.id, foto: matchedDoc.data().foto_profil}));
-                window.location.href = '/client'; // Redirect paksa ke URL client
+                window.location.href = '/client'; 
             } else {
                 const errDiv = document.createElement('div');
                 errDiv.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg z-[9999] animate-fade-in';
@@ -2152,8 +2151,7 @@ if (!currentUser) {
         const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
         const savedUser = localStorage.getItem('mabunet_client_session');
         if (isClient && !savedUser) {
-            window.location.href = '/'; // Tendang ke halaman utama jika belum login
-            return;
+            window.location.href = '/'; return;
         }
         const clientUI = document.getElementById('client-ui');
         const adminUI = document.getElementById('root');
