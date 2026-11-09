@@ -144,48 +144,50 @@
   <!-- ========================================== -->
   <div id="client-ui" class="hidden bg-kai-bg text-slate-800 h-[100dvh] w-full flex flex-col overflow-hidden">
       
-      <!-- MODAL RUANG CHAT TIKET -->
-      <div id="chatModal" class="fixed inset-0 bg-white z-[120] hidden flex-col">
-          <div class="bg-kai-blue p-4 flex items-center gap-3 shadow-md">
-              <button onclick="tutupChat()" class="text-white hover:text-kai-orange p-1">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+      <!-- MODAL RUANG CHAT TIKET (v2) -->
+      <div id="chatModal" class="fixed inset-0 bg-slate-50 z-[120] hidden flex-col">
+          <div class="bg-white px-4 py-3 flex items-center gap-3 border-b border-slate-200 shadow-sm shrink-0">
+              <button onclick="tutupChat()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 active:scale-95 transition-transform shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
               </button>
-              <div class="flex-1">
-                  <h3 class="font-black text-white text-sm" id="chatTicketType">Obrolan Layanan</h3>
-                  <p class="text-[9px] text-slate-300" id="chatTicketStatus">Status: Open</p>
+              <div class="flex-1 min-w-0">
+                  <h3 class="font-black text-kai-blue text-sm truncate" id="chatTicketType">Obrolan Layanan</h3>
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5" id="chatTicketStatus">Status: Open</p>
+              </div>
+              <div class="w-9 h-9 rounded-full bg-kai-blue/10 text-kai-blue flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
               </div>
           </div>
-          <div id="chatMessages" class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-kai-bg dark:bg-slate-950 space-y-3"></div>
           
-          <div id="clientChatImagePreviewContainer" class="px-4 py-2 bg-slate-100 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between hidden">
+          <div id="chatMessages" class="flex-1 overflow-y-auto custom-scrollbar p-4 bg-slate-50 flex flex-col gap-2"></div>
+          
+          <div id="clientChatImagePreviewContainer" class="px-4 py-2 bg-white border-t border-slate-200 flex items-center justify-between hidden">
               <div class="flex items-center gap-3">
-                  <img id="clientChatImagePreview" src="" class="w-12 h-12 rounded-lg object-cover border border-kai-blue" />
-                  <span class="text-xs font-bold text-kai-blue dark:text-white">Foto siap dikirim</span>
+                  <img id="clientChatImagePreview" src="" class="w-10 h-10 rounded-lg object-cover border border-slate-200" />
+                  <span class="text-[10px] font-bold text-kai-blue">Foto siap dikirim</span>
               </div>
-              <button type="button" onclick="hapusPreviewGambarChat()" class="p-1.5 bg-rose-100 text-rose-600 rounded-full hover:bg-rose-200">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button type="button" onclick="hapusPreviewGambarChat()" class="w-7 h-7 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center hover:bg-rose-100 transition-colors">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
           </div>
 
-          <form id="chatForm" class="p-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center gap-2">
+          <form id="chatForm" class="p-3 bg-white border-t border-slate-200 flex items-end gap-2 pb-safe shrink-0">
               <input id="clientChatCamera" type="file" accept="image/*" capture="environment" onchange="handleClientChatImage(event)" class="hidden" />
               <input id="clientChatGallery" type="file" accept="image/*" onchange="handleClientChatImage(event)" class="hidden" />
               
-              <button type="button" onclick="document.getElementById('clientChatCamera').click()" title="Ambil Foto" class="p-2.5 bg-slate-100 dark:bg-slate-700 text-kai-blue dark:text-white rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-              </button>
-              <button type="button" onclick="document.getElementById('clientChatGallery').click()" title="Pilih Galeri" class="p-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl hover:bg-kai-blue hover:text-white transition-colors shrink-0">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              <button type="button" onclick="document.getElementById('clientChatGallery').click()" class="w-11 h-11 bg-slate-100 text-slate-500 rounded-full hover:bg-slate-200 transition-colors shrink-0 flex items-center justify-center">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
               </button>
 
-              <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik pesan..." required class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-kai-blue">
-              <button type="submit" class="p-3 bg-kai-orange text-white rounded-xl hover:bg-kai-orangedark transition-colors shadow-sm shrink-0">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+              <input type="text" id="chatInput" autocomplete="off" placeholder="Ketik pesan..." required class="flex-1 bg-slate-100 border-none rounded-2xl px-4 py-3 text-sm outline-none text-slate-700 focus:ring-2 focus:ring-kai-blue/20 min-h-[44px]">
+              
+              <button type="submit" class="w-11 h-11 bg-kai-orange text-white rounded-full hover:bg-kai-orangedark transition-colors shadow-sm shrink-0 flex items-center justify-center active:scale-95">
+                  <svg class="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
               </button>
           </form>
       </div>
 
-      <!-- MODAL PENGAJUAN UPGRADE PAKET -->
+            <!-- MODAL PENGAJUAN UPGRADE PAKET -->
       <div id="upgradeModal" class="fixed inset-0 bg-black/80 z-[110] hidden flex-col justify-end">
           <div class="bg-white w-full max-w-xl mx-auto rounded-t-[30px] shadow-2xl flex flex-col transform transition-transform translate-y-full duration-300" id="upgradeContent">
               <div class="p-5 flex justify-between items-center border-b border-slate-100">
@@ -373,39 +375,42 @@
 
       </div>
 
-            <!-- KONTEN: REGISTRASI -->
-      <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
-          <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200 mt-2">
-              <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
-              <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
-              <form id="regForm" class="space-y-4">
-                  <div>
-                      <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket Internet</label>
-                      <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
-                          <option value="">-- Pilih Paket --</option>
-                          <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
-                          <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
-                          <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
-                          <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
-                          <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
-                          <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
-                          <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
-                      </select>
+            <!-- KONTEN: REGISTRASI (v2) -->
+      <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4 pt-4">
+          <div class="text-center mb-5 px-1">
+              <h2 class="text-xl font-black text-kai-blue mb-1">Pasang Baru</h2>
+              <p class="text-xs font-semibold text-slate-500">Daftar sekarang dan nikmati internet tanpa FUP.</p>
+          </div>
+          
+          <form id="regForm" class="space-y-4">
+              <!-- Section 1: Data Diri -->
+              <div class="bg-white rounded-[24px] shadow-sm border border-slate-200 p-5">
+                  <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                      <div class="w-6 h-6 rounded-full bg-kai-blue text-white flex items-center justify-center text-[10px] font-black shrink-0">1</div>
+                      <h3 class="text-sm font-black text-kai-blue">Data Diri</h3>
                   </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="space-y-3">
                       <div>
                           <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama Lengkap</label>
-                          <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                          <input type="text" id="nama" placeholder="Masukkan nama Anda" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                       </div>
                       <div>
                           <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">No. HP / WhatsApp</label>
-                          <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                          <input type="tel" id="whatsapp" placeholder="08123456789" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                       </div>
                   </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </div>
+
+              <!-- Section 2: Alamat -->
+              <div class="bg-white rounded-[24px] shadow-sm border border-slate-200 p-5">
+                  <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                      <div class="w-6 h-6 rounded-full bg-kai-blue text-white flex items-center justify-center text-[10px] font-black shrink-0">2</div>
+                      <h3 class="text-sm font-black text-kai-blue">Lokasi Pemasangan</h3>
+                  </div>
+                  <div class="space-y-3">
                       <div>
                           <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Area</label>
-                          <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                          <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                               <option value="">-- Pilih Area --</option>
                               <option value="Mabu">Mabu</option>
                               <option value="Ranau">Ranau</option>
@@ -414,30 +419,50 @@
                           </select>
                       </div>
                       <div>
-                          <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat</label>
-                          <input type="text" id="alamat" placeholder="Contoh: Mabu Park blok P no 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Detail Alamat (Blok/No)</label>
+                          <input type="text" id="alamat" placeholder="Contoh: Blok P No 11" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                       </div>
                   </div>
-                  <div class="pt-4 border-t border-slate-100 mt-6">
-                      <h3 class="text-sm font-black text-kai-blue mb-1">Pengaturan WiFi</h3>
-                      <p class="text-[10px] font-semibold text-slate-500 mb-3">Tentukan nama dan sandi jaringan Anda.</p>
-                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </div>
+
+              <!-- Section 3: Paket & WiFi -->
+              <div class="bg-white rounded-[24px] shadow-sm border border-slate-200 p-5">
+                  <div class="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                      <div class="w-6 h-6 rounded-full bg-kai-blue text-white flex items-center justify-center text-[10px] font-black shrink-0">3</div>
+                      <h3 class="text-sm font-black text-kai-blue">Paket & Jaringan</h3>
+                  </div>
+                  <div class="space-y-3">
+                      <div>
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Pilih Paket</label>
+                          <select id="paket" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
+                              <option value="">-- Pilih Paket --</option>
+                              <option value="5mbps_100">Standar 5 Mbps - Rp 100.000</option>
+                              <option value="10mbps_150">Standar 10 Mbps - Rp 150.000</option>
+                              <option value="15mbps_200">Standar 15 Mbps - Rp 200.000</option>
+                              <option value="20mbps_250">Standar 20 Mbps - Rp 250.000</option>
+                              <option value="25mbps_300">Standar 25 Mbps - Rp 300.000</option>
+                              <option value="netflix_10mbps_200">Netflix 10 Mbps - Rp 200.000</option>
+                              <option value="netflix_15mbps_250">Netflix 15 Mbps - Rp 250.000</option>
+                          </select>
+                      </div>
+                      <div class="grid grid-cols-2 gap-3">
                           <div>
-                              <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Nama WiFi</label>
-                              <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                              <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Nama WiFi</label>
+                              <input type="text" id="ssid" placeholder="RumahKeluarga" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                           </div>
                           <div>
-                              <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Request Password</label>
-                              <input type="text" id="password_wifi" placeholder="Minimal 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
+                              <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Password WiFi</label>
+                              <input type="text" id="password_wifi" placeholder="Min. 8 karakter" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue transition-colors">
                           </div>
                       </div>
                   </div>
-                  <button type="submit" id="btnSubmit" class="w-full py-4 mt-6 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">Kirim Pendaftaran</button>
-              </form>
-          </div>
+              </div>
+              
+              <button type="submit" id="btnSubmit" class="w-full py-4 mt-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(249,115,22,0.5)] transition-transform active:scale-95">Kirim Pendaftaran</button>
+          </form>
       </div>
 
-      <!-- KONTEN: PEMBAYARAN (v2) -->
+            <!-- KONTEN: PEMBAYARAN (v2) -->
       <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4 pt-4">
           
           <div class="mb-5 px-1">
@@ -507,79 +532,92 @@
 
       </div>
 
-            <!-- KONTEN: BANTUAN -->
-      <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
-          <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6 mt-2">
-              <h3 class="text-lg font-black text-kai-blue mb-1">Buat Laporan / Pertanyaan Baru</h3>
-              <p class="text-[10px] font-semibold text-slate-500 mb-5">Admin akan membalas pesan Anda langsung di aplikasi ini.</p>
-              <form id="ticketForm" class="space-y-4">
-                  <div>
-                      <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Topik Kendala / Info</label>
-                      <select id="ticketType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
-                          <option value="">-- Pilih Topik --</option>
-                          <option value="Internet Mati (LOS Merah)">Internet Mati (LOS Merah)</option>
-                          <option value="Internet Lemot">Internet Lemot / Sering Putus</option>
-                          <option value="Kabel Fiber Putus">Kabel Fiber Putus</option>
-                          <option value="Lupa Password WiFi">Ganti / Lupa Password WiFi</option>
-                          <option value="Konfirmasi Pembayaran">Tanya Seputar Pembayaran / Tagihan</option>
-                          <option value="Lainnya">Lainnya</option>
-                      </select>
-                  </div>
-                  <div>
-                      <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Isi Pesan Detail</label>
-                      <textarea id="ticketDesc" rows="3" required placeholder="Jelaskan secara detail pesan atau kendala Anda..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-kai-blue"></textarea>
-                  </div>
-                  <button type="submit" id="btnSubmitTicket" class="w-full py-4 mt-2 bg-kai-blue hover:bg-kai-bluedark text-white rounded-xl font-black text-sm shadow-lg transition-transform active:scale-95">Kirim Pesan</button>
-              </form>
+            <!-- KONTEN: BANTUAN (v2) -->
+      <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4 pt-4">
+          <!-- Tab Switcher -->
+          <div class="flex bg-slate-200/70 p-1 rounded-2xl mb-5">
+              <button type="button" onclick="switchBantuanTab('lapor')" id="tabBtnLapor" class="flex-1 py-2.5 rounded-xl text-xs font-black text-kai-blue bg-white shadow-sm transition-all">Buat Laporan</button>
+              <button type="button" onclick="switchBantuanTab('faq')" id="tabBtnFaq" class="flex-1 py-2.5 rounded-xl text-xs font-black text-slate-500 hover:text-slate-700 transition-all">Panduan (FAQ)</button>
           </div>
-          <h2 class="text-lg font-black text-kai-blue mb-3 px-1 mt-6">Panduan Perbaikan Mandiri (FAQ)</h2>
-          <div class="space-y-3 mb-6">
-              <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
-                      <span class="font-extrabold text-sm text-kai-blue">Arti Lampu Indikator Modem</span>
-                      <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                  <div class="accordion-content bg-slate-50/50">
-                      <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                          <ul class="list-disc pl-4 space-y-2">
-                              <li><strong class="text-kai-blue">POWER:</strong> Nyala (Normal) / Mati (Cek colokan listrik).</li>
-                              <li><strong class="text-emerald-500">PON:</strong> Nyala Hijau (Normal).</li>
-                              <li><strong class="text-rose-500">LOS:</strong> Kedip Merah (Kabel putus/tertekuk parah). <span class="bg-rose-100 text-rose-600 px-1 rounded font-black">Lapor admin!</span></li>
-                          </ul>
-                      </div>
-                  </div>
-              </div>
-              <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
-                      <span class="font-extrabold text-sm text-kai-blue">Internet Lemot & Solusinya</span>
-                      <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                  <div class="accordion-content bg-slate-50/50">
-                      <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                          <p>Matikan modem selama 10 menit, lalu nyalakan kembali. Pastikan tidak ada HP yang sedang mendownload update otomatis.</p>
-                      </div>
-                  </div>
-              </div>
-              <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
-                      <span class="font-extrabold text-sm text-kai-blue">Cara Kirim Bukti Pembayaran</span>
-                      <svg class="accordion-icon w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </div>
-                  <div class="accordion-content bg-slate-50/50">
-                      <div class="p-4 border-t border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed">
-                          <ol class="list-decimal pl-4 space-y-2">
-                              <li>Lakukan pembayaran melalui menu <strong>Bayar Tagihan</strong> menggunakan QRIS.</li>
-                              <li>Simpan/Screenshot bukti transfer dari aplikasi perbankan (BCA, DANA, GoPay, dll).</li>
-                              <li>Tekan tombol hijau <strong>"Upload Bukti Pembayaran"</strong> di halaman pembayaran, lalu lampirkan gambar bukti transfer Anda.</li>
-                              <li>Admin akan memverifikasi dan mengubah status pembayaran Anda.</li>
-                          </ol>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </div>               
 
-      <!-- KONTEN: LOGIN CLIENT (v2) -->
+          <!-- Tab Content: Lapor -->
+          <div id="bantuanTabLapor" class="block">
+              <div class="bg-white p-5 rounded-[24px] shadow-sm border border-slate-200 mb-6">
+                  <h3 class="text-base font-black text-kai-blue mb-1">Buat Laporan Baru</h3>
+                  <p class="text-[10px] font-semibold text-slate-500 mb-5">Admin akan membalas pesan Anda langsung di aplikasi ini.</p>
+                  <form id="ticketForm" class="space-y-4">
+                      <div>
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Topik Kendala</label>
+                          <select id="ticketType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-kai-blue">
+                              <option value="">-- Pilih Topik --</option>
+                              <option value="Internet Mati (LOS Merah)">Internet Mati (LOS Merah)</option>
+                              <option value="Internet Lemot">Internet Lemot / Sering Putus</option>
+                              <option value="Kabel Fiber Putus">Kabel Fiber Putus</option>
+                              <option value="Lupa Password WiFi">Ganti / Lupa Password WiFi</option>
+                              <option value="Konfirmasi Pembayaran">Tanya Seputar Pembayaran / Tagihan</option>
+                              <option value="Lainnya">Lainnya</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label class="block text-[10px] font-bold text-slate-500 mb-1 ml-1 uppercase">Isi Pesan Detail</label>
+                          <textarea id="ticketDesc" rows="4" required placeholder="Jelaskan secara detail pesan atau kendala Anda..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-kai-blue"></textarea>
+                      </div>
+                      <button type="submit" id="btnSubmitTicket" class="w-full py-3.5 bg-kai-blue hover:bg-kai-bluedark text-white rounded-xl font-black text-sm shadow-md transition-transform active:scale-95">Kirim Pesan</button>
+                  </form>
+              </div>
+          </div>
+
+          <!-- Tab Content: FAQ -->
+          <div id="bantuanTabFaq" class="hidden">
+              <h2 class="text-sm font-black text-kai-blue mb-3 px-1">Panduan Mandiri</h2>
+              <div class="space-y-3 mb-6">
+                  <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                      <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                          <span class="font-extrabold text-xs text-kai-blue">Arti Lampu Indikator Modem</span>
+                          <svg class="accordion-icon w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div class="accordion-content bg-slate-50/50">
+                          <div class="p-4 border-t border-slate-100 text-[11px] font-semibold text-slate-600 leading-relaxed">
+                              <ul class="list-disc pl-4 space-y-1.5">
+                                  <li><strong class="text-kai-blue">POWER:</strong> Nyala (Normal) / Mati (Cek listrik).</li>
+                                  <li><strong class="text-emerald-500">PON:</strong> Nyala Hijau (Normal).</li>
+                                  <li><strong class="text-rose-500">LOS:</strong> Kedip Merah (Kabel putus). <span class="bg-rose-100 text-rose-600 px-1.5 py-0.5 rounded text-[9px] font-black uppercase">Lapor!</span></li>
+                              </ul>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                      <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                          <span class="font-extrabold text-xs text-kai-blue">Internet Lemot & Solusinya</span>
+                          <svg class="accordion-icon w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div class="accordion-content bg-slate-50/50">
+                          <div class="p-4 border-t border-slate-100 text-[11px] font-semibold text-slate-600 leading-relaxed">
+                              <p>Matikan modem selama 10 menit, lalu nyalakan kembali. Pastikan tidak ada perangkat yang sedang mengunduh file besar secara otomatis.</p>
+                          </div>
+                      </div>
+                  </div>
+                  <div class="accordion-item bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                      <div class="accordion-header p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+                          <span class="font-extrabold text-xs text-kai-blue">Cara Kirim Bukti Pembayaran</span>
+                          <svg class="accordion-icon w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                      <div class="accordion-content bg-slate-50/50">
+                          <div class="p-4 border-t border-slate-100 text-[11px] font-semibold text-slate-600 leading-relaxed">
+                              <ol class="list-decimal pl-4 space-y-1.5">
+                                  <li>Buka menu <strong>Bayar Tagihan</strong>.</li>
+                                  <li>Screenshot bukti transfer dari m-Banking / e-Wallet.</li>
+                                  <li>Tekan tombol hijau <strong>"Upload Bukti"</strong>, lalu pilih screenshot tersebut.</li>
+                                  <li>Tunggu admin memverifikasi (maks 1x24 jam).</li>
+                              </ol>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+            <!-- KONTEN: LOGIN CLIENT (v2) -->
       <div id="view-login" class="view-section flex flex-col items-center justify-center p-4 md:p-8 w-full">
           <div class="w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center my-auto">
 
@@ -2422,6 +2460,28 @@
         });
     });
 
+    
+    /* ---------- Tab Bantuan (v2) ---------- */
+    function switchBantuanTab(tab) {
+        var elLapor = document.getElementById('bantuanTabLapor');
+        var elFaq = document.getElementById('bantuanTabFaq');
+        var btnLapor = document.getElementById('tabBtnLapor');
+        var btnFaq = document.getElementById('tabBtnFaq');
+        if (!elLapor || !elFaq) return;
+        
+        if (tab === 'lapor') {
+            elLapor.classList.replace('hidden', 'block');
+            elFaq.classList.replace('block', 'hidden');
+            btnLapor.className = 'flex-1 py-2.5 rounded-xl text-xs font-black text-kai-blue bg-white shadow-sm transition-all';
+            btnFaq.className = 'flex-1 py-2.5 rounded-xl text-xs font-black text-slate-500 hover:text-slate-700 transition-all';
+        } else {
+            elLapor.classList.replace('block', 'hidden');
+            elFaq.classList.replace('hidden', 'block');
+            btnLapor.className = 'flex-1 py-2.5 rounded-xl text-xs font-black text-slate-500 hover:text-slate-700 transition-all';
+            btnFaq.className = 'flex-1 py-2.5 rounded-xl text-xs font-black text-kai-blue bg-white shadow-sm transition-all';
+        }
+    }
+
     function switchView(viewId, btnElement) {
         document.querySelectorAll('.view-section').forEach(view => view.classList.remove('active'));
         document.getElementById(viewId).classList.add('active');
@@ -2690,7 +2750,7 @@
     function bukaChat(ticketId, type, status) {
         currentChatTicketId = ticketId;
         document.getElementById('chatTicketType').innerText = type || 'Obrolan Layanan';
-        document.getElementById('chatTicketStatus').innerText = `Status: ${status}`;
+        document.getElementById('chatTicketStatus').innerText = 'Status: ' + (status || 'Open');
         document.getElementById('chatModal').classList.remove('hidden');
         document.getElementById('chatModal').classList.add('flex');
 
@@ -2701,46 +2761,44 @@
             let html = '';
             
             if (snapshot.empty) {
-                html = '<div class="text-center text-slate-400 text-xs py-10">Mulai obrolan...</div>';
+                html = '<div class="text-center text-slate-400 text-[10px] font-bold py-10">Belum ada pesan. Mulai obrolan sekarang.</div>';
             } else {
+                let lastDate = '';
                 snapshot.forEach(doc => {
                     const msg = doc.data();
                     const isAdmin = msg.senderType === 'admin' || msg.role === 'admin' || msg.isAdmin === true || msg.sender !== 'client';
                     
                     const dateObj = msg.time ? new Date(msg.time) : new Date();
+                    const dateStr = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+                    
+                    if (dateStr !== lastDate) {
+                        html += '<div class="text-center my-3"><span class="text-[9px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-wider">' + dateStr + '</span></div>';
+                        lastDate = dateStr;
+                    }
+
                     const timeStr = dateObj.getHours() + ':' + (dateObj.getMinutes()<10?'0':'') + dateObj.getMinutes();
-                    
-                    const senderLabel = isAdmin ? 'Admin MABUNET' : (globalName || 'Anda');
-                    const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
                     const textMsg = msg.text || msg.message || '';
-                    
-                    const clientPhoto = document.getElementById('profilImage').src;
-                    const avatarAdmin = `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0 border border-slate-300 shadow-sm"><svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>`;
-                    const avatarClient = `<div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200 shadow-sm"><img src="${clientPhoto}" class="w-full h-full object-cover"></div>`;
+                    const imgAttachment = msg.attachmentUrl || msg.imageUrl || msg.image || msg.attachment;
 
                     if(!isAdmin) {
-                        html += `<div class="flex justify-end items-end gap-2">`;
-                        html += `<div class="max-w-[75%] flex flex-col items-end">`;
-                        html += `<div class="bg-kai-blue text-white rounded-2xl rounded-tr-sm p-3 shadow-sm">`;
-                        if(textMsg) html += `<p class="text-xs whitespace-pre-line leading-relaxed">${textMsg}</p>`;
-                        if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open('${imgAttachment}', '_blank')">`;
-                        html += `</div>`;
-                        html += `<p class="text-[8px] text-slate-400 mt-1 mr-1">${timeStr}</p>`;
-                        html += `</div>`;
-                        html += avatarClient;
-                        html += `</div>`;
+                        html += '<div class="flex justify-end mb-1">';
+                        html += '<div class="max-w-[80%] flex flex-col items-end">';
+                        html += '<div class="bg-kai-blue text-white rounded-2xl rounded-br-sm p-3 shadow-sm text-sm whitespace-pre-line leading-relaxed">';
+                        if(textMsg) html += textMsg;
+                        if(imgAttachment) html += '<img src="' + imgAttachment + '" class="mt-2 rounded-lg max-h-48 w-auto object-cover cursor-pointer border border-white/20" onclick="window.open(\'' + imgAttachment + '\', \'_blank\')">';
+                        html += '</div>';
+                        html += '<span class="text-[9px] font-semibold text-slate-400 mt-1 mr-1">' + timeStr + '</span>';
+                        html += '</div></div>';
                     } else {
-                        html += `<div class="flex justify-start items-end gap-2">`;
-                        html += avatarAdmin;
-                        html += `<div class="max-w-[75%] flex flex-col items-start">`;
-                        html += `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-sm p-3 shadow-sm">`;
-                        html += `<p class="text-[9px] font-black text-kai-orange mb-1">${senderLabel}</p>`;
-                        if(textMsg) html += `<p class="text-xs whitespace-pre-line leading-relaxed">${textMsg}</p>`;
-                        if(imgAttachment) html += `<img src="${imgAttachment}" class="mt-2 rounded-xl max-h-60 w-auto object-cover cursor-pointer border border-slate-200 dark:border-slate-700" onclick="window.open('${imgAttachment}', '_blank')">`;
-                        html += `</div>`;
-                        html += `<p class="text-[8px] text-slate-400 mt-1 ml-1">${timeStr}</p>`;
-                        html += `</div>`;
-                        html += `</div>`;
+                        html += '<div class="flex justify-start mb-1">';
+                        html += '<div class="max-w-[80%] flex flex-col items-start">';
+                        html += '<div class="bg-white text-slate-800 border border-slate-200 rounded-2xl rounded-bl-sm p-3 shadow-sm text-sm whitespace-pre-line leading-relaxed">';
+                        html += '<p class="text-[9px] font-black text-kai-orange mb-1 uppercase tracking-wider">Admin MABUNET</p>';
+                        if(textMsg) html += textMsg;
+                        if(imgAttachment) html += '<img src="' + imgAttachment + '" class="mt-2 rounded-lg max-h-48 w-auto object-cover cursor-pointer border border-slate-200" onclick="window.open(\'' + imgAttachment + '\', \'_blank\')">';
+                        html += '</div>';
+                        html += '<span class="text-[9px] font-semibold text-slate-400 mt-1 ml-1">' + timeStr + '</span>';
+                        html += '</div></div>';
                     }
                 });
             }
