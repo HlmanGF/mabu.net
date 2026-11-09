@@ -257,7 +257,6 @@
           <h3 class="text-sm font-black text-kai-blue mb-3 px-1 mt-2">Layanan Utama</h3>
           <div class="grid grid-cols-2 gap-4 mb-6">
               
-              <!-- Tombol Pasang Baru -->
               <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="group bg-white p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(26,44,91,0.2)] active:scale-95">
                   <div class="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 text-kai-blue rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
@@ -265,7 +264,6 @@
                   <h4 class="font-extrabold text-xs text-kai-blue group-hover:text-blue-700 transition-colors">Pasang Baru</h4>
               </div>
               
-              <!-- Tombol Bayar -->
               <div onclick="switchView('view-pembayaran', document.getElementById('nav-pembayaran'))" class="group bg-white p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(249,115,22,0.2)] active:scale-95">
                   <div class="w-14 h-14 bg-gradient-to-br from-orange-50 to-orange-100 text-kai-orange rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
@@ -273,7 +271,6 @@
                   <h4 class="font-extrabold text-xs text-kai-blue group-hover:text-kai-orangedark transition-colors">Bayar Tagihan</h4>
               </div>
               
-              <!-- Tombol Bantuan (Desain Baru: Full Color) -->
               <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="group bg-gradient-to-r from-emerald-500 to-emerald-600 p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(16,185,129,0.4)] flex flex-row items-center justify-center gap-3 text-center cursor-pointer col-span-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(16,185,129,0.6)] active:scale-95 text-white">
                   <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
                       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -351,14 +348,12 @@
       <!-- KONTEN: PEMBAYARAN -->
       <div id="view-pembayaran" class="view-section max-w-xl mx-auto px-4">
           <div class="bg-white rounded-[30px] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] border border-slate-100 text-center mt-2 relative overflow-hidden">
-              <!-- Banner Atas -->
               <div class="absolute top-0 inset-x-0 h-32 bg-gradient-to-br from-kai-blue to-kai-bluedark z-0"></div>
               
               <div class="relative z-10 pt-6 pb-6 px-6">
                   <h2 class="text-xl font-black text-white mb-1">Pembayaran Tagihan</h2>
                   <p class="text-[10px] font-semibold text-slate-300 mb-6">Scan QRIS di bawah ini untuk membayar</p>
 
-                  <!-- Kartu QRIS -->
                   <div class="bg-white p-5 rounded-3xl shadow-xl border border-slate-200 mb-6 mx-auto inline-block w-full max-w-[280px]">
                       <div class="text-kai-blue font-black text-sm tracking-widest mb-3 uppercase">MABUNET QRIS</div>
                       
@@ -371,7 +366,6 @@
                       <div class="text-[9px] text-slate-400 font-semibold" id="payStatusTagihan">Memuat...</div>
                   </div>
 
-                  <!-- Tombol Upload -->
                   <button onclick="bukaPaymentProof()" class="flex justify-center items-center gap-2 w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-[0_8px_20px_-6px_rgba(16,185,129,0.5)] active:scale-95 transition-all">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                       Upload Bukti Pembayaran
@@ -553,10 +547,10 @@
       Users, LayoutDashboard, LogOut, Check, Fingerprint, Lock, User, Settings, Camera, ShieldAlert,
       Bell, Plus, Edit3, Trash2, FileText, Server, Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Power, Wallet, Search, Mail, ArrowLeft, Send,
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
-      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
+      MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X, Megaphone
     } from 'https://esm.sh/lucide-react@0.292.0';
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, query, orderBy } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com",
@@ -694,6 +688,11 @@
       const [cropState, setCropState] = useState({ isOpen: false, src: null, isTarget: false, zoom: 1, x: 0, y: 0 });
       const [isDragging, setIsDragging] = useState(false);
       const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+      
+      // STATE PENGUMUMAN
+      const [announcements, setAnnouncements] = useState([]);
+      const [newAnnouncement, setNewAnnouncement] = useState({ title: '', body: '' });
+      const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
 
       const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
       const cleanPhone = (phoneStr) => { let p = (phoneStr || '').replace(/\D/g, ''); if (p.startsWith('0')) p = '62' + p.substring(1); return p; };
@@ -815,11 +814,16 @@
              data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0));
              setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
           });
+          // LISTENER PENGUMUMAN
+          const unsubAnnouncements = onSnapshot(query(collection(db, 'announcements'), orderBy('time', 'desc')), (snapshot) => {
+             setAnnouncements(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+          });
+          
           return () => { 
               unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
               unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
               unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings();
-              unsubTickets(); unsubApprovals();
+              unsubTickets(); unsubApprovals(); unsubAnnouncements();
           };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
@@ -944,6 +948,22 @@
               await updateDoc(doc(db, 'approvals', approvalData.id), { status: 'rejected', rejectedBy: currentUser.name, rejectedAt: serverTimestamp() });
               alert("Permohonan ditolak.");
           } catch (err) { alert("Gagal menolak: " + err.message); }
+      };
+
+      const handleSendAnnouncement = async (e) => {
+          e.preventDefault();
+          try {
+              await addDoc(collection(db, 'announcements'), {
+                  title: newAnnouncement.title,
+                  body: newAnnouncement.body,
+                  time: Date.now(),
+                  author: currentUser.name
+              });
+              setNewAnnouncement({ title: '', body: '' });
+              setIsAnnouncementModalOpen(false);
+              writeLog(`Mengirim Pengumuman: ${newAnnouncement.title}`);
+              alert("Pengumuman berhasil dikirim ke Klien!");
+          } catch(err) { alert("Gagal mengirim pengumuman: " + err.message); }
       };
 
       const handleSaveMikrotikData = async (e) => {
@@ -1332,6 +1352,7 @@
               <SidebarItem id="dashboard" icon={LayoutDashboard} label="Beranda" />
               <SidebarItem id="customers" icon={Users} label="Data Pelanggan" badgeCount={pendingApprovals.length} />
               <SidebarItem id="tickets" icon={MessageCircle} label="Chat & Layanan" badgeCount={unreadTicketsCount} />
+              <SidebarItem id="announcements" icon={Megaphone} label="Pengumuman" />
               <SidebarItem id="ledger" icon={Wallet} label="Kas Keuangan" />
               {currentUser.id === 'admin1' && <SidebarItem id="mikrotik" icon={Server} label="MikroTik" />}
               <SidebarItem id="portal" icon={Globe} label="Portal Web" />
@@ -1372,17 +1393,25 @@
                 
                 {activeTab === 'dashboard' && (
                   <>
-                    <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
-                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                        <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm text-kai-blue dark:text-white">Saldo Kas Bersih</span></div>
-                        <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
-                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
-                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                    {/* DESAIN BARU KARTU SALDO */}
+                    <div className="bg-gradient-to-br from-kai-blue to-kai-bluedark p-5 rounded-3xl shadow-[0_10px_30px_rgba(26,44,91,0.4)] border border-white/10 text-white flex flex-col gap-4 relative overflow-hidden">
+                      <div className="absolute -right-10 -top-10 w-32 h-32 bg-kai-orange/20 rounded-full blur-2xl pointer-events-none"></div>
+                      <div className="flex justify-between items-center border-b border-white/10 pb-3 relative z-10">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="w-5 h-5 text-kai-orange" />
+                          <span className="font-bold text-sm">Saldo Kas Bersih</span>
+                        </div>
+                        <div className="lg:hidden flex bg-white/10 rounded-lg px-2 py-1 gap-1 border border-white/10">
+                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-white">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
+                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-white">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                         </div>
                       </div>
-                      <div className="flex justify-between items-end">
-                        <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3>
-                        <div className="text-right"><p className="text-[10px] font-bold text-slate-400">Total Pelanggan</p><p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p></div>
+                      <div className="flex justify-between items-end relative z-10">
+                        <h3 className="text-3xl font-black tracking-tight">{formatIDR(netProfit)}</h3>
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold text-slate-300 uppercase">Total Pelanggan</p>
+                          <p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p>
+                        </div>
                       </div>
                     </div>
                     
@@ -1698,6 +1727,34 @@
                   </div>
                 )}
 
+                {activeTab === 'announcements' && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0">
+                      <h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Pengumuman Klien</h2>
+                      <button onClick={() => setIsAnnouncementModalOpen(true)} className="bg-kai-orange text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:bg-kai-orangedark transition-colors"><Plus className="w-4 h-4"/> Buat Pesan Baru</button>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
+                       <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mb-4 border-b pb-2">Riwayat Pengumuman</h3>
+                       {announcements.length === 0 ? (
+                           <div className="text-center py-10 text-slate-400 font-bold text-sm bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">Belum ada pengumuman terkirim.</div>
+                       ) : (
+                           <div className="space-y-3">
+                               {announcements.map(ann => (
+                                   <div key={ann.id} className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 relative group">
+                                       <div className="flex justify-between items-start mb-1">
+                                           <h4 className="font-extrabold text-sm text-kai-blue dark:text-white">{ann.title}</h4>
+                                           <button onClick={async () => { if(confirm('Hapus pengumuman ini?')) { await deleteDoc(doc(db, 'announcements', ann.id)); } }} className="text-rose-400 hover:text-rose-600 bg-white dark:bg-slate-700 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3.5 h-3.5"/></button>
+                                       </div>
+                                       <p className="text-xs text-slate-600 dark:text-slate-400">{ann.body}</p>
+                                       <p className="text-[9px] font-bold text-slate-400 mt-2 text-right">{new Date(ann.time).toLocaleString('id-ID')} • oleh {ann.author}</p>
+                                   </div>
+                               ))}
+                           </div>
+                       )}
+                    </div>
+                  </div>
+                )}
+
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center mb-1 px-1 lg:px-0"><h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
@@ -1904,6 +1961,7 @@
               <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold tracking-wide">Pelanggan</span></button>
               <button onClick={() => {setActiveTab('tickets'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><MessageCircle className="w-5 h-5 mb-1" strokeWidth={activeTab === 'tickets' ? 2.5 : 1.5} />{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold tracking-wide">Chat</span></button>
               {currentUser?.id === 'admin1' && (<button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Server className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">MikroTik</span></button>)}
+              <button onClick={() => {setActiveTab('announcements'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'announcements' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Megaphone className="w-5 h-5 mb-1" strokeWidth={activeTab === 'announcements' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Info</span></button>
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Keuangan</span></button>
               <button onClick={() => {setActiveTab('portal'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'portal' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Globe className="w-5 h-5 mb-1" strokeWidth={activeTab === 'portal' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Portal</span></button>
               <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Profil</span></button>
@@ -1928,6 +1986,19 @@
             <div className="fixed inset-0 z-[80] bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4" onClick={() => setPreviewLightbox(null)}>
               <button onClick={() => setPreviewLightbox(null)} className="absolute top-5 right-5 p-3 bg-white/20 text-white rounded-full hover:bg-white/30"><X className="w-6 h-6"/></button>
               <img src={previewLightbox} className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+            </div>
+          )}
+
+          {isAnnouncementModalOpen && (
+            <div className="fixed inset-0 z-[65] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="flex justify-between items-center mb-4"><h3 className="text-base font-extrabold text-kai-blue dark:text-white">Buat Pengumuman Baru</h3><button onClick={() => setIsAnnouncementModalOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"><X className="w-4 h-4"/></button></div>
+                <form onSubmit={handleSendAnnouncement} className="space-y-4">
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">JUDUL PENGUMUMAN</label><input type="text" required value={newAnnouncement.title} onChange={e => setNewAnnouncement({...newAnnouncement, title: e.target.value})} placeholder="Misal: Maintenance Jaringan" className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-kai-blue" /></div>
+                  <div><label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1">ISI PESAN</label><textarea required rows="4" value={newAnnouncement.body} onChange={e => setNewAnnouncement({...newAnnouncement, body: e.target.value})} placeholder="Tulis detail informasi yang ingin disampaikan ke pelanggan..." className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-kai-blue"></textarea></div>
+                  <div className="flex gap-3 pt-2"><button type="button" onClick={() => setIsAnnouncementModalOpen(false)} className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm">Batal</button><button type="submit" className="flex-1 py-3 bg-kai-orange text-white rounded-xl font-bold text-sm shadow-lg hover:bg-kai-orangedark transition-colors">Kirim Ke Klien</button></div>
+                </form>
+              </div>
             </div>
           )}
           
@@ -2286,6 +2357,7 @@
                     if(data.status === 'Aktif') { statEl.classList.add('text-emerald-600'); statEl.classList.remove('text-rose-600'); } 
                     else { statEl.classList.add('text-rose-600'); statEl.classList.remove('text-emerald-600'); }
                     if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
+                    
                     // --- UPDATE TAGIHAN DI MENU PEMBAYARAN ---
                     const PACKAGE_PRICES = { '5mbps_100': 100000, '10mbps_150': 150000, '15mbps_200': 200000, '20mbps_250': 250000, '25mbps_300': 300000, 'netflix_10mbps_200': 200000, 'netflix_15mbps_250': 250000 };
                     const hargaPaket = PACKAGE_PRICES[data.packageId] || 0;
@@ -2753,27 +2825,30 @@
     
     async function muatNotifikasi() {
         if(!currentUserDocId) return;
-        const listDiv = document.getElementById('listNotif'); let hasNotif = false; let htmlContent = '';
+        const listDiv = document.getElementById('listNotif'); 
         
-        if(globalDueDate) {
-            const dueDay = parseInt(globalDueDate); const currentDay = new Date().getDate();
-            if (currentDay >= dueDay - 3 && currentDay <= dueDay) {
-                hasNotif = true;
-                htmlContent += `<div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-slate-800">Jatuh Tempo Tgl ${dueDay}</h4><p class="text-[10px] text-slate-600 mb-2">Segera bayar tagihan Anda.</p></div>`;
+        db.collection('announcements').orderBy('time', 'desc').limit(10).onSnapshot(snap => {
+            let hasNotif = false; let htmlContent = '';
+            
+            if(globalDueDate) {
+                const dueDay = parseInt(globalDueDate); const currentDay = new Date().getDate();
+                if (currentDay >= dueDay - 3 && currentDay <= dueDay) {
+                    hasNotif = true;
+                    htmlContent += `<div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-slate-800">Jatuh Tempo Tgl ${dueDay}</h4><p class="text-[10px] text-slate-600 mb-2">Segera bayar tagihan Anda.</p></div>`;
+                }
             }
-        }
-        try {
-            const snap = await db.collection('announcements').orderBy('time', 'desc').limit(5).get();
+            
             if(!snap.empty) {
                 hasNotif = true;
                 snap.forEach(doc => {
-                    htmlContent += `<div class="bg-white border border-slate-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-kai-blue">${doc.data().title}</h4><p class="text-[10px] text-slate-600">${doc.data().body}</p></div>`;
+                    const ann = doc.data();
+                    htmlContent += `<div class="bg-white border border-slate-200 rounded-2xl p-4 mb-2"><h4 class="font-black text-sm text-kai-blue">${ann.title}</h4><p class="text-[10px] text-slate-600 mt-1">${ann.body}</p><p class="text-[8px] text-slate-400 text-right mt-2">${new Date(ann.time).toLocaleDateString('id-ID')}</p></div>`;
                 });
             }
-        } catch(e) {}
 
-        listDiv.innerHTML = hasNotif ? htmlContent : `<div class="text-center py-10"><p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman.</p></div>`;
-        if(hasNotif) document.getElementById('notifBadge').classList.remove('hidden'); 
+            listDiv.innerHTML = hasNotif ? htmlContent : `<div class="text-center py-10"><p class="text-[10px] font-bold text-slate-400">Belum ada pengumuman.</p></div>`;
+            if(hasNotif) document.getElementById('notifBadge').classList.remove('hidden'); 
+        });
     }
 
     async function bukaRiwayat() {
