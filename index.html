@@ -66,7 +66,6 @@
   </style>
 </head>
 <body>
-<div style="position:fixed; top:0; left:0; width:100%; background:red; color:white; text-align:center; font-weight:bold; z-index:99999; padding:5px; font-size:12px;">SMART LOGIN v2 TERPASANG</div>
 
   <!-- ========================================== -->
   <!-- 1. AREA ADMIN PANEL (REACT JS)             -->
@@ -662,6 +661,7 @@
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
+      localStorage.removeItem('mabunet_session'); localStorage.removeItem('mabunet_device_user');
       const [loginForm, setLoginForm] = useState({ password: '', smartInput: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -1258,6 +1258,7 @@
       );
 
       
+
 if (!currentUser) {
         const isAdminMode = /[a-zA-Z]/.test(loginForm.smartInput || '');
 
@@ -1268,7 +1269,6 @@ if (!currentUser) {
           if (!inputVal) return;
 
           if (isAdminMode) {
-            // --- LOGIN ADMIN ---
             const user = admins.find(a =&gt; a.username.toLowerCase() === inputVal.toLowerCase() &amp;&amp; a.password === loginForm.password);
             if (user) {
               if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
@@ -1279,7 +1279,6 @@ if (!currentUser) {
               setLoginError('Username atau Password Admin salah!');
             }
           } else {
-            // --- LOGIN PELANGGAN ---
             if (typeof window.smartLoginClient === 'function') {
               window.smartLoginClient(inputVal);
             } else {
@@ -1290,7 +1289,6 @@ if (!currentUser) {
 
         return (
           <div classname="min-h-screen flex flex-col items-center justify-center p-4 bg-[#0F172A] relative overflow-hidden">
-            {/* Ornamen Latar Belakang */}
             <div classname="absolute top-[-10%] left-[-10%] w-96 h-96 bg-kai-blue rounded-full mix-blend-screen filter blur-[100px] opacity-40 pointer-events-none"></div>
             <div classname="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-kai-orange rounded-full mix-blend-screen filter blur-[100px] opacity-20 pointer-events-none"></div>
 
