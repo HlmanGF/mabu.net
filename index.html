@@ -576,7 +576,7 @@
   <!-- 3. SCRIPT ADMIN (REACT JS)                 -->
   <!-- ========================================== -->
   <script type="text/babel" data-type="module" id="admin-script">
-    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+    import React, { useState, useEffect, useRef, useMemo } from 'https://esm.sh/react@18.2.0';
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
       Users, LayoutDashboard, LogOut, Check, Fingerprint, Lock, User, Settings, Camera, ShieldAlert,
@@ -1279,14 +1279,58 @@
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-      const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const actualPaidRevenue = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-      const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
-      const jurnalExpenses = displayedExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category));
-      const famExpenses = displayedExpenses.filter(e => e.category === 'Fam');
-      const totalJurnal = jurnalExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const totalFam = famExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
-      const netProfit = actualPaidRevenue - (totalJurnal + totalFam); 
+            const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+      
+      // --- LOGIKA KAS & AKUMULASI (OPTIMIZED) ---
+      const { actualPaidRevenue, totalJurnal, totalFam, netProfit, totalKasKeseluruhan } = useMemo(() => {
+          // 1. Pemasukan Lunas Bulan Ini
+          const paid = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+          
+          // 2. Pengeluaran Bulan Ini
+          const displayExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
+          const tJurnal = displayExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+          const tFam = displayExpenses.filter(e => e.category === 'Fam').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+          // 3. Laba / Saldo Bersih Bulan Ini
+          const profit = paid - (tJurnal + tFam);
+
+          // 4. Akumulasi Kas Keseluruhan (Dari bulan terlama s.d bulan terpilih)
+          const allMonthsSet = new Set();
+          expenses.forEach(e => { if(e.date) allMonthsSet.add(e.date.substring(0, 7)); });
+          customers.forEach(c => {
+              if (c.payments) Object.keys(c.payments).forEach(m => { if(c.payments[m]) allMonthsSet.add(m); });
+          });
+          
+          const sortedMonths = Array.from(allMonthsSet).sort();
+          let akumulasi = 0;
+          
+          for (const monthKey of sortedMonths) {
+              if (monthKey > currentPeriodKey) break; // Berhenti di bulan yang dipilih
+              
+              // Hitung pendapatan historis bulan tersebut
+              let pBulan = 0;
+              customers.forEach(c => {
+                  if (c.status === 'Aktif' && c.packageId !== 'free_0' && c.payments && c.payments[monthKey]) {
+                      pBulan += getPackage(c.packageId).price;
+                  }
+              });
+              
+              // Hitung pengeluaran historis bulan tersebut
+              const expArr = expenses.filter(e => e.date && e.date.startsWith(monthKey));
+              const totalExp = expArr.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+              
+              // Tambahkan sisa/minus ke total akumulasi
+              akumulasi += (pBulan - totalExp);
+          }
+
+          return {
+              actualPaidRevenue: paid,
+              totalJurnal: tJurnal,
+              totalFam: tFam,
+              netProfit: profit,
+              totalKasKeseluruhan: akumulasi
+          };
+      }, [customers, expenses, currentPeriodKey, activeCustomersList]); 
       
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -1511,7 +1555,26 @@
                   <>
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
                       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                        <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm text-kai-blue dark:text-white">Saldo Kas Bersih</span></div>
+                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm text-kai-blue dark:text-white">Total Saldo Kas</span></div>
+                        <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
+                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
+                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">Akumulasi Keseluruhan</p>
+                            <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(totalKasKeseluruhan)}</h3>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-bold text-slate-400">Sisa Kas {MONTHS[selectedMonth]}</p>
+                            <p className={`font-black text-sm ${netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{netProfit >= 0 ? '+' : ''}{formatIDR(netProfit)}</p>
+                            <p className="text-[9px] font-bold text-slate-400 mt-1">{customers.filter(c=>c.packageId!=='free_0').length} Pelanggan</p>
+                        </div>
+                      </div>
+                    </div>
                         <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
                           <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
                           <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
@@ -1837,11 +1900,38 @@
 
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0"><h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
-                      <div className="flex gap-2">
-                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm"><Download className="w-4 h-4"/></button>
-                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg shadow-sm"><Plus className="w-4 h-4"/></button>
-                      </div>
+                                        <div className="grid grid-cols-2 gap-3 mb-3">
+                        {/* Kotak Saldo Total (Full Width) */}
+                        <div className="col-span-2 bg-kai-blue p-4 rounded-2xl shadow-sm text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-bl-full"></div>
+                            <p className="text-[10px] font-bold text-blue-200 uppercase mb-1 relative z-10 tracking-widest">Total Saldo Kas (Akumulasi)</p>
+                            <p className="text-2xl font-black relative z-10">{formatIDR(totalKasKeseluruhan)}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                       {/* Kotak Pemasukan Bulan Ini */}
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                           <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pemasukan ({MONTHS[selectedMonth].substring(0,3)})</p>
+                           <p className="text-[13px] font-black text-kai-blue dark:text-white">{formatIDR(actualPaidRevenue)}</p>
+                       </div>
+                       
+                       {/* Kotak Pengeluaran Bulan Ini */}
+                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-sm">
+                           <p className="text-[9px] font-bold text-rose-400 uppercase mb-1">Pengeluaran ({MONTHS[selectedMonth].substring(0,3)})</p>
+                           <p className="text-[13px] font-black text-rose-600 dark:text-rose-400">{formatIDR(totalJurnal + totalFam)}</p>
+                       </div>
+                       
+                       {/* Kotak Sisa Kas Bulanan */}
+                       <div className="col-span-2 bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex justify-between items-center">
+                           <div>
+                               <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Sisa Kas Bulan Ini</p>
+                               <p className="text-[9px] font-bold text-slate-500">Jurnal: {formatIDR(totalJurnal)} | Fam: {formatIDR(totalFam)}</p>
+                           </div>
+                           <p className={`text-lg font-black ${netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                               {netProfit >= 0 ? '+' : ''}{formatIDR(netProfit)}
+                           </p>
+                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                        <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm"><p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pemasukan</p><p className="text-[13px] font-black text-kai-blue dark:text-white">{formatIDR(actualPaidRevenue)}</p></div>
