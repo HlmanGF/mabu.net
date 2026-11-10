@@ -223,11 +223,10 @@
               <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
               
               <div class="relative z-10 flex justify-between items-start mb-4">
-                                    <div>
+                  <div>
                       <p class="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Selamat Datang,</p>
-                      <h2 class="text-lg font-black leading-tight text-white">
-                          <span id="homeNamaClient">Memuat...</span> <span class="text-kai-orange" id="homeBlokClient">- BLOK -</span>
-                      </h2>
+                      <h2 class="text-xl font-black" id="homeNamaClient">Memuat...</h2>
+                      <p class="text-xs text-kai-orange font-bold mt-0.5" id="homeBlokClient">Blok -</p>
                   </div>
                   <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
                       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
@@ -516,18 +515,11 @@
                   <h2 class="text-xl font-black text-kai-blue">Data Pelanggan</h2>
                   <button onclick="logoutAkun()" class="text-[10px] font-bold px-3 py-1.5 bg-rose-50 text-rose-600 rounded-lg">Keluar</button>
               </div>
-                            <div class="flex flex-col items-center mb-6">
+              <div class="flex flex-col items-center mb-6">
                   <div class="relative">
                       <img id="profilImage" src="https://ui-avatars.com/api/?name=User&background=1A2C5B&color=fff" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md">
                       <label for="uploadFoto" class="absolute bottom-0 right-0 w-8 h-8 bg-kai-orange text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></label>
                       <input type="file" id="uploadFoto" accept="image/*" class="hidden" onchange="openCropper(event)">
-                  </div>
-                  <h3 class="text-lg font-black text-kai-blue mt-3 text-center">
-                      <span id="clientProfileName">Memuat...</span> <span class="text-kai-orange" id="clientProfileBlock">- BLOK -</span>
-                  </h3>
-                  <div class="flex gap-2 mt-2">
-                      <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200" id="clientProfileTempo">Tempo: Tgl -</span>
-                      <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-200" id="clientProfileStatus">Status</span>
                   </div>
               </div>
               <div id="pendingUpgradeAlert" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-center">
@@ -1743,24 +1735,11 @@
                     {isDbLoading ? (<div className="text-center py-10 font-bold text-slate-400 text-sm animate-pulse">Memuat...</div>) : (
                       <div className="space-y-3 pb-4">
                         {filteredCustomers.length === 0 ? (<div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Pelanggan tidak ditemukan.</div>) : (
-                                                    filteredCustomers.map(cust => (
+                          filteredCustomers.map(cust => (
                             <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
                                <div className="flex justify-between items-start mb-2">
-                                 <div className="flex flex-col">
-                                   <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">
-                                     {cust.name} <span className="text-kai-orange">- BLOK {cust.block}</span>
-                                   </span>
-                                   <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed}</span>
-                                 </div>
-                                 <div className="flex flex-col items-end">
-                                   <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
-                                   <div className="flex items-center gap-1.5 mt-1">
-                                     <span className="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">Tempo Tgl {cust.dueDate || '1'}</span>
-                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
-                                   </div>
-                                 </div>
-                               </div>
-                               <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
+                                 <div className="flex flex-col"><span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span><span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span></div>
+                                 <div className="flex flex-col items-end"><span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span><span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span></div>
                                </div>
                                <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
                                   {MONTHS.map((m, i) => { const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`; const isPaid = cust.payments && cust.payments[monthKey]; return (<button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>{m.substring(0,3)}</button>); })}
@@ -2517,25 +2496,7 @@
 
     function mulaiListenerRealtime() {
         if(!currentUserDocId) return;
-                // --- UPDATE TAMPILAN NAMA & BLOK ---
-                if (document.getElementById('homeNamaClient')) {
-                    document.getElementById('homeNamaClient').innerText = globalName;
-                    document.getElementById('homeBlokClient').innerText = `- BLOK ${globalBlock}`;
-                }
-                if (document.getElementById('clientProfileName')) {
-                    document.getElementById('clientProfileName').innerText = globalName;
-                    document.getElementById('clientProfileBlock').innerText = `- BLOK ${globalBlock}`;
-                    document.getElementById('clientProfileTempo').innerText = `Tempo: Tgl ${data.dueDate || '1'}`;
-                    
-                    const statElBadge = document.getElementById('clientProfileStatus');
-                    statElBadge.innerText = data.status || '-';
-                    if(data.status === 'Aktif') {
-                        statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-200';
-                    } else {
-                        statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-rose-50 text-rose-600 rounded border border-rose-200';
-                    }
-                }
-                // -----------------------------------
+
         profilListener = db.collection('customers').doc(currentUserDocId).onSnapshot(doc => {
             if (doc.exists) {
                 const data = doc.data();
