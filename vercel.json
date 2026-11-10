@@ -1,6 +1,11 @@
 {
-  "cleanUrls": true,
+"cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/api/supabase/:match*",
+      "destination": "https://oyytpufzosophoixyphaj.supabase.co/:match*"
+    },
+    {
     { "source": "/client", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
