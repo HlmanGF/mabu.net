@@ -1005,22 +1005,37 @@
         }
         setIsBroadcasting(false); alert(`Broadcast Selesai!\n✅ Berhasil: ${successCount}\n❌ Gagal: ${failedCount}`);
       };
-      const handleSaveCustomer = async (e) => {
+            const handleSaveCustomer = async (e) => {
         e.preventDefault();
         const payload = {
             name: formData.name, block: formData.block, phone: formData.phone,
             package_id: formData.packageId, due_date: formData.dueDate, status: formData.status,
             notes: formData.notes, pppoe_user: formData.pppoe_user
         };
-        if (editingCustomer) { 
-            await db.from('customers').update(payload).eq('id', editingCustomer.id); 
-            writeLog(`Mengedit pelanggan: ${formData.name}`); 
-        } else { 
-            payload.payments = {};
-            await db.from('customers').insert([payload]); 
-            writeLog(`Menambah pelanggan: ${formData.name}`); 
+        
+        try {
+            if (editingCustomer) { 
+                const { error } = await db.from('customers').update(payload).eq('id', editingCustomer.id);
+                if (error) throw error;
+                writeLog(`Mengedit pelanggan: ${formData.name}`); 
+            } else { 
+                payload.payments = {};
+                // Coba simpan ke Supabase
+                const { data, error } = await db.from('customers').insert([payload]).select();
+                
+                // JIKA SUPABASE MENOLAK, MUNCULKAN PESAN ERROR
+                if (error) {
+                    alert("Gagal menyimpan ke Supabase: " + error.message);
+                    console.error("Error Supabase:", error);
+                    return; // Hentikan proses
+                }
+                
+                writeLog(`Menambah pelanggan: ${formData.name}`); 
+            }
+            setIsCustomerModalOpen(false);
+        } catch (err) {
+            alert("Terjadi kesalahan sistem: " + err.message);
         }
-        setIsCustomerModalOpen(false);
       };
 
       const handleSaveExpense = async (e) => {
