@@ -1280,7 +1280,25 @@
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
             const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+            const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
+      // --- TAMBAHKAN BARIS INI KEMBALI ---
+      const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
+      // -----------------------------------
+
+      // --- LOGIKA KAS & AKUMULASI (OPTIMIZED) ---
+      const { actualPaidRevenue, totalJurnal, totalFam, netProfit, totalKasKeseluruhan } = useMemo(() => {
+          // 1. Pemasukan Lunas Bulan Ini
+          const paid = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
+          
+          // 2. Pengeluaran Bulan Ini
+          const displayExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
+          const tJurnal = displayExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
+          const tFam = displayExpenses.filter(e => e.category === 'Fam').reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+          // 3. Laba / Saldo Bersih Bulan Ini
+          const profit = paid - (tJurnal + tFam);
+          // ... (sisa kode useMemo di bawahnya biarkan sama)
       // --- LOGIKA KAS & AKUMULASI (OPTIMIZED) ---
       const { actualPaidRevenue, totalJurnal, totalFam, netProfit, totalKasKeseluruhan } = useMemo(() => {
           // 1. Pemasukan Lunas Bulan Ini
