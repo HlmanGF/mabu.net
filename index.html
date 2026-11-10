@@ -67,8 +67,6 @@
 </head>
 <body>
 
-
-
             <div id="root" class="h-full w-full"></div>
 
   <!-- ========================================== -->
@@ -225,8 +223,9 @@
               <div class="relative z-10 flex justify-between items-start mb-4">
                   <div>
                       <p class="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Selamat Datang,</p>
-                      <h2 class="text-xl font-black" id="homeNamaClient">Memuat...</h2>
-                      <p class="text-xs text-kai-orange font-bold mt-0.5" id="homeBlokClient">Blok -</p>
+                      <h2 class="text-lg font-black leading-tight text-white">
+                          <span id="homeNamaClient">Memuat...</span> <span class="text-kai-orange" id="homeBlokClient">- BLOK -</span>
+                      </h2>
                   </div>
                   <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center border border-white/20">
                       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
@@ -451,8 +450,6 @@
           </div>
       </div>               
 
-      <!-- KONTEN: LOGIN CLIENT -->
-      
   <!-- KONTEN: LOGIN CLIENT (Premium) -->
   <div id="view-login" class="view-section flex flex-col justify-center items-center p-6 w-full min-h-screen relative overflow-hidden bg-[#0F172A]">
       
@@ -520,6 +517,13 @@
                       <img id="profilImage" src="https://ui-avatars.com/api/?name=User&background=1A2C5B&color=fff" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md">
                       <label for="uploadFoto" class="absolute bottom-0 right-0 w-8 h-8 bg-kai-orange text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></label>
                       <input type="file" id="uploadFoto" accept="image/*" class="hidden" onchange="openCropper(event)">
+                  </div>
+                  <h3 class="text-lg font-black text-kai-blue mt-3 text-center">
+                      <span id="clientProfileName">Memuat...</span> <span class="text-kai-orange" id="clientProfileBlock">- BLOK -</span>
+                  </h3>
+                  <div class="flex gap-2 mt-2">
+                      <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded border border-slate-200" id="clientProfileTempo">Tempo: Tgl -</span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-200" id="clientProfileStatus">Status</span>
                   </div>
               </div>
               <div id="pendingUpgradeAlert" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-center">
@@ -660,7 +664,6 @@
     function App() {
       const [admins, setAdmins] = useState(INITIAL_ADMINS);
       const [currentUser, setCurrentUser] = useState(null);
-      /* Sabotage cleared */
       const [loginForm, setLoginForm] = useState({ password: '', smartInput: '' });
       const [loginError, setLoginError] = useState('');
       const [isScanning, setIsScanning] = useState(false);
@@ -794,18 +797,15 @@
               setAdmins(cloudAdmins);
               const sessionUid = localStorage.getItem('mabunet_session');
               setCurrentUser(prevUser => {
-        // Jika sudah login, jangan sentuh sesinya!
-        if (prevUser) return prevUser;
-        
-        // Jika belum login, coba pulihkan dari localStorage
-        const savedUid = localStorage.getItem("mabunet_session");
-        if (savedUid) {
-            const savedUser = cloudAdmins.find(a => a.id === savedUid);
-            if (savedUser && savedUser.status === "Aktif") return savedUser;
-            else localStorage.removeItem("mabunet_session");
-        }
-        return null;
-    });
+                if (prevUser) return prevUser;
+                const savedUid = localStorage.getItem("mabunet_session");
+                if (savedUid) {
+                    const savedUser = cloudAdmins.find(a => a.id === savedUid);
+                    if (savedUser && savedUser.status === "Aktif") return savedUser;
+                    else localStorage.removeItem("mabunet_session");
+                }
+                return null;
+              });
             }
           });
           const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => {
@@ -1051,61 +1051,58 @@
       };
 
       const handleLogin = async (e) => {
-    if(e) e.preventDefault(); setLoginError('');
-    const inputVal = (loginForm.smartInput || '').trim();
-    const passVal = (loginForm.password || '').trim();
+        if(e) e.preventDefault(); setLoginError('');
+        const inputVal = (loginForm.smartInput || '').trim();
+        const passVal = (loginForm.password || '').trim();
 
-    if (!inputVal) return setLoginError('Nomor WA / Username tidak boleh kosong!');
+        if (!inputVal) return setLoginError('Nomor WA / Username tidak boleh kosong!');
 
-    const isAdmin = /[a-zA-Z]/.test(inputVal);
+        const isAdmin = /[a-zA-Z]/.test(inputVal);
 
-    if (isAdmin) {
-        // --- JALUR ADMIN ---
-        if (!passVal) return setLoginError('Password Admin wajib diisi!');
-        const listToSearch = admins.length > 0 ? admins : INITIAL_ADMINS;
-        const user = listToSearch.find(a => 
-            (a.username && a.username.toLowerCase() === inputVal.toLowerCase() && a.password === passVal) ||
-            (a.password && a.password === passVal) // Fallback jika hanya ketik password
-        );
+        if (isAdmin) {
+            if (!passVal) return setLoginError('Password Admin wajib diisi!');
+            const listToSearch = admins.length > 0 ? admins : INITIAL_ADMINS;
+            const user = listToSearch.find(a => 
+                (a.username && a.username.toLowerCase() === inputVal.toLowerCase() && a.password === passVal) ||
+                (a.password && a.password === passVal)
+            );
 
-        if (user) {
-            if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
-            setCurrentUser(user); setEditProfile(user);
-            localStorage.setItem('mabunet_session', user.id); 
-            localStorage.setItem('mabunet_device_user', user.id); 
-        } else {
-            setLoginError('Username atau Password Admin salah!');
-        }
-    } else {
-        // --- JALUR PELANGGAN ---
-        // Jika yang diketik hanya angka, kita asumsikan itu Nomor WA
-        try {
-            const cleanPhone = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
-            const norm = cleanPhone(inputVal);
-            const withZero = norm.startsWith('62') ? '0'+norm.substring(2) : norm;
-            
-            let snap = await db.collection('customers').where('phone', '==', inputVal).get();
-            if (snap.empty) snap = await db.collection('customers').where('phone', '==', norm).get();
-            if (snap.empty) snap = await db.collection('customers').where('phone', '==', withZero).get();
-            
-            let matched = null;
-            if (!snap.empty) matched = snap.docs[0];
-            else {
-                const all = await db.collection('customers').get();
-                matched = all.docs.find(d => cleanPhone(d.data().phone) === norm);
-            }
-
-            if (matched) {
-                localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.data().foto_profil}));
-                window.location.href = '/client'; // Lempar ke portal pelanggan
+            if (user) {
+                if (user.status !== 'Aktif') return setLoginError('Akun dinonaktifkan.');
+                setCurrentUser(user); setEditProfile(user);
+                localStorage.setItem('mabunet_session', user.id); 
+                localStorage.setItem('mabunet_device_user', user.id); 
             } else {
-                setLoginError('Nomor WhatsApp tidak terdaftar.');
+                setLoginError('Username atau Password Admin salah!');
             }
-        } catch (err) {
-            setLoginError('Gagal cek nomor WA: ' + err.message);
+        } else {
+            try {
+                const cleanPhone = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
+                const norm = cleanPhone(inputVal);
+                const withZero = norm.startsWith('62') ? '0'+norm.substring(2) : norm;
+                
+                let snap = await db.collection('customers').where('phone', '==', inputVal).get();
+                if (snap.empty) snap = await db.collection('customers').where('phone', '==', norm).get();
+                if (snap.empty) snap = await db.collection('customers').where('phone', '==', withZero).get();
+                
+                let matched = null;
+                if (!snap.empty) matched = snap.docs[0];
+                else {
+                    const all = await db.collection('customers').get();
+                    matched = all.docs.find(d => cleanPhone(d.data().phone) === norm);
+                }
+
+                if (matched) {
+                    localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.data().foto_profil}));
+                    window.location.href = '/client';
+                } else {
+                    setLoginError('Nomor WhatsApp tidak terdaftar.');
+                }
+            } catch (err) {
+                setLoginError('Gagal cek nomor WA: ' + err.message);
+            }
         }
-    }
-};
+      };
 
       const registerFingerprint = async () => {
         try {
@@ -1279,40 +1276,20 @@
       const dueCustomers = activeCustomersList.filter(c => c.packageId !== 'free_0' && (!c.payments || !c.payments[currentPeriodKey])).sort((a, b) => a.dueDate - b.dueDate);
       const customersDueToday = dueCustomers.filter(c => c.dueDate === todayDay);
       const filteredDueCustomers = dueCustomers.filter(c => (c.name || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(dueSearchTerm.toLowerCase()) );
-            const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-            const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       
-      // --- TAMBAHKAN BARIS INI KEMBALI ---
+      const totalPotentialRevenue = activeCustomersList.filter(c => c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
       const displayedExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
-      // -----------------------------------
 
       // --- LOGIKA KAS & AKUMULASI (OPTIMIZED) ---
       const { actualPaidRevenue, totalJurnal, totalFam, netProfit, totalKasKeseluruhan } = useMemo(() => {
-          // 1. Pemasukan Lunas Bulan Ini
           const paid = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
           
-          // 2. Pengeluaran Bulan Ini
           const displayExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
           const tJurnal = displayExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
           const tFam = displayExpenses.filter(e => e.category === 'Fam').reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-          // 3. Laba / Saldo Bersih Bulan Ini
-          const profit = paid - (tJurnal + tFam);
-          // ... (sisa kode useMemo di bawahnya biarkan sama)
-      // --- LOGIKA KAS & AKUMULASI (OPTIMIZED) ---
-      const { actualPaidRevenue, totalJurnal, totalFam, netProfit, totalKasKeseluruhan } = useMemo(() => {
-          // 1. Pemasukan Lunas Bulan Ini
-          const paid = activeCustomersList.filter(c => c.payments && c.payments[currentPeriodKey] && c.packageId !== 'free_0').reduce((sum, c) => sum + getPackage(c.packageId).price, 0);
-          
-          // 2. Pengeluaran Bulan Ini
-          const displayExpenses = expenses.filter(e => e.date && e.date.startsWith(currentPeriodKey));
-          const tJurnal = displayExpenses.filter(e => ['Belanja', 'Perbaikan/Pemasangan', 'Operasional'].includes(e.category)).reduce((sum, e) => sum + Number(e.amount || 0), 0);
-          const tFam = displayExpenses.filter(e => e.category === 'Fam').reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-          // 3. Laba / Saldo Bersih Bulan Ini
           const profit = paid - (tJurnal + tFam);
 
-          // 4. Akumulasi Kas Keseluruhan (Dari bulan terlama s.d bulan terpilih)
           const allMonthsSet = new Set();
           expenses.forEach(e => { if(e.date) allMonthsSet.add(e.date.substring(0, 7)); });
           customers.forEach(c => {
@@ -1323,9 +1300,8 @@
           let akumulasi = 0;
           
           for (const monthKey of sortedMonths) {
-              if (monthKey > currentPeriodKey) break; // Berhenti di bulan yang dipilih
+              if (monthKey > currentPeriodKey) break; 
               
-              // Hitung pendapatan historis bulan tersebut
               let pBulan = 0;
               customers.forEach(c => {
                   if (c.status === 'Aktif' && c.packageId !== 'free_0' && c.payments && c.payments[monthKey]) {
@@ -1333,11 +1309,9 @@
                   }
               });
               
-              // Hitung pengeluaran historis bulan tersebut
               const expArr = expenses.filter(e => e.date && e.date.startsWith(monthKey));
               const totalExp = expArr.reduce((sum, e) => sum + Number(e.amount || 0), 0);
               
-              // Tambahkan sisa/minus ke total akumulasi
               akumulasi += (pBulan - totalExp);
           }
 
@@ -1378,12 +1352,10 @@
       if (!currentUser) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-[#0F172A] p-4 relative overflow-hidden">
-            {/* Ornamen Background Gelap */}
             <div className="absolute top-0 left-0 w-full h-full bg-[#0F172A] z-0"></div>
             
             <div className="relative z-10 w-full max-w-5xl grid lg:grid-cols-2 bg-white rounded-[32px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] border border-slate-800">
               
-              {/* KIRI: Branding Panel */}
               <div className="hidden lg:flex flex-col justify-center p-12 bg-gradient-to-br from-[#1A2C5B] to-[#111D42] relative text-white">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-kai-orange rounded-full mix-blend-screen filter blur-[80px] opacity-20 pointer-events-none"></div>
                 
@@ -1405,7 +1377,6 @@
                 </p>
               </div>
 
-              {/* KANAN: Form Login */}
               <div className="p-8 md:p-12 flex flex-col justify-center bg-white relative">
                 <div className="text-center mb-8 lg:hidden">
                   <img src="./mabunetlogo.png" className="w-16 h-16 mx-auto mb-3" onError={(e) => { e.target.style.display = 'none'; }} />
@@ -1573,8 +1544,6 @@
                   <>
                     <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
                       <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
-                                            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col gap-3">
-                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
                         <div className="flex items-center gap-2"><Wallet className="w-5 h-5 text-kai-blue dark:text-white" /><span className="font-bold text-sm text-kai-blue dark:text-white">Total Saldo Kas</span></div>
                         <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
                           <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
@@ -1591,16 +1560,6 @@
                             <p className={`font-black text-sm ${netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{netProfit >= 0 ? '+' : ''}{formatIDR(netProfit)}</p>
                             <p className="text-[9px] font-bold text-slate-400 mt-1">{customers.filter(c=>c.packageId!=='free_0').length} Pelanggan</p>
                         </div>
-                      </div>
-                    </div>
-                        <div className="lg:hidden flex bg-slate-50 dark:bg-slate-900 rounded-lg px-2 py-1 gap-1 border border-slate-200 dark:border-slate-700">
-                          <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{MONTHS.map((m, idx) => <option key={idx} value={idx}>{m.substring(0,3)}</option>)}</select>
-                          <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="bg-transparent text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-end">
-                        <h3 className="text-2xl font-black text-kai-blue dark:text-white">{formatIDR(netProfit)}</h3>
-                        <div className="text-right"><p className="text-[10px] font-bold text-slate-400">Total Pelanggan</p><p className="font-black text-sm text-kai-orange">{customers.filter(c=>c.packageId!=='free_0').length} ({activeCustomersList.filter(c=>c.packageId!=='free_0').length} Aktif)</p></div>
                       </div>
                     </div>
                     
@@ -1664,7 +1623,7 @@
                         <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
                       ) : (
                         <div className="space-y-3 pb-4">
-                                                    {filteredDueCustomers.map(cust => {
+                          {filteredDueCustomers.map(cust => {
                             const pkg = getPackage(cust.packageId);
                             const isToday = cust.dueDate === todayDay;
                             return (
@@ -1756,8 +1715,19 @@
                           filteredCustomers.map(cust => (
                             <div key={cust.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative">
                                <div className="flex justify-between items-start mb-2">
-                                 <div className="flex flex-col"><span className="font-extrabold text-[15px] text-kai-blue dark:text-white">{cust.name}</span><span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed} • Blok {cust.block}</span></div>
-                                 <div className="flex flex-col items-end"><span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span><span className={`text-[9px] font-bold px-1.5 py-0.5 rounded mt-1 ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span></div>
+                                 <div className="flex flex-col">
+                                   <span className="font-extrabold text-[15px] text-kai-blue dark:text-white">
+                                     {cust.name} <span className="text-kai-orange">- BLOK {cust.block}</span>
+                                   </span>
+                                   <span className="text-[10px] font-bold text-slate-400">{getPackage(cust.packageId).speed}</span>
+                                 </div>
+                                 <div className="flex flex-col items-end">
+                                   <span className="text-[13px] font-black text-kai-orange">{formatIDR(getPackage(cust.packageId).price)}</span>
+                                   <div className="flex items-center gap-1.5 mt-1">
+                                     <span className="text-[9px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">Tempo Tgl {cust.dueDate || '1'}</span>
+                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${cust.status === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>{cust.status}</span>
+                                   </div>
+                                 </div>
                                </div>
                                <div className="grid grid-cols-6 gap-1.5 my-3 bg-slate-50 dark:bg-slate-900 rounded-xl p-2 border border-slate-100 dark:border-slate-700">
                                   {MONTHS.map((m, i) => { const monthKey = `${selectedYear}-${String(i + 1).padStart(2, '0')}`; const isPaid = cust.payments && cust.payments[monthKey]; return (<button key={i} onClick={() => togglePayment(cust.id, monthKey)} className={`flex items-center justify-center py-2 rounded-lg text-[10px] font-black uppercase transition-all ${isPaid ? 'bg-kai-blue text-white shadow-md scale-105' : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400'}`}>{m.substring(0,3)}</button>); })}
@@ -1922,7 +1892,7 @@
 
                 {activeTab === 'ledger' && (
                   <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                         {/* Kotak Saldo Total (Full Width) */}
                         <div className="col-span-2 bg-kai-blue p-4 rounded-2xl shadow-sm text-white relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-bl-full"></div>
@@ -1955,12 +1925,14 @@
                            </p>
                        </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm"><p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Pemasukan</p><p className="text-[13px] font-black text-kai-blue dark:text-white">{formatIDR(actualPaidRevenue)}</p></div>
-                       <div className="bg-kai-blue p-3 rounded-2xl shadow-sm text-white relative overflow-hidden"><div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-bl-full"></div><p className="text-[9px] font-bold text-blue-200 uppercase mb-1 relative z-10">Sisa Kas Net</p><p className="text-[13px] font-black relative z-10">{formatIDR(netProfit)}</p></div>
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-rose-100 dark:border-rose-900/30 shadow-sm"><p className="text-[9px] font-bold text-rose-400 uppercase mb-1">Keluar Jurnal</p><p className="text-[13px] font-black text-rose-600 dark:text-rose-400">{formatIDR(totalJurnal)}</p></div>
-                       <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl border border-orange-100 dark:border-orange-900/30 shadow-sm"><p className="text-[9px] font-bold text-orange-400 uppercase mb-1">Keluar Fam</p><p className="text-[13px] font-black text-orange-600 dark:text-orange-400">{formatIDR(totalFam)}</p></div>
+
+                    <div className="flex justify-between items-center mb-1 px-1 lg:px-0 mt-6"><h2 className="font-black text-xl text-white lg:text-kai-blue dark:text-white drop-shadow-md lg:drop-shadow-none">Keuangan</h2>
+                      <div className="flex gap-2">
+                        <button onClick={() => exportCSV('expenses')} className="p-2 bg-slate-200 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300 shadow-sm"><Download className="w-4 h-4"/></button>
+                        <button onClick={() => { setEditingExpense(null); setExpenseForm({ date: new Date().toISOString().split('T')[0], category: 'Belanja', applicantSelect: 'Ayah', applicantCustom: '', description: '', amount: '' }); setIsExpenseModalOpen(true); }} className="p-2 bg-kai-orange text-white rounded-lg shadow-sm"><Plus className="w-4 h-4"/></button>
+                      </div>
                     </div>
+
                     <h3 className="font-bold text-sm text-slate-500 dark:text-slate-400 mt-4 mb-2 px-1">Riwayat Kas Keluar</h3>
                     <div className="space-y-3 pb-4">
                       {displayedExpenses.length === 0 ? (<div className="text-center py-10 text-slate-400 font-bold text-sm bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">Belum ada pengeluaran.</div>) : (
@@ -2303,23 +2275,19 @@
             clientUI.classList.remove('hidden');
             adminUI.classList.add('hidden');
             
-            // KUNCI BODY AGAR TIDAK BISA DI-SCROLL LIAR
             document.body.className = 'bg-kai-bg text-slate-800 h-[100dvh] w-full overflow-hidden m-0 p-0';
             document.documentElement.className = 'h-full overflow-hidden';
             document.title = 'Portal Pelanggan MabuNet';
             
             const savedUser = localStorage.getItem('mabunet_client_session');
             
-            // Sembunyikan semua halaman terlebih dahulu
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             
             if (savedUser) {
-                // Jika sudah login
                 document.getElementById('mainHeader').classList.remove('hidden');
                 document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('view-home').classList.add('active');
             } else {
-                // Jika BELUM login
                 document.getElementById('mainHeader').classList.add('hidden');
                 document.getElementById('bottomNav').classList.add('hidden');
                 document.getElementById('view-login').classList.add('active');
@@ -2535,7 +2503,27 @@
                     if(data.status === 'Aktif') { statEl.classList.add('text-emerald-600'); statEl.classList.remove('text-rose-600'); } 
                     else { statEl.classList.add('text-rose-600'); statEl.classList.remove('text-emerald-600'); }
                     if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
-                    // --- UPDATE TAGIHAN DI MENU PEMBAYARAN ---
+
+                    // --- UPDATE TAMPILAN NAMA & BLOK DI BERANDA & PROFIL ---
+                    if (document.getElementById('homeNamaClient')) {
+                        document.getElementById('homeNamaClient').innerText = globalName;
+                        document.getElementById('homeBlokClient').innerText = `- BLOK ${globalBlock}`;
+                    }
+                    if (document.getElementById('clientProfileName')) {
+                        document.getElementById('clientProfileName').innerText = globalName;
+                        document.getElementById('clientProfileBlock').innerText = `- BLOK ${globalBlock}`;
+                        document.getElementById('clientProfileTempo').innerText = `Tempo: Tgl ${data.dueDate || '1'}`;
+                        
+                        const statElBadge = document.getElementById('clientProfileStatus');
+                        statElBadge.innerText = data.status || '-';
+                        if(data.status === 'Aktif') {
+                            statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-200';
+                        } else {
+                            statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-rose-50 text-rose-600 rounded border border-rose-200';
+                        }
+                    }
+                    // ----------------------------------------
+
                     const PACKAGE_PRICES = { '5mbps_100': 100000, '10mbps_150': 150000, '15mbps_200': 200000, '20mbps_250': 250000, '25mbps_300': 300000, 'netflix_10mbps_200': 200000, 'netflix_15mbps_250': 250000 };
                     const hargaPaket = PACKAGE_PRICES[data.packageId] || 0;
                     const d = new Date();
@@ -2558,7 +2546,6 @@
                             if(statusText) statusText.innerText = 'Mohon selesaikan pembayaran.';
                         }
                     }
-                    // ----------------------------------------
 
                     if (data.pendingUpgrade) {
                         document.getElementById('pendingUpgradeAlert').classList.remove('hidden');
