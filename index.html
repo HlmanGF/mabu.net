@@ -995,7 +995,16 @@
         await db.from('customers').update({ payments: currentPayments }).eq('id', custId);
         writeLog(isPaid ? `Membatalkan lunas tagihan: ${cust.name}` : `Menandai LUNAS tagihan: ${cust.name}`);
       };
-
+      const handleBroadcastWA = async () => {
+        if (filteredDueCustomers.length === 0) return alert("Tidak ada tagihan yang belum lunas dalam daftar ini.");
+        if (!confirm(`Kirim pesan otomatis ke ${filteredDueCustomers.length} pelanggan belum lunas?`)) return;
+        setIsBroadcasting(true); let successCount = 0, failedCount = 0;
+        for (const cust of filteredDueCustomers) {
+          if (!cust.phone) { failedCount++; continue; }
+          try { await new Promise(r => setTimeout(r, 1500)); successCount++; } catch { failedCount++; }
+        }
+        setIsBroadcasting(false); alert(`Broadcast Selesai!\n✅ Berhasil: ${successCount}\n❌ Gagal: ${failedCount}`);
+      };
       const handleSaveCustomer = async (e) => {
         e.preventDefault();
         const payload = {
