@@ -1646,13 +1646,17 @@
                         <div className="text-center py-10 text-slate-400 font-bold bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">Semua lunas atau nama tidak ditemukan! 👍</div>
                       ) : (
                         <div className="space-y-3 pb-4">
-                          {filteredDueCustomers.map(cust => {
+                                                    {filteredDueCustomers.map(cust => {
                             const pkg = getPackage(cust.packageId);
                             const isToday = cust.dueDate === todayDay;
                             return (
                               <div key={cust.id} className={`flex bg-white dark:bg-slate-800 rounded-2xl shadow-sm border ${isToday ? 'border-rose-300 dark:border-rose-900' : 'border-slate-200 dark:border-slate-700'} relative overflow-hidden`}>
                                 <div className="flex-1 p-3 md:p-4">
-                                  <div className="flex justify-between items-start"><h4 className="font-extrabold text-sm md:text-base text-kai-blue dark:text-white truncate pr-2">{cust.name}</h4><div className="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[9px] font-bold text-slate-500 whitespace-nowrap">BLOK {cust.block}</div></div>
+                                  <div className="flex justify-between items-start">
+                                    <h4 className="font-extrabold text-sm md:text-base text-kai-blue dark:text-white truncate pr-2">
+                                      {cust.name} <span className="text-kai-orange">- BLOK {cust.block}</span>
+                                    </h4>
+                                  </div>
                                   <div className="text-[10px] font-semibold text-slate-400 mt-1">{pkg.speed} • HP: {cust.phone || '-'}</div>
                                   <div className={`text-[10px] font-bold mt-3 inline-block px-2 py-1 rounded-md ${isToday ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30' : 'bg-slate-50 dark:bg-slate-700 text-slate-500'}`}>Jatuh Tempo TGL {cust.dueDate}</div>
                                 </div>
