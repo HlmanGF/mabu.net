@@ -1071,7 +1071,7 @@
                 const noRumah = match[3];                 
                 if (angkaBlok) { pppoe_secret = `${hurufBlok}${angkaBlok}.${noRumah}@mabu.net`; } 
                 else { pppoe_secret = `${hurufBlok}${noRumah}@mabu.net`; }
-            } else { pppoe_secret = `${namaDepan}@mabu.net`; }
+            } else { pppoe_secret = `${namaDepan || 'user'}@mabu.net`; }
 
             await addDoc(collection(db, 'customers'), {
                 name: regFormData.name,
@@ -1120,29 +1120,20 @@
             }
         } else {
             try {
-                const cleanPhone = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
-                const norm = cleanPhone(inputVal);
-                const withZero = norm.startsWith('62') ? '0'+norm.substring(2) : norm;
+                const cleanPhoneStr = (p) => { let x = (p||'').replace(/\D/g,''); if(x.startsWith('0')) x='62'+x.substring(1); return x; };
+                const norm = cleanPhoneStr(inputVal);
                 
-                let snap = await db.collection('customers').where('phone', '==', inputVal).get();
-                if (snap.empty) snap = await db.collection('customers').where('phone', '==', norm).get();
-                if (snap.empty) snap = await db.collection('customers').where('phone', '==', withZero).get();
-                
-                let matched = null;
-                if (!snap.empty) matched = snap.docs[0];
-                else {
-                    const all = await db.collection('customers').get();
-                    matched = all.docs.find(d => cleanPhone(d.data().phone) === norm);
-                }
+                // CARI LANGSUNG DI STATE LOKAL (TIDAK PERLU HIT DATABASE)
+                const matched = customers.find(c => cleanPhoneStr(c.phone) === norm);
 
                 if (matched) {
-                    localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.data().foto_profil}));
+                    localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.foto_profil}));
                     window.location.href = '/client';
                 } else {
                     setLoginError('Nomor WhatsApp tidak terdaftar.');
                 }
             } catch (err) {
-                setLoginError('Gagal cek nomor WA: ' + err.message);
+                setLoginError('Gagal login: ' + err.message);
             }
         }
       };
@@ -2598,7 +2589,7 @@
             const noRumah = match[3];                 
             if (angkaBlok) { pppoe_secret = `${hurufBlok}${angkaBlok}.${noRumah}@mabu.net`; } 
             else { pppoe_secret = `${hurufBlok}${noRumah}@mabu.net`; }
-        } else { pppoe_secret = `${namaDepan}@mabu.net`; }
+        } else { pppoe_secret = `${namaDepan || 'user'}@mabu.net`; }
 
         try {
             await db.collection('customers').add({
