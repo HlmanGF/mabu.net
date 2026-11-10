@@ -27,8 +27,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
-  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -588,19 +587,14 @@
       TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Globe, Share2, Copy, Key, Link,
       MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com",
-      projectId: "billing-mabunet", storageBucket: "billing-mabunet.firebasestorage.app",
-      messagingSenderId: "362703627315", appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
+    const supabaseUrl = 'https://oyytpufzosophoixyphaj.supabase.co';
+const supabaseKey = 'sb_publishable_gm5Ftcnm2uPWZMInIltIJw_Vef_LjZz'; // Gunakan yang "Publishable key" (anon), BUKAN secret!
+const db = supabase.createClient(supabaseUrl, supabaseKey);
     };
 
-    let app, db;
-    try { app = initializeApp(firebaseConfig); db = getFirestore(app); } catch(e) { console.error("Gagal Firebase:", e); }
-
-    const INITIAL_ADMINS = [
+       const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
       { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
