@@ -793,7 +793,8 @@
             const { data: setData } = await db.from('settings').select('*');
             if (setData) {
               const config = setData.find(s => s.key === 'globalConfig');
-              if (config) setSettingsData(config.value);
+              if (config && config.value) setSettingsData(config.value);
+              else setSettingsData({ waGatewayPhone: '62811122699' });
               const mikrotik = setData.find(s => s.key === 'mikrotik_status');
               if (mikrotik) setMikrotikStatus(mikrotik.value);
               const mUsers = setData.find(s => s.key === 'mikrotik_users');
@@ -823,32 +824,43 @@
         fetchData();
 
         // Realtime Channels
-        const adminSub = db.channel('public:admins').on('postgres_changes', { event: '*', schema: 'public', table: 'admins' }, () => fetchData()).subscribe();
-        const custSub = db.channel('public:customers').on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => fetchData()).subscribe();
-        const expSub = db.channel('public:expenses').on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchData()).subscribe();
-        const logSub = db.channel('public:logs').on('postgres_changes', { event: '*', schema: 'public', table: 'logs' }, () => fetchData()).subscribe();
-        const setSub = db.channel('public:settings').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
-        const tickSub = db.channel('public:tickets').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => fetchData()).subscribe();
-        const appSub = db.channel('public:approvals').on('postgres_changes', { event: '*', schema: 'public', table: 'approvals' }, () => fetchData()).subscribe();
+        let adminSub, custSub, expSub, logSub, setSub, tickSub, appSub;
+        try {
+          adminSub = db.channel('public:admins').on('postgres_changes', { event: '*', schema: 'public', table: 'admins' }, () => fetchData()).subscribe();
+          custSub = db.channel('public:customers').on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => fetchData()).subscribe();
+          expSub = db.channel('public:expenses').on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => fetchData()).subscribe();
+          logSub = db.channel('public:logs').on('postgres_changes', { event: '*', schema: 'public', table: 'logs' }, () => fetchData()).subscribe();
+          setSub = db.channel('public:settings').on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => fetchData()).subscribe();
+          tickSub = db.channel('public:tickets').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => fetchData()).subscribe();
+          appSub = db.channel('public:approvals').on('postgres_changes', { event: '*', schema: 'public', table: 'approvals' }, () => fetchData()).subscribe();
+        } catch(e) { console.error("Realtime error:", e); }
 
         return () => {
-          db.removeChannel(adminSub); db.removeChannel(custSub); db.removeChannel(expSub);
-          db.removeChannel(logSub); db.removeChannel(setSub); db.removeChannel(tickSub); db.removeChannel(appSub);
+          if(adminSub) db.removeChannel(adminSub);
+          if(custSub) db.removeChannel(custSub);
+          if(expSub) db.removeChannel(expSub);
+          if(logSub) db.removeChannel(logSub);
+          if(setSub) db.removeChannel(setSub);
+          if(tickSub) db.removeChannel(tickSub);
+          if(appSub) db.removeChannel(appSub);
         };
       }, []);
 
       // CHAT SUBSCRIPTION
       useEffect(() => {
           if (!activeTicket || !db) return;
-          const chatSub = db.channel('public:messages')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `ticket_id=eq.${activeTicket.id}` }, payload => {
-                setChatMessages(prev => {
-                    const uniqueMsgs = [...prev, { id: payload.new.id, ...payload.new, senderType: payload.new.sender_type, imageUrl: payload.new.image_url, time: new Date(payload.new.created_at).getTime() }];
-                    uniqueMsgs.sort((a, b) => (a.time || 0) - (b.time || 0));
-                    return uniqueMsgs;
-                });
-                setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; }, 120);
-            }).subscribe();
+          let chatSub;
+          try {
+            chatSub = db.channel('public:messages')
+              .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `ticket_id=eq.${activeTicket.id}` }, payload => {
+                  setChatMessages(prev => {
+                      const uniqueMsgs = [...prev, { id: payload.new.id, ...payload.new, senderType: payload.new.sender_type, imageUrl: payload.new.image_url, time: new Date(payload.new.created_at).getTime() }];
+                      uniqueMsgs.sort((a, b) => (a.time || 0) - (b.time || 0));
+                      return uniqueMsgs;
+                  });
+                  setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; }, 120);
+              }).subscribe();
+          } catch(e) { console.error("Chat subscription error:", e); }
           
           const fetchChats = async () => {
               const { data } = await db.from('messages').select('*').eq('ticket_id', activeTicket.id);
@@ -861,7 +873,7 @@
           };
           fetchChats();
 
-          return () => { db.removeChannel(chatSub); };
+          return () => { if(chatSub) db.removeChannel(chatSub); };
       }, [activeTicket]);
 
       const handleSelectChatImage = async (e) => {
@@ -886,8 +898,10 @@
           }]).select();
 
           if (error) throw error;
-          setActiveTicket({ id: data[0].id, customerId: cust.id, customerName: cust.name, block: cust.block, phone: cust.phone || '', subject: 'Obrolan Layanan MABUNET', status: 'In Progress' });
-          setIsNewChatModalOpen(false);
+          if(data && data.length > 0) {
+            setActiveTicket({ id: data[0].id, customerId: cust.id, customerName: cust.name, block: cust.block, phone: cust.phone || '', subject: 'Obrolan Layanan MABUNET', status: 'In Progress' });
+            setIsNewChatModalOpen(false);
+          }
         } catch (err) { alert("Gagal membuat ruang obrolan: " + err.message); }
       };
 
@@ -1176,7 +1190,7 @@
               akumulasi += (pBulan - totalExp);
           }
           return { actualPaidRevenue: paid, totalJurnal: tJurnal, totalFam: tFam, netProfit: profit, totalKasKeseluruhan: akumulasi };
-      }, [customers, expenses, currentPeriodKey, activeCustomersList]); 
+      }, [customers, expenses, currentPeriodKey]); 
       
       const filteredCustomers = customers.filter(c => {
         const matchSearch = (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.block || '').toLowerCase().includes(searchTerm.toLowerCase());
