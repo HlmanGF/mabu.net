@@ -1169,7 +1169,42 @@
         window.location.href = '/'; 
         window.location.reload();
       };
+      const handleLogout = () => { 
+        localStorage.removeItem('mabunet_session'); 
+        localStorage.removeItem('mabunet_device_user');
+        window.location.href = '/'; 
+        window.location.reload();
+      };
 
+      // --- FITUR AUTO LOGOUT 30 MENIT (ADMIN) ---
+      useEffect(() => {
+        if (!currentUser) return; // Hanya berjalan jika admin sudah login
+
+        let idleTimer;
+        const resetTimer = () => {
+          clearTimeout(idleTimer);
+          // 30 menit = 30 * 60 * 1000 = 1.800.000 milidetik
+          idleTimer = setTimeout(() => {
+            alert("Sesi Admin Anda telah berakhir karena tidak ada aktivitas selama 30 menit. Silakan login kembali.");
+            handleLogout();
+          }, 1800000); 
+        };
+
+        // Deteksi aktivitas pengguna
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+          document.addEventListener(evt, resetTimer);
+        });
+
+        resetTimer(); // Mulai hitungan saat pertama kali login
+
+        return () => {
+          clearTimeout(idleTimer);
+          ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+            document.removeEventListener(evt, resetTimer);
+          });
+        };
+      }, [currentUser]);
+      // ------------------------------------------
       const handleBroadcastWA = async () => {
         if (filteredDueCustomers.length === 0) return alert("Tidak ada tagihan yang belum lunas dalam daftar ini.");
         if (!confirm(`Kirim pesan otomatis ke ${filteredDueCustomers.length} pelanggan belum lunas?`)) return;
@@ -3122,6 +3157,36 @@
         document.getElementById('profilImage').src = canvas.toDataURL('image/jpeg');
         closeCropper();
     }
+        function logoutAkun() {
+        if(confirm("Yakin ingin keluar dari portal?")) {
+            currentUserDocId = null;
+            localStorage.removeItem('mabunet_client_session');
+            tutupAplikasiPenuh();
+        }
+    }
+
+    // --- FITUR AUTO LOGOUT 30 MENIT (CLIENT) ---
+    let clientIdleTimer;
+    function resetClientIdleTimer() {
+        clearTimeout(clientIdleTimer);
+        // 30 menit = 30 * 60 * 1000 = 1.800.000 milidetik
+        clientIdleTimer = setTimeout(() => {
+            const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
+            if (isClient && currentUserDocId) {
+                alert("Sesi Anda telah berakhir karena tidak ada aktivitas selama 30 menit. Silakan login kembali.");
+                // Paksa logout tanpa konfirmasi
+                currentUserDocId = null;
+                localStorage.removeItem('mabunet_client_session');
+                tutupAplikasiPenuh();
+            }
+        }, 1800000);
+    }
+
+    // Deteksi aktivitas pengguna
+    ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetClientIdleTimer);
+    });
+    // ------------------------------------------
   </script>
 
 
