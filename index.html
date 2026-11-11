@@ -1294,6 +1294,35 @@
     let tempBillProofBase64 = null;
     let globalProducts = [];
 
+    const formatIDR = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
+    const getPackagePrice = (pkgId) => {
+        const PACKAGE_PRICES = { '5mbps_100': 100000, '10mbps_150': 150000, '15mbps_200': 200000, '20mbps_250': 250000, '25mbps_300': 300000, 'netflix_10mbps_200': 200000, 'netflix_15mbps_250': 250000 };
+        return PACKAGE_PRICES[pkgId] || 0;
+    };
+
+    function downloadInvoiceClient(bulanStr, totalStr) {
+        const [year, month] = bulanStr.split('-');
+        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        const periodName = `${monthNames[parseInt(month)-1]} ${year}`;
+
+        const template = document.getElementById('client-invoice-template');
+        template.querySelector('#c-inv-period').innerText = `Periode ${periodName}`;
+        template.querySelector('#c-inv-name').innerText = globalName || '-';
+        template.querySelector('#c-inv-phone').innerText = globalPhone || '-';
+        template.querySelector('#c-inv-block').innerText = globalBlock || '-';
+        template.querySelector('#c-inv-total').innerText = totalStr;
+
+        html2canvas(template, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+            const image = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `Invoice_MABUNET_${globalName.replace(/\s+/g, '_')}_${periodName}.png`;
+            link.href = image;
+            link.click();
+        }).catch(err => {
+            alert("Gagal membuat invoice: " + err.message);
+        });
+    }
+
     document.querySelectorAll('.accordion-header').forEach(header => {
         header.addEventListener('click', function() {
             const item = this.parentElement; const content = item.querySelector('.accordion-content');
@@ -1425,8 +1454,7 @@
                         if(data.status === 'Aktif') { statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded border border-emerald-200'; } 
                         else { statElBadge.className = 'text-[10px] font-bold px-2 py-0.5 bg-rose-50 text-rose-600 rounded border border-rose-200'; }
                     }
-                    const PACKAGE_PRICES = { '5mbps_100': 100000, '10mbps_150': 150000, '15mbps_200': 200000, '20mbps_250': 250000, '25mbps_300': 300000, 'netflix_10mbps_200': 200000, 'netflix_15mbps_250': 250000 };
-                    const hargaPaket = PACKAGE_PRICES[data.packageId] || 0;
+                    const hargaPaket = getPackagePrice(data.packageId);
                     const d = new Date();
                     const bulanSekarang = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                     const sudahBayar = data.payments && data.payments[bulanSekarang];
@@ -1693,7 +1721,32 @@
                 keys.sort().reverse().forEach(bulan => {
                     const status = payments[bulan];
                     const isLunas = String(status).toLowerCase() === 'lunas' || status === true;
-                    listDiv.innerHTML += `<div class="flex justify-between items-center p-4 rounded-xl border shadow-sm ${isLunas ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50 border-rose-100'}"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full flex items-center justify-center ${isLunas ? 'bg-emerald-100 text-emerald-500' : 'bg-rose-100 text-rose-500'}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">${isLunas ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}</svg></div><div><h4 class="font-black text-sm ${isLunas ? 'text-emerald-800' : 'text-rose-800'}">${bulan}</h4><p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">${currentPackageName.replace(/_/g, ' ')}</p></div></div><div class="px-3 py-1 rounded-md ${isLunas ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'} text-[9px] font-black uppercase tracking-wider shadow-sm">${isLunas ? 'LUNAS' : 'BELUM BAYAR'}</div></div>`;
+                    const price = getPackagePrice(currentPackageName);
+                    const btnDownload = isLunas ? `<button onclick="downloadInvoiceClient('${bulan}', '${formatIDR(price)}')" class="mt-2 px-3 py-1.5 bg-blue-500 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1.5 hover:bg-blue-600 transition-colors shadow-sm w-full"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Invoice</button>` : '';
+                    
+                    listDiv.innerHTML += `
+                        <div class="flex flex-col gap-2 p-4 rounded-xl border shadow-sm ${isLunas ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50 border-rose-100'}">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center ${isLunas ? 'bg-emerald-100 text-emerald-500' : 'bg-rose-100 text-rose-500'}">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            ${isLunas ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>' : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-black text-sm ${isLunas ? 'text-emerald-800' : 'text-rose-800'}">${bulan}</h4>
+                                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">${currentPackageName.replace(/_/g, ' ')}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <div class="px-3 py-1 rounded-md ${isLunas ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'} text-[9px] font-black uppercase tracking-wider shadow-sm">
+                                        ${isLunas ? 'LUNAS' : 'BELUM BAYAR'}
+                                    </div>
+                                    ${btnDownload}
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 });
             }
         } catch(e) { listDiv.innerHTML = '<p class="text-center text-xs font-bold text-rose-500 mt-4">Gagal memuat data.</p>'; }
@@ -1807,7 +1860,7 @@
   </script>
   <!-- ========== END PWA INSTALL ========== -->
 
-  <!-- ========== HIDDEN INVOICE TEMPLATE ========== -->
+  <!-- ========== HIDDEN INVOICE TEMPLATE (ADMIN) ========== -->
   <div id="invoice-template" style="position: absolute; left: -9999px; top: 0; width: 800px; background: #ffffff; padding: 40px; font-family: 'Inter', sans-serif; box-sizing: border-box;">
       <div style="display: flex; align-items: center; margin-bottom: 20px;">
           <img src="./mabunetlogo.png" style="height: 70px; object-fit: contain; margin-right: 15px;" crossorigin="anonymous" />
@@ -1840,7 +1893,40 @@
           <span id="inv-total">Rp. ...</span>
       </div>
   </div>
-  <!-- ========== END INVOICE TEMPLATE ========== -->
+
+  <!-- ========== HIDDEN INVOICE TEMPLATE (CLIENT) ========== -->
+  <div id="client-invoice-template" style="position: absolute; left: -9999px; top: 0; width: 800px; background: #ffffff; padding: 40px; font-family: 'Inter', sans-serif; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; margin-bottom: 20px;">
+          <img src="./mabunetlogo.png" style="height: 70px; object-fit: contain; margin-right: 15px;" crossorigin="anonymous" />
+          <h1 style="font-size: 46px; font-weight: 800; color: #0055A4; margin: 0; letter-spacing: -1.5px;">Mabu<span style="color: #00A0E9;">.net</span></h1>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; font-weight: 800; font-size: 22px; color: #0A1E5C; margin-bottom: 10px;">
+          <span id="c-inv-period">Periode ...</span>
+          <span>Sudah dibayarkan</span>
+      </div>
+      <div style="height: 4px; background: #0077C8; margin-bottom: 30px;"></div>
+      <div style="font-size: 20px; font-weight: 800; color: #0A1E5C; line-height: 1.8; margin-bottom: 40px;">
+          <div style="display: flex; margin-bottom: 5px;">
+              <span style="width: 200px;">Nama</span> 
+              <span style="margin-right: 15px;">:</span> 
+              <span id="c-inv-name">...</span>
+          </div>
+          <div style="display: flex; margin-bottom: 5px;">
+              <span style="width: 200px;">No WA</span> 
+              <span style="margin-right: 15px;">:</span> 
+              <span id="c-inv-phone">...</span>
+          </div>
+          <div style="display: flex;">
+              <span style="width: 200px;">Alamat/Blok</span> 
+              <span style="margin-right: 15px;">:</span> 
+              <span id="c-inv-block">...</span>
+          </div>
+      </div>
+      <div style="background: #DEEFFF; padding: 25px 30px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 32px; color: #0A1E5C;">
+          <span>Total Pembayaran</span>
+          <span id="c-inv-total">Rp. ...</span>
+      </div>
+  </div>
 
 </body>
 </html>
