@@ -754,14 +754,15 @@
             data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
             setCustomers(data); setIsDbLoading(false);
           });
-          const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            data.sort((a,b) => new Date(b.date) - new Date(a.date));
-            setExpenses(data);
+          const qExpenses = query(collection(db, 'expenses'), orderBy('date', 'desc'), limit(500));
+const unsubExpenses = onSnapshot(qExpenses, (snapshot) => {
+  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  setExpenses(data);
           });
-          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            data.sort((a,b) => b.time - a.time); setAuditLogs(data);
+          const qLogs = query(collection(db, 'logs'), orderBy('time', 'desc'), limit(100));
+const unsubLogs = onSnapshot(qLogs, (snapshot) => {
+  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  setAuditLogs(data);
           });
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
             if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
@@ -780,11 +781,11 @@
           const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (d) => { if (d.exists()) setMikrotikHotspotHosts(d.data().hosts || []); });
           const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (d) => { if (d.exists()) setMikrotikIpBindings(d.data().bindings || []); });
           
-          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
-             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-             data.sort((a, b) => (b.updatedAt?.seconds || b.createdAt?.seconds || b.timestamp?.seconds || b.time || 0) - (a.updatedAt?.seconds || a.createdAt?.seconds || a.timestamp?.seconds || a.time || 0));
-             setTickets(data);
-             setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
+          const qTickets = query(collection(db, 'tickets'), orderBy('updatedAt', 'desc'), limit(100));
+const unsubTickets = onSnapshot(qTickets, (snapshot) => {
+  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  setTickets(data);
+  setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
           });
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
              const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
