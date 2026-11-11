@@ -1068,10 +1068,14 @@
 
                 if (matched) {
                     localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.foto_profil}));
-                    window.location.href = '/client';
-                } else {
-                    setLoginError('Nomor WhatsApp tidak terdaftar.');
-                }
+                    // Di dalam handleLogin (bagian else untuk pelanggan)
+if (matched) {
+    localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.foto_profil}));
+    // JANGAN arahkan ke /client, tapi muat ulang halaman utama
+    window.location.href = '/'; // atau window.location.reload();
+} else {
+    setLoginError('Nomor WhatsApp tidak terdaftar.');
+}
             } catch (err) {
                 setLoginError('Gagal login: ' + err.message);
             }
@@ -2209,43 +2213,48 @@
   <!-- ========================================== -->
   <script>
     function checkRoute() {
-        const isClient = window.location.pathname.includes('client') || window.location.hash === '#client';
-        const clientUI = document.getElementById('client-ui');
-        const adminUI = document.getElementById('root');
-        
-        if (isClient) {
-            clientUI.classList.remove('hidden');
+    // 1. Sembunyikan UI admin (React) terlebih dahulu
+    const adminUI = document.getElementById('root');
+    const clientUI = document.getElementById('client-ui');
+
+    // 2. Sembunyikan kedua UI
+    adminUI.classList.add('hidden');
+    if (clientUI) clientUI.style.display = 'none';
+
+    // 3. Logika Penentuan Tampilan
+    // Cek apakah user sudah login sebagai pelanggan (dari localStorage)
+    const savedUser = localStorage.getItem('mabunet_client_session');
+
+    if (savedUser) {
+        // ---- JIKA SUDAH LOGIN SEBAGAI PELANGGAN ----
+        // Tampilkan UI Client
+        if (clientUI) {
             clientUI.style.display = 'flex';
-            adminUI.classList.add('hidden');
-            
+            clientUI.classList.remove('hidden');
             document.body.className = 'bg-kai-bg text-slate-800 h-[100dvh] w-full overflow-hidden m-0 p-0';
             document.documentElement.className = 'h-full overflow-hidden';
             document.title = 'Portal Pelanggan MabuNet';
-            
-            const savedUser = localStorage.getItem('mabunet_client_session');
+            // Tampilkan halaman utama client
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            
-            if (savedUser) {
-                document.getElementById('mainHeader').classList.remove('hidden');
-                document.getElementById('bottomNav').classList.remove('hidden');
-                document.getElementById('view-home').classList.add('active');
-            } else {
-                document.getElementById('mainHeader').classList.add('hidden');
-                document.getElementById('bottomNav').classList.add('hidden');
-                document.getElementById('view-login').classList.add('active');
-            }
-        } else {
-            clientUI.classList.add('hidden');
-            clientUI.style.display = 'none';
-            adminUI.classList.remove('hidden');
-            document.body.className = 'text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300';
-            document.documentElement.className = '';
-            document.title = 'MABUNET - Master Billing & Network';
+            document.getElementById('view-home').classList.add('active');
+            // Sembunyikan header/nav bawaan client jika perlu (opsional, sesuaikan dengan UI Anda)
+            document.getElementById('mainHeader').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
         }
+    } else {
+        // ---- JIKA BELUM LOGIN ATAU SEBAGAI ADMIN ----
+        // Tampilkan UI Admin (React) yang berisi halaman login universal
+        adminUI.classList.remove('hidden');
+        document.body.className = 'text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300';
+        document.documentElement.className = '';
+        document.title = 'MABUNET - Master Billing & Network';
     }
-    window.addEventListener('hashchange', checkRoute);
-    window.addEventListener('load', checkRoute);
-    setTimeout(checkRoute, 100);
+}
+
+// Panggil saat halaman pertama kali dimuat dan saat hash berubah
+window.addEventListener('hashchange', checkRoute);
+window.addEventListener('load', checkRoute);
+setTimeout(checkRoute, 100);
 
     // --- LOGIKA CLIENT MABUNET (FIREBASE COMPAT) ---
     const firebaseConfig = {
