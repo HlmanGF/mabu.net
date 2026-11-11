@@ -288,7 +288,6 @@
                           <select id="area" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none">
                               <option value="">-- Pilih Area --</option>
                               <option value="Mabu">Mabu</option>
-                              <option value="Ranau">Ranau</option>
                               <option value="RG">Rancagawe</option>
                               <option value="Pesona">Pesona</option>
                           </select>
@@ -549,9 +548,9 @@
     const db = getFirestore(firebaseApp);
 
     const INITIAL_ADMINS = [
-      { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
+      { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilmanmabu@gmail.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' },
-      { id: 'admin3', username: 'admin3', password: '123', name: 'Admin Teknisi', role: 'Teknisi & CS', phone: '081200000003', email: '', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
+      { id: 'admin3', username: 'fathir', password: '198081', name: 'Admin Keuangan 1', role: 'Teknisi & CS', phone: '0811122699', email: 'ibnufathiralfatma@gmail.com', photo: '', status: 'Aktif', fingerprintEnabled: false, credentialId: '' }
     ];
 
     const PACKAGES = [
@@ -572,7 +571,7 @@
 
     const PPPOE_PROFILES = ['default', '100RB', 'Paket 10 Mbps', 'Paket 15 Mbps', 'Paket 20 Mbps', 'Paket 25 Mbps', 'Paket 30Mbps', 'Paket 40 MB', 'profile1', 'REAL 10 MB', 'REAL 20 MB', 'REAL 25Mb', 'test'];
     const HOTSPOT_PROFILES = ['default', 'CLIENT', 'FREE', 'MABU ALL', 'VIP'];
-    const BLOCKS = ['Semua Blok', 'Mabu', 'Ranau', 'RG', 'Pesona', 'PLT'];
+    const BLOCKS = ['Semua Blok', 'Mabu', 'RG', 'Pesona', 'PLT'];
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
     const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
