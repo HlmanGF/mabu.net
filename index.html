@@ -210,20 +210,25 @@
           </div>
       </div>
       
-      <div id="mainHeader" class="hidden bg-kai-blue w-full px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg z-40 shrink-0">
-          <div class="max-w-xl mx-auto flex justify-between items-center">
+      <div id="mainHeader" class="hidden bg-kai-blue w-full px-4 md:px-6 pt-8 pb-8 rounded-b-[40px] shadow-lg z-40 shrink-0">
+          <div class="max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto flex justify-between items-center">
               <div>
                   <h1 class="text-2xl font-black text-white tracking-tight">MABU<span class="text-kai-orange">NET</span></h1>
                   <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Portal Pelanggan</p>
               </div>
-              <div class="relative cursor-pointer" onclick="bukaNotifikasi()">
-                  <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
-                  <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-kai-blue animate-pulse"></span>
+              <div class="flex items-center gap-2">
+                  <div class="relative cursor-pointer" onclick="bukaNotifikasi()">
+                      <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/20"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg></div>
+                      <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-500 rounded-full border-2 border-kai-blue animate-pulse"></span>
+                  </div>
+                  <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 cursor-pointer active:scale-95 transition-transform" onclick="switchView('view-profil', document.getElementById('nav-akun'))">
+                      <img id="headerProfilePhoto" src="https://ui-avatars.com/api/?name=U&background=F97316&color=fff" class="w-full h-full object-cover" alt="Profile">
+                  </div>
               </div>
           </div>
       </div>
 
-      <div id="view-home" class="view-section max-w-xl mx-auto px-4">
+      <div id="view-home" class="view-section max-w-xl md:max-w-3xl lg:max-w-6xl mx-auto px-4">
           <div class="bg-gradient-to-br from-kai-bluedark via-kai-blue to-kai-bluedark p-5 rounded-[28px] shadow-[0_8px_30px_rgba(26,44,91,0.3)] border border-white/10 text-white mb-6 relative overflow-hidden mt-2">
               <div class="absolute -right-10 -top-10 w-32 h-32 bg-kai-orange/30 rounded-full blur-2xl pointer-events-none"></div>
               <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
@@ -258,7 +263,7 @@
           </div>
 
           <h3 class="text-sm font-black text-kai-blue mb-3 px-1 mt-2">Layanan Utama</h3>
-          <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div onclick="switchView('view-registrasi', document.getElementById('nav-registrasi'))" class="group bg-white p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-slate-100 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(26,44,91,0.2)] active:scale-95">
                   <div class="w-14 h-14 bg-gradient-to-br from-blue-50 to-blue-100 text-kai-blue rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300 shadow-inner">
                       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
@@ -272,10 +277,21 @@
                   <h4 class="font-extrabold text-xs text-kai-blue group-hover:text-kai-orangedark transition-colors">Bayar Tagihan</h4>
               </div>
               <div onclick="switchView('view-bantuan', document.getElementById('nav-bantuan'))" class="group bg-gradient-to-r from-emerald-500 to-emerald-600 p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(16,185,129,0.4)] flex flex-row items-center justify-center gap-3 text-center cursor-pointer col-span-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(16,185,129,0.6)] active:scale-95 text-white">
-                  <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                  <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-300 shrink-0">
                       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                   </div>
                   <h4 class="font-extrabold text-sm">Pusat Bantuan & Lapor Kendala</h4>
+              </div>
+          </div>
+
+          <!-- Tombol Ajukan Ganti Paket di Beranda -->
+          <div id="btnUpgradeHome" onclick="bukaUpgrade()" class="bg-gradient-to-r from-kai-orange to-orange-500 p-4 rounded-[28px] shadow-[0_8px_20px_-6px_rgba(249,115,22,0.5)] flex flex-row items-center justify-center gap-3 cursor-pointer mb-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_25px_-5px_rgba(249,115,22,0.7)] active:scale-95 text-white">
+              <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shrink-0">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </div>
+              <div class="text-left">
+                  <h4 class="font-extrabold text-sm">Ajukan Ganti Paket Baru</h4>
+                  <p class="text-[10px] text-orange-100 font-semibold">Tingkatkan kecepatan internet Anda sekarang</p>
               </div>
           </div>
 
@@ -285,14 +301,14 @@
                   <span>Promosi Digital</span>
                   <span class="text-[10px] text-kai-orange font-bold bg-orange-50 px-2 py-0.5 rounded-full">MABUNET</span>
               </h3>
-              <div id="clientProductGrid" class="grid grid-cols-2 gap-3">
+              <div id="clientProductGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   <!-- Produk akan dimuat otomatis dari Firebase di sini -->
-                  <div class="col-span-2 text-center text-slate-400 text-xs py-4">Memuat produk...</div>
+                  <div class="col-span-2 md:col-span-3 lg:col-span-4 text-center text-slate-400 text-xs py-4">Memuat produk...</div>
               </div>
           </div>
       </div>
 
-      <div id="view-registrasi" class="view-section max-w-xl mx-auto px-4">
+      <div id="view-registrasi" class="view-section max-w-xl md:max-w-3xl mx-auto px-4">
           <div class="bg-white p-5 md:p-7 rounded-3xl shadow-sm border border-slate-200 mt-2">
               <h2 class="text-lg font-black text-kai-blue mb-1">Formulir Pendaftaran</h2>
               <p class="text-xs font-semibold text-slate-500 mb-6">Daftar sekarang dan nikmati internet super cepat tanpa FUP.</p>
@@ -378,7 +394,7 @@
           </div>
       </div>
       
-      <div id="view-bantuan" class="view-section max-w-xl mx-auto px-4">
+      <div id="view-bantuan" class="view-section max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto px-4">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6 mt-2">
               <h3 class="text-lg font-black text-kai-blue mb-1">Buat Laporan / Pertanyaan Baru</h3>
               <p class="text-[10px] font-semibold text-slate-500 mb-5">Admin akan membalas pesan Anda langsung di aplikasi ini.</p>
@@ -594,7 +610,7 @@
       </div>
   </div>
 
-      <div id="view-profil" class="view-section max-w-xl mx-auto px-4">
+      <div id="view-profil" class="view-section max-w-xl md:max-w-3xl mx-auto px-4">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mt-2">
               <div class="flex justify-between items-center mb-6">
                   <h2 class="text-xl font-black text-kai-blue">Data Pelanggan</h2>
@@ -638,7 +654,7 @@
           </div>
       </div>
 
-      <div id="view-riwayat" class="view-section max-w-xl mx-auto px-4">
+      <div id="view-riwayat" class="view-section max-w-xl md:max-w-3xl mx-auto px-4">
           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mt-2">
               <button onclick="switchView('view-profil', document.getElementById('nav-akun'))" class="mb-4 flex items-center gap-1 text-[10px] font-bold text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Kembali</button>
               <h2 class="text-xl font-black text-kai-blue mb-1">Riwayat Tagihan</h2>
@@ -2295,6 +2311,7 @@
               <button onClick={() => {setActiveTab('customers'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'customers' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Users className="w-5 h-5 mb-1" strokeWidth={activeTab === 'customers' ? 2.5 : 1.5} />{pendingApprovals.length > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full animate-ping"></span>}<span className="text-[9px] font-bold tracking-wide">Pelanggan</span></button>
               <button onClick={() => {setActiveTab('tickets'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors relative ${activeTab === 'tickets' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><MessageCircle className="w-5 h-5 mb-1" strokeWidth={activeTab === 'tickets' ? 2.5 : 1.5} />{unreadTicketsCount > 0 && <span className="absolute top-1.5 right-2 bg-rose-500 w-2 h-2 rounded-full"></span>}<span className="text-[9px] font-bold tracking-wide">Chat</span></button>
               {currentUser?.id === 'admin1' && (<button onClick={() => {setActiveTab('mikrotik'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'mikrotik' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Server className="w-5 h-5 mb-1" strokeWidth={activeTab === 'mikrotik' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">MikroTik</span></button>)}
+              {currentUser?.id === 'admin1' && (<button onClick={() => {setActiveTab('products'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'products' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><ShoppingBag className="w-5 h-5 mb-1" strokeWidth={activeTab === 'products' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Produk</span></button>)}
               <button onClick={() => {setActiveTab('ledger'); setIsEditingProfile(false); setShowAdminManagement(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'ledger' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><Wallet className="w-5 h-5 mb-1" strokeWidth={activeTab === 'ledger' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Keuangan</span></button>
               <button onClick={() => {setActiveTab('settings'); setEditProfile(currentUser); setShowPassword(false); setActiveTicket(null);}} className={`flex flex-col items-center justify-center p-2 min-w-[54px] flex-1 transition-colors ${activeTab === 'settings' ? 'text-kai-orange' : 'text-slate-400 hover:text-slate-600'}`}><User className="w-5 h-5 mb-1" strokeWidth={activeTab === 'settings' ? 2.5 : 1.5} /><span className="text-[9px] font-bold tracking-wide">Profil</span></button>
             </nav>
@@ -2730,6 +2747,17 @@
                     else { statEl.classList.add('text-rose-600'); statEl.classList.remove('text-emerald-600'); }
                     if (data.foto_profil) document.getElementById('profilImage').src = data.foto_profil;
 
+                    // Update foto profil header (pojok kanan atas)
+                    const headerPhoto = document.getElementById('headerProfilePhoto');
+                    if (headerPhoto) {
+                        if (data.foto_profil) {
+                            headerPhoto.src = data.foto_profil;
+                        } else {
+                            const initial = (globalName || 'U').trim().charAt(0).toUpperCase();
+                            headerPhoto.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=F97316&color=fff`;
+                        }
+                    }
+
                     if (document.getElementById('homeNamaClient')) {
                         document.getElementById('homeNamaClient').innerText = globalName;
                         document.getElementById('homeBlokClient').innerText = `- BLOK ${globalBlock}`;
@@ -2771,13 +2799,16 @@
                         }
                     }
 
+                    const homeUpgradeBtn = document.getElementById('btnUpgradeHome');
                     if (data.pendingUpgrade) {
                         document.getElementById('pendingUpgradeAlert').classList.remove('hidden');
-                        document.getElementById('pendingPackageName').innerText = data.pendingUpgrade.packageId.replace(/_/g, ' ').toUpperCase();
                         document.getElementById('btnBukaUpgrade').classList.add('hidden');
+                        if (homeUpgradeBtn) homeUpgradeBtn.classList.add('hidden');
+                        document.getElementById('pendingPackageName').innerText = data.pendingUpgrade.packageId.replace(/_/g, ' ').toUpperCase();
                     } else {
                         document.getElementById('pendingUpgradeAlert').classList.add('hidden');
                         document.getElementById('btnBukaUpgrade').classList.remove('hidden');
+                        if (homeUpgradeBtn) homeUpgradeBtn.classList.remove('hidden');
                     }
                 }
             }
@@ -2794,7 +2825,7 @@
             globalProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             
             if (globalProducts.length === 0) {
-                grid.innerHTML = '<div class="col-span-2 text-center text-slate-400 text-xs py-4">Belum ada produk promosi.</div>';
+                grid.innerHTML = '<div class="col-span-2 md:col-span-3 lg:col-span-4 text-center text-slate-400 text-xs py-4">Belum ada produk promosi.</div>';
                 return;
             }
 
@@ -3173,6 +3204,11 @@
     }
 
     function bukaUpgrade() {
+        if(!currentUserDocId) {
+            alert("Silakan login terlebih dahulu untuk mengajukan ganti paket.");
+            switchView('view-login', document.getElementById('nav-akun'));
+            return;
+        }
         document.getElementById('upgradeModal').classList.remove('hidden');
         document.getElementById('upgradeModal').classList.add('flex');
         setTimeout(() => { document.getElementById('upgradeContent').classList.remove('translate-y-full'); }, 10);
