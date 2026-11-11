@@ -27,9 +27,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- ============================================================= -->
-  <!-- FIREBASE COMPAT SDK (untuk script client vanilla JS di bawah)  -->
-  <!-- ============================================================= -->
+  <!-- FIREBASE COMPAT SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
@@ -537,7 +535,6 @@
       MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X
     } from 'https://esm.sh/lucide-react@0.292.0';
 
-    // ===== FIREBASE v9 MODULAR IMPORTS =====
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import {
       getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, getDoc, getDocs,
@@ -584,7 +581,9 @@
     const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
     const APPLICANTS = ['Ayah', 'Mamah', 'Fathir', 'Dede', 'Zahra', 'Manual'];
-    const PORTAL_URL = window.location.origin + "/client"; 
+    
+    // URL PORTAL DIPERBARUI (Tidak lagi memakai /client karena sudah satu pintu)
+    const PORTAL_URL = window.location.origin; 
 
     const compressImageFile = (file, maxWidth = 900, quality = 0.75) => {
       return new Promise((resolve, reject) => {
@@ -1068,14 +1067,10 @@
 
                 if (matched) {
                     localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.foto_profil}));
-                    // Di dalam handleLogin (bagian else untuk pelanggan)
-if (matched) {
-    localStorage.setItem('mabunet_client_session', JSON.stringify({id: matched.id, foto: matched.foto_profil}));
-    // JANGAN arahkan ke /client, tapi muat ulang halaman utama
-    window.location.href = '/'; // atau window.location.reload();
-} else {
-    setLoginError('Nomor WhatsApp tidak terdaftar.');
-}
+                    window.location.reload(); // Muat ulang halaman agar checkRoute() mendeteksi login pelanggan
+                } else {
+                    setLoginError('Nomor WhatsApp tidak terdaftar.');
+                }
             } catch (err) {
                 setLoginError('Gagal login: ' + err.message);
             }
@@ -2213,48 +2208,46 @@ if (matched) {
   <!-- ========================================== -->
   <script>
     function checkRoute() {
-    // 1. Sembunyikan UI admin (React) terlebih dahulu
-    const adminUI = document.getElementById('root');
-    const clientUI = document.getElementById('client-ui');
+        const adminUI = document.getElementById('root');
+        const clientUI = document.getElementById('client-ui');
+        
+        if (!adminUI || !clientUI) return; 
 
-    // 2. Sembunyikan kedua UI
-    adminUI.classList.add('hidden');
-    if (clientUI) clientUI.style.display = 'none';
+        const savedUser = localStorage.getItem('mabunet_client_session');
 
-    // 3. Logika Penentuan Tampilan
-    // Cek apakah user sudah login sebagai pelanggan (dari localStorage)
-    const savedUser = localStorage.getItem('mabunet_client_session');
-
-    if (savedUser) {
-        // ---- JIKA SUDAH LOGIN SEBAGAI PELANGGAN ----
-        // Tampilkan UI Client
-        if (clientUI) {
+        if (savedUser) {
+            adminUI.style.display = 'none';
+            adminUI.classList.add('hidden');
+            
             clientUI.style.display = 'flex';
             clientUI.classList.remove('hidden');
             document.body.className = 'bg-kai-bg text-slate-800 h-[100dvh] w-full overflow-hidden m-0 p-0';
             document.documentElement.className = 'h-full overflow-hidden';
             document.title = 'Portal Pelanggan MabuNet';
-            // Tampilkan halaman utama client
+            
+            // Tampilkan halaman home client secara default
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('view-home').classList.add('active');
-            // Sembunyikan header/nav bawaan client jika perlu (opsional, sesuaikan dengan UI Anda)
+            
             document.getElementById('mainHeader').classList.remove('hidden');
             document.getElementById('bottomNav').classList.remove('hidden');
+            
+            if(typeof mulaiListenerRealtime === 'function') mulaiListenerRealtime();
+        } else {
+            clientUI.style.display = 'none';
+            clientUI.classList.add('hidden');
+            
+            adminUI.style.display = 'block';
+            adminUI.classList.remove('hidden');
+            document.body.className = 'text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300';
+            document.documentElement.className = '';
+            document.title = 'MABUNET - Master Billing & Network';
         }
-    } else {
-        // ---- JIKA BELUM LOGIN ATAU SEBAGAI ADMIN ----
-        // Tampilkan UI Admin (React) yang berisi halaman login universal
-        adminUI.classList.remove('hidden');
-        document.body.className = 'text-slate-800 dark:text-slate-100 antialiased h-screen overflow-hidden transition-colors duration-300';
-        document.documentElement.className = '';
-        document.title = 'MABUNET - Master Billing & Network';
     }
-}
 
-// Panggil saat halaman pertama kali dimuat dan saat hash berubah
-window.addEventListener('hashchange', checkRoute);
-window.addEventListener('load', checkRoute);
-setTimeout(checkRoute, 100);
+    window.addEventListener('hashchange', checkRoute);
+    window.addEventListener('load', checkRoute);
+    setTimeout(checkRoute, 100);
 
     // --- LOGIKA CLIENT MABUNET (FIREBASE COMPAT) ---
     const firebaseConfig = {
@@ -2266,7 +2259,6 @@ setTimeout(checkRoute, 100);
         appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46"
     };
     
-    // Gunakan NAMED app 'clientApp' agar tidak bentrok dengan default app milik admin (modular)
     let clientApp;
     try {
         clientApp = firebase.app('clientApp');
@@ -2311,17 +2303,6 @@ setTimeout(checkRoute, 100);
         }
         window.scrollTo(0,0);
     }
-
-    window.addEventListener('load', () => {
-        const savedUser = localStorage.getItem('mabunet_client_session');
-        if (savedUser) {
-            const data = JSON.parse(savedUser);
-            currentUserDocId = data.id;
-            if(data.foto) document.getElementById('profilImage').src = data.foto;
-            bukaAplikasiPenuh();
-            mulaiListenerRealtime(); 
-        }
-    });
 
     function bukaAplikasiPenuh() {
         document.getElementById('mainHeader').classList.remove('hidden');
@@ -2435,7 +2416,14 @@ setTimeout(checkRoute, 100);
     });
 
     function mulaiListenerRealtime() {
+        const savedUser = localStorage.getItem('mabunet_client_session');
+        if (savedUser && !currentUserDocId) {
+            const data = JSON.parse(savedUser);
+            currentUserDocId = data.id;
+        }
         if(!currentUserDocId) return;
+
+        if(profilListener) profilListener(); // Unsubscribe old listener if any
 
         profilListener = db.collection('customers').doc(currentUserDocId).onSnapshot(doc => {
             if (doc.exists) {
@@ -3042,7 +3030,7 @@ setTimeout(checkRoute, 100);
         if(confirm("Yakin ingin keluar dari portal?")) {
             currentUserDocId = null;
             localStorage.removeItem('mabunet_client_session');
-            tutupAplikasiPenuh();
+            window.location.reload(); // Reload halaman agar checkRoute() mendeteksi logout dan memunculkan halaman login
         }
     }
 
