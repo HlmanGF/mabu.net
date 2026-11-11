@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA META TAGS -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MABUNET">
   <title>MABUNET - Master Billing & Network</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1A2C5B">
@@ -1710,6 +1715,138 @@
 
     window.addEventListener('load', () => { setTimeout(() => { if(typeof muatProdukDigital === 'function') muatProdukDigital(); }, 1000); });
   </script>
+<!-- ========== PWA INSTALL BANNER ========== -->
+<div id="pwaInstallBanner" class="hidden fixed bottom-20 left-3 right-3 z-[9999] pointer-events-none">
+  <div class="pointer-events-auto max-w-md mx-auto bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.4)] border border-slate-200 p-3 flex items-center gap-3 pwa-slide-up">
+    <img src="./mabunetlogo.png" alt="MABUNET" class="w-14 h-14 rounded-xl object-contain bg-slate-50 p-1 shrink-0 border border-slate-200" onerror="this.style.display='none'">
+    <div class="flex-1 min-w-0">
+      <h3 class="font-black text-[13px] text-slate-800 leading-tight">Install Aplikasi MABUNET</h3>
+      <p class="text-[10px] font-semibold text-slate-500 mt-0.5 leading-tight">Akses lebih cepat langsung dari layar HP</p>
+    </div>
+    <div class="flex flex-col gap-1.5 shrink-0">
+      <button id="btnInstallApp" class="px-4 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[11px] font-black shadow-sm transition-colors active:scale-95 whitespace-nowrap">Install</button>
+      <button id="btnDismissInstall" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg text-[10px] font-bold transition-colors">Nanti</button>
+    </div>
+  </div>
+</div>
 
+<style>
+  @keyframes pwaSlideUp { from { transform: translateY(120%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .pwa-slide-up { animation: pwaSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+</style>
+
+<script>
+// ========== PWA INSTALL LOGIC ==========
+(function() {
+  let deferredPrompt = null;
+  const DISMISS_KEY = 'mabunet_install_dismissed_at';
+  const DISMISS_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 hari
+  const SHOW_DELAY = 3000; // 3 detik setelah page load
+
+  function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.matchMedia('(display-mode: fullscreen)').matches ||
+           window.navigator.standalone === true;
+  }
+
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
+  function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  function wasDismissedRecently() {
+    const t = localStorage.getItem(DISMISS_KEY);
+    if (!t) return false;
+    return (Date.now() - parseInt(t)) < DISMISS_DURATION;
+  }
+
+  function markDismissed() {
+    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+  }
+
+  function showBanner() {
+    if (isStandalone()) return;
+    if (!isMobile()) return;
+    if (wasDismissedRecently()) return;
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.classList.remove('hidden');
+  }
+
+  function hideBanner() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.classList.add('hidden');
+  }
+
+  // Registrasi Service Worker (syarat wajib PWA installable)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => {
+        console.warn('[PWA] Service Worker gagal:', err);
+      });
+    });
+  }
+
+  // Capture event install prompt (Chrome/Edge/Android)
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    setTimeout(showBanner, SHOW_DELAY);
+  });
+
+  // Fallback iOS (Safari tidak dukung beforeinstallprompt)
+  if (isIOS() && !isStandalone() && !wasDismissedRecently()) {
+    window.addEventListener('load', () => {
+      setTimeout(showBanner, SHOW_DELAY);
+    });
+  }
+
+  // Handler klik tombol
+  document.addEventListener('click', async (e) => {
+    if (e.target.id === 'btnInstallApp') {
+      if (deferredPrompt) {
+        // Android / Chrome / Edge
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') hideBanner();
+        else { markDismissed(); hideBanner(); }
+        deferredPrompt = null;
+      } else if (isIOS()) {
+        // iOS - instruksi manual
+        alert(
+          '📱 Cara Install di iPhone / iPad:\n\n' +
+          '1. Tap tombol "Share" (kotak dengan panah ke atas) di Safari\n' +
+          '2. Scroll dan pilih "Tambah ke Layar Utama"\n' +
+          '3. Tap "Tambah"\n\n' +
+          'Aplikasi MABUNET akan muncul di layar utama HP Anda.'
+        );
+        markDismissed();
+        hideBanner();
+      } else {
+        alert('Browser Anda belum mendukung install otomatis.\nGunakan Chrome (Android) atau Safari (iPhone) untuk hasil terbaik.');
+      }
+    }
+    if (e.target.id === 'btnDismissInstall') {
+      markDismissed();
+      hideBanner();
+    }
+  });
+
+  // Auto-hide kalau sudah ter-install
+  window.addEventListener('appinstalled', () => {
+    hideBanner();
+    deferredPrompt = null;
+    localStorage.removeItem(DISMISS_KEY);
+  });
+
+  // Hide jika sudah standalone (sudah install)
+  if (isStandalone()) {
+    window.addEventListener('load', hideBanner);
+  }
+})();
+</script>
+<!-- ========== END PWA INSTALL ========== -->
 </body>
 </html>
