@@ -1,7 +1,16 @@
-self.addEventListener('install', (e) => {
-  console.log('[Service Worker] Install');
+// Service Worker MABUNET
+// Minimal SW agar PWA bisa di-install. TIDAK caching agar Firebase realtime tidak terganggu.
+
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
 });
-self.addEventListener('fetch', (e) => {
-  // Service worker sederhana agar PWA diakui oleh sistem HP/PC
-  e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+  // Pass-through: biarkan semua request berjalan normal
+  // Service worker dianggap aktif karena punya fetch handler
+  return;
 });
