@@ -27,6 +27,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+  <!-- FIREBASE COMPAT SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
@@ -754,16 +755,20 @@
             data.sort((a,b) => (a.block || '').localeCompare(b.block || ''));
             setCustomers(data); setIsDbLoading(false);
           });
-          const qExpenses = query(collection(db, 'expenses'), orderBy('date', 'desc'), limit(500));
-const unsubExpenses = onSnapshot(qExpenses, (snapshot) => {
-  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  setExpenses(data);
+          
+          // === HEMAT KUOTA (MENGAMBIL 500 TERAKHIR DI MEMORI) ===
+          const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
+            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            data.sort((a,b) => new Date(b.date) - new Date(a.date));
+            setExpenses(data.slice(0, 500)); 
           });
-          const qLogs = query(collection(db, 'logs'), orderBy('time', 'desc'), limit(100));
-const unsubLogs = onSnapshot(qLogs, (snapshot) => {
-  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  setAuditLogs(data);
+          
+          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => {
+            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            data.sort((a,b) => b.time - a.time); 
+            setAuditLogs(data.slice(0, 100)); 
           });
+          
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => {
             if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } 
             else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); }
@@ -781,17 +786,23 @@ const unsubLogs = onSnapshot(qLogs, (snapshot) => {
           const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (d) => { if (d.exists()) setMikrotikHotspotHosts(d.data().hosts || []); });
           const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (d) => { if (d.exists()) setMikrotikIpBindings(d.data().bindings || []); });
           
-          const qTickets = query(collection(db, 'tickets'), orderBy('updatedAt', 'desc'), limit(100));
-const unsubTickets = onSnapshot(qTickets, (snapshot) => {
-  const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  setTickets(data);
-  setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
+          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
+             const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+             data.sort((a, b) => {
+                 const timeA = a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0;
+                 const timeB = b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0;
+                 return timeB - timeA;
+             });
+             setTickets(data.slice(0, 100)); 
+             setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null);
           });
           const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => {
              const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
              data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0));
              setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu'));
           });
+          // ==========================================================
+          
           return () => { 
               unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); 
               unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); 
@@ -1721,14 +1732,12 @@ const unsubTickets = onSnapshot(qTickets, (snapshot) => {
                                <div className="flex justify-end gap-1.5 pt-1 flex-wrap">
                                   <button onClick={() => { setActiveTab('tickets'); handleStartNewChatWithCustomer(cust); }} className="px-2.5 py-1.5 bg-blue-50 dark:bg-slate-700 text-kai-blue dark:text-blue-300 rounded-lg text-[10px] font-bold flex items-center gap-1" title="Chat Pelanggan"><MessageCircle className="w-3.5 h-3.5"/></button>
                                   
-                                  {/* TOMBOL MANUAL ISOLIR BARU */}
                                   {cust.status === 'Aktif' ? (
                                       <button onClick={() => toggleIsolirManual(cust, 'ISOLIR')} className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors text-[10px] font-bold" title="Isolir Manual"><Power className="w-3.5 h-3.5"/></button>
                                   ) : (
                                       <button onClick={() => toggleIsolirManual(cust, 'AKTIFKAN')} className="px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors text-[10px] font-bold" title="Aktifkan Manual (Bebas Isolir)"><Power className="w-3.5 h-3.5"/></button>
                                   )}
 
-                                  {/* TOMBOL KEMBALIKAN KE SISTEM (Hanya muncul jika Bebas Isolir) */}
                                   {cust.manualOverride && (
                                       <button onClick={() => toggleIsolirManual(cust, 'KEMBALIKAN')} className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors text-[10px] font-bold" title="Kembalikan ke Sistem Normal"><ShieldAlert className="w-3.5 h-3.5"/></button>
                                   )}
@@ -1747,7 +1756,6 @@ const unsubTickets = onSnapshot(qTickets, (snapshot) => {
                 )}
 
                 {/* ... SISA KODE TAB LAINNYA (Tickets, Ledger, Mikrotik, Portal, Settings) TETAP SAMA SEPERTI SEBELUMNYA ... */}
-                {/* Karena terlalu panjang, saya pastikan Anda menyalin dari file utuh yang saya berikan di atas. */}
               </div>
             </main>
 
