@@ -330,15 +330,13 @@
 
     const firebaseConfig = { apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com", projectId: "billing-mabunet", storageBucket: "billing-mabunet.firebasestorage.app", messagingSenderId: "362703627315", appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46" };
     const firebaseApp = initializeApp(firebaseConfig);
-    const db = getFirestore(firebaseApp);
-    const firebaseApp = initializeApp(firebaseConfig);
-    const db = getFirestore(firebaseApp);
-    const auth = firebase.auth(); // <-- TAMBAHKAN INI
+const db = getFirestore(firebaseApp);
+const auth = firebase.auth(); 
 
-    // TAMBAHKAN BLOK INI UNTUK LOGIN ANONIM OTOMATIS
-    auth.signInAnonymously().catch((error) => {
-      console.error("Gagal login anonim:", error);
-    });
+// Proses Login Anonim yang aman
+auth.signInAnonymously().catch((error) => {
+  console.error("Gagal login anonim:", error);
+});
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif' },
@@ -529,7 +527,14 @@
               });
             }
           });
-          const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => (a.block || '').localeCompare(b.block || '')); setCustomers(data); setIsDbLoading(false); });
+          const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => { 
+    const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); 
+    data.sort((a,b) => (a.block || '').localeCompare(b.block || '')); 
+    setCustomers(data); setIsDbLoading(false); 
+}, (error) => {
+    console.error("Gagal memuat pelanggan (cek Rules/Auth):", error);
+    setIsDbLoading(false);
+});
           const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => new Date(b.date) - new Date(a.date)); setExpenses(data.slice(0, 500)); });
           const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => b.time - a.time); setAuditLogs(data.slice(0, 100)); });
           const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => { if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); } });
