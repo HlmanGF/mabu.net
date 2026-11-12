@@ -17,10 +17,9 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Firebase Core & Firestore -->
+  <!-- Firebase Core & Firestore (Compat untuk Vanilla JS) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-  <!-- Firebase Auth (Tambahan baru) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
@@ -321,14 +320,15 @@
     import { Users, LayoutDashboard, LogOut, Check, Lock, User, Settings, Camera, ShieldAlert, Bell, Plus, Edit3, Trash2, FileText, Server, Eye, EyeOff, Sun, Moon, Printer, Download, Activity, UserCog, Power, Wallet, Search, ArrowLeft, Send, TrendingUp, ChevronRight, ChevronLeft, CreditCard, UserPlus, Key, Link, MessageCircle, AlertCircle, FileCheck, Image as ImageIcon, X, ShoppingBag, Clock, LogIn } from 'https://esm.sh/lucide-react@0.292.0';
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, setDoc, getDoc, getDocs, onSnapshot, serverTimestamp, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 
     const firebaseConfig = { apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com", projectId: "billing-mabunet", storageBucket: "billing-mabunet.firebasestorage.app", messagingSenderId: "362703627315", appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46" };
     const firebaseApp = initializeApp(firebaseConfig);
     const db = getFirestore(firebaseApp);
-    const auth = firebase.auth();
+    const auth = getAuth(firebaseApp);
 
     // Login Anonim Otomatis
-    auth.signInAnonymously().catch((error) => {
+    signInAnonymously(auth).catch((error) => {
       console.warn("Gagal login anonim (pastikan Anonymous Auth aktif di Firebase):", error.message);
     });
 
