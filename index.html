@@ -5,12 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MABUNET - Master Billing & Network</title>
   
-  <!-- PWA META TAGS -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MABUNET">
-
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1A2C5B">
   <link rel="icon" href="./mabunetlogo.png" type="image/png">
@@ -23,12 +17,12 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Firebase -->
+  <!-- Firebase Core & Firestore -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<!-- Tambahkan Script Firebase Auth ini -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <!-- Cropper & HTML2Canvas -->
+  <!-- Firebase Auth (Tambahan baru) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -58,8 +52,8 @@
       #print-receipt { position: absolute; left: 0; top: 0; width: 58mm; margin: 0; padding: 5px; font-family: monospace; font-size: 11px; color: #000; background: #fff; }
       @page { margin: 0; }
     }
-    @keyframes pwaSlideUp { from { transform: translateY(120%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .pwa-slide-up { animation: pwaSlideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes pwaSlideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .pwa-slide-down { animation: pwaSlideDown 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
   </style>
 </head>
 <body>
@@ -330,13 +324,39 @@
 
     const firebaseConfig = { apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com", projectId: "billing-mabunet", storageBucket: "billing-mabunet.firebasestorage.app", messagingSenderId: "362703627315", appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46" };
     const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const auth = firebase.auth(); 
+    const db = getFirestore(firebaseApp);
+    const auth = firebase.auth();
 
-// Proses Login Anonim yang aman
-auth.signInAnonymously().catch((error) => {
-  console.error("Gagal login anonim:", error);
-});
+    // Login Anonim Otomatis
+    auth.signInAnonymously().catch((error) => {
+      console.warn("Gagal login anonim (pastikan Anonymous Auth aktif di Firebase):", error.message);
+    });
+
+    // Error Boundary untuk mencegah layar putih
+    class ErrorBoundary extends React.Component {
+      constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+      }
+      static getDerivedStateFromError(error) { return { hasError: true, error }; }
+      componentDidCatch(error, errorInfo) { console.error("React Crash:", error, errorInfo); }
+      render() {
+        if (this.state.hasError) {
+          return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">
+              <div className="bg-slate-800 p-8 rounded-3xl max-w-md shadow-2xl border border-slate-700">
+                <ShieldAlert className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-black mb-2">Terjadi Kesalahan Sistem</h2>
+                <p className="text-sm text-slate-400 mb-6">Aplikasi gagal memuat data. Kemungkinan kuota Firebase habis atau aturan keamanan (Rules) memblokir akses.</p>
+                <button onClick={() => window.location.reload()} className="px-6 py-3 bg-kai-blue hover:bg-blue-600 rounded-xl font-bold text-sm w-full transition-colors">Muat Ulang Halaman</button>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif' },
@@ -518,35 +538,41 @@ auth.signInAnonymously().catch((error) => {
             if (snapshot.empty) { INITIAL_ADMINS.forEach(async (adm) => { await setDoc(doc(db, 'admins', adm.id), adm); }); } 
             else {
               const cloudAdmins = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+              localStorage.setItem('mabunet_admins_cache', JSON.stringify(cloudAdmins));
               setAdmins(cloudAdmins);
               setCurrentUser(prevUser => {
-                if (prevUser) return prevUser;
+                if (prevUser) return cloudAdmins.find(a => a.id === prevUser.id) || prevUser;
                 const savedUid = localStorage.getItem("mabunet_session");
                 if (savedUid) { const savedUser = cloudAdmins.find(a => a.id === savedUid); if (savedUser && savedUser.status === "Aktif") return savedUser; else localStorage.removeItem("mabunet_session"); }
                 return null;
               });
             }
+          }, (error) => {
+            console.warn("Admin onSnapshot error:", error);
+            const cachedAdmins = localStorage.getItem('mabunet_admins_cache');
+            if (cachedAdmins) setAdmins(JSON.parse(cachedAdmins));
           });
-          const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => { 
-    const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); 
-    data.sort((a,b) => (a.block || '').localeCompare(b.block || '')); 
-    setCustomers(data); setIsDbLoading(false); 
-}, (error) => {
-    console.error("Gagal memuat pelanggan (cek Rules/Auth):", error);
-    setIsDbLoading(false);
-});
-          const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => new Date(b.date) - new Date(a.date)); setExpenses(data.slice(0, 500)); });
-          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => b.time - a.time); setAuditLogs(data.slice(0, 100)); });
-          const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => { if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); } });
-          const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => { if (docSnap.exists()) { const data = docSnap.data(); if (new Date().getTime() - data.lastUpdate > 30000) setMikrotikStatus(null); else setMikrotikStatus(data); } else setMikrotikStatus(null); });
-          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (d) => { if (d.exists()) setMikrotikUsers(d.data().users || []); });
-          const unsubHSUsers = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_users'), (d) => { if (d.exists()) setMikrotikHotspotUsers(d.data().users || []); });
-          const unsubHSActive = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_active'), (d) => { if (d.exists()) setMikrotikHotspotActive(d.data().users || []); });
-          const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (d) => { if (d.exists()) setMikrotikHotspotHosts(d.data().hosts || []); });
-          const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (d) => { if (d.exists()) setMikrotikIpBindings(d.data().bindings || []); });
-          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => { const timeA = a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0; const timeB = b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0; return timeB - timeA; }); setTickets(data.slice(0, 100)); setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null); });
-          const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0)); setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu')); });
-          const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setDigitalProducts(data); });
+
+          const unsubCustomers = onSnapshot(collection(db, 'customers'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => (a.block || '').localeCompare(b.block || '')); setCustomers(data); setIsDbLoading(false); }, (error) => { console.warn("Customers error:", error); setIsDbLoading(false); });
+          const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => new Date(b.date) - new Date(a.date)); setExpenses(data.slice(0, 500)); }, (error) => console.warn("Expenses error:", error));
+          const unsubLogs = onSnapshot(collection(db, 'logs'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a,b) => b.time - a.time); setAuditLogs(data.slice(0, 100)); }, (error) => console.warn("Logs error:", error));
+          
+          const unsubSettings = onSnapshot(doc(db, 'settings', 'globalConfig'), (docSnapshot) => { if (docSnapshot.exists()) { setSettingsData(docSnapshot.data()); } else { setDoc(doc(db, 'settings', 'globalConfig'), { waGatewayPhone: '62811122699' }); } }, (error) => console.warn("Settings error:", error));
+          
+          const unsubMikrotik = onSnapshot(doc(db, 'settings', 'mikrotik_status'), (docSnap) => { if (docSnap.exists()) { const data = docSnap.data(); if (new Date().getTime() - data.lastUpdate > 30000) setMikrotikStatus(null); else setMikrotikStatus(data); } else setMikrotikStatus(null); }, (error) => console.warn("Mikrotik status error:", error));
+          
+          const unsubMikrotikUsers = onSnapshot(doc(db, 'settings', 'mikrotik_users'), (d) => { if (d.exists()) setMikrotikUsers(d.data().users || []); }, (error) => console.warn("Mikrotik users error:", error));
+          const unsubHSUsers = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_users'), (d) => { if (d.exists()) setMikrotikHotspotUsers(d.data().users || []); }, (error) => console.warn("Hotspot users error:", error));
+          const unsubHSActive = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_active'), (d) => { if (d.exists()) setMikrotikHotspotActive(d.data().users || []); }, (error) => console.warn("Hotspot active error:", error));
+          const unsubHSHosts = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_hosts'), (d) => { if (d.exists()) setMikrotikHotspotHosts(d.data().hosts || []); }, (error) => console.warn("Hotspot hosts error:", error));
+          const unsubHSBindings = onSnapshot(doc(db, 'settings', 'mikrotik_hotspot_bindings'), (d) => { if (d.exists()) setMikrotikIpBindings(d.data().bindings || []); }, (error) => console.warn("Hotspot bindings error:", error));
+          
+          const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => { const timeA = a.updatedAt?.seconds || a.createdAt?.seconds || a.time || 0; const timeB = b.updatedAt?.seconds || b.createdAt?.seconds || b.time || 0; return timeB - timeA; }); setTickets(data.slice(0, 100)); setActiveTicket(prev => prev ? (data.find(t => t.id === prev.id) || prev) : null); }, (error) => console.warn("Tickets error:", error));
+          
+          const unsubApprovals = onSnapshot(collection(db, 'approvals'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => (b.createdAt?.seconds || b.time || 0) - (a.createdAt?.seconds || a.time || 0)); setPendingApprovals(data.filter(a => !a.status || a.status === 'pending' || a.status === 'Pending' || a.status === 'menunggu')); }, (error) => console.warn("Approvals error:", error));
+          
+          const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => { const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() })); data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); setDigitalProducts(data); }, (error) => console.warn("Products error:", error));
+          
           return () => { unsubAdmins(); unsubCustomers(); unsubExpenses(); unsubLogs(); unsubSettings(); unsubMikrotik(); unsubMikrotikUsers(); unsubHSUsers(); unsubHSActive(); unsubHSHosts(); unsubHSBindings(); unsubTickets(); unsubApprovals(); unsubProducts(); };
         } catch(e) { console.error(e); setIsDbLoading(false); }
       }, []);
@@ -561,7 +587,7 @@ auth.signInAnonymously().catch((error) => {
           uniqueMsgs.sort((a, b) => (a.timestamp?.seconds * 1000 || a.time || 0) - (b.timestamp?.seconds * 1000 || b.time || 0));
           setChatMessages(uniqueMsgs);
           setTimeout(() => { if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight; }, 120);
-        });
+        }, (error) => console.warn("Chat messages error:", error));
         return () => unsubChats();
       }, [activeTicket]);
 
@@ -1258,7 +1284,7 @@ auth.signInAnonymously().catch((error) => {
       );
     }
     const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 
   <script>
@@ -1294,6 +1320,11 @@ auth.signInAnonymously().catch((error) => {
     let clientApp;
     try { clientApp = firebase.app('clientApp'); } catch (e) { clientApp = firebase.initializeApp(firebaseConfig, 'clientApp'); }
     const db = clientApp.firestore();
+    const clientAuth = clientApp.auth();
+
+    clientAuth.signInAnonymously().catch((error) => {
+      console.warn("Client Gagal login anonim:", error.message);
+    });
     
     let currentUserDocId = null;
     let cropperInstance = null;
@@ -1490,7 +1521,7 @@ auth.signInAnonymously().catch((error) => {
                     }
                 }
             }
-        });
+        }, (error) => console.warn("Client profile listener error:", error));
         muatNotifikasi();
         muatProdukDigital();
     }
@@ -1578,7 +1609,7 @@ auth.signInAnonymously().catch((error) => {
             }
             chatBox.innerHTML = html;
             setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 50);
-        });
+        }, err => console.warn("Client chat error:", err));
     }
 
     function tutupChat() {
@@ -1813,18 +1844,22 @@ auth.signInAnonymously().catch((error) => {
     window.addEventListener('load', () => { setTimeout(() => { if(typeof muatProdukDigital === 'function') muatProdukDigital(); }, 1000); });
   </script>
 
-  <!-- ========== PWA INSTALL BANNER ========== -->
-  <div id="pwaInstallBanner" class="hidden fixed bottom-20 left-3 right-3 z-[9999] pointer-events-none">
-    <div class="pointer-events-auto max-w-md mx-auto bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.4)] border border-slate-200 p-3 flex items-center gap-3 pwa-slide-up">
-      <img src="./mabunetlogo.png" alt="MABUNET" class="w-14 h-14 rounded-xl object-contain bg-slate-50 p-1 shrink-0 border border-slate-200" onerror="this.style.display='none'">
-      <div class="flex-1 min-w-0">
-        <h3 class="font-black text-[13px] text-slate-800 leading-tight">Install Aplikasi MABUNET</h3>
-        <p class="text-[10px] font-semibold text-slate-500 mt-0.5 leading-tight">Akses lebih cepat langsung dari layar HP</p>
+  <!-- ========== PWA INSTALL BANNER (POPUP MELAYANG DI TENGAH ATAS) ========== -->
+  <div id="pwaInstallBanner" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 z-[9999] w-[90%] max-w-sm pointer-events-none">
+    <div class="pointer-events-auto bg-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.4)] border-2 border-kai-orange p-4 flex flex-col gap-3 pwa-slide-down relative">
+      <!-- Tombol Close -->
+      <button id="btnDismissInstall" class="absolute top-2 right-2 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+      
+      <div class="flex items-center gap-3">
+        <img src="./mabunetlogo.png" alt="MABUNET" class="w-12 h-12 rounded-xl object-contain bg-slate-50 p-1 shrink-0 border border-slate-200" onerror="this.style.display='none'">
+        <div class="flex-1 min-w-0">
+          <h3 class="font-black text-sm text-slate-800 leading-tight">Install Aplikasi MABUNET</h3>
+          <p class="text-[10px] font-semibold text-slate-500 mt-1 leading-tight">Akses lebih cepat langsung dari layar HP Anda</p>
+        </div>
       </div>
-      <div class="flex flex-col gap-1.5 shrink-0">
-        <button id="btnInstallApp" class="px-4 py-2 bg-kai-orange hover:bg-kai-orangedark text-white rounded-lg text-[11px] font-black shadow-sm transition-colors active:scale-95 whitespace-nowrap">Install</button>
-        <button id="btnDismissInstall" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg text-[10px] font-bold transition-colors">Nanti</button>
-      </div>
+      <button id="btnInstallApp" class="w-full py-2.5 bg-kai-orange hover:bg-kai-orangedark text-white rounded-xl text-xs font-black shadow-sm transition-colors active:scale-95">Install Sekarang</button>
     </div>
   </div>
 
@@ -1853,7 +1888,7 @@ auth.signInAnonymously().catch((error) => {
       if (isIOS() && !isStandalone() && !wasDismissedRecently()) { window.addEventListener('load', () => { setTimeout(showBanner, SHOW_DELAY); }); }
 
       document.addEventListener('click', async (e) => {
-        if (e.target.id === 'btnInstallApp') {
+        if (e.target.id === 'btnInstallApp' || e.target.closest('#btnInstallApp')) {
           if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
@@ -1864,7 +1899,7 @@ auth.signInAnonymously().catch((error) => {
             markDismissed(); hideBanner();
           } else { alert('Browser Anda belum mendukung install otomatis.\nGunakan Chrome (Android) atau Safari (iPhone) untuk hasil terbaik.'); }
         }
-        if (e.target.id === 'btnDismissInstall') { markDismissed(); hideBanner(); }
+        if (e.target.id === 'btnDismissInstall' || e.target.closest('#btnDismissInstall')) { markDismissed(); hideBanner(); }
       });
 
       window.addEventListener('appinstalled', () => { hideBanner(); deferredPrompt = null; localStorage.removeItem(DISMISS_KEY); });
