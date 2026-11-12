@@ -26,7 +26,8 @@
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
+<!-- Tambahkan Script Firebase Auth ini -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <!-- Cropper & HTML2Canvas -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -330,7 +331,14 @@
     const firebaseConfig = { apiKey: "AIzaSyCE-kFF6ZaDZ5UodX2MJfvooshQT8LH0ak", authDomain: "billing-mabunet.firebaseapp.com", projectId: "billing-mabunet", storageBucket: "billing-mabunet.firebasestorage.app", messagingSenderId: "362703627315", appId: "1:362703627315:web:a24bf8a6ba9d07f13e6f46" };
     const firebaseApp = initializeApp(firebaseConfig);
     const db = getFirestore(firebaseApp);
+    const firebaseApp = initializeApp(firebaseConfig);
+    const db = getFirestore(firebaseApp);
+    const auth = firebase.auth(); // <-- TAMBAHKAN INI
 
+    // TAMBAHKAN BLOK INI UNTUK LOGIN ANONIM OTOMATIS
+    auth.signInAnonymously().catch((error) => {
+      console.error("Gagal login anonim:", error);
+    });
     const INITIAL_ADMINS = [
       { id: 'admin1', username: 'Hilman', password: 'Kosong,19', name: 'Hilman Fatahillah', role: 'Super Admin', phone: '08999999977', email: 'hilman@mabunet.com', photo: '', status: 'Aktif' },
       { id: 'admin2', username: 'admin2', password: '123', name: 'Admin Keuangan', role: 'Billing', phone: '081200000002', email: '', photo: '', status: 'Aktif' },
